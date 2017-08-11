@@ -1356,6 +1356,37 @@ namespace etl
 
     typename etl::aligned_storage<sizeof(T*) * MAX_SIZE, etl::alignment_of<T*>::value>::type buffer;
   };
+
+  //*****************************************************************************
+  /// Compile time calculation to find the maximum number of elements that will
+  /// fit in a specifically sized buffer.
+  //*****************************************************************************
+  template <typename T, const size_t SIZE>
+  class max_vector_size
+  {
+  public:
+
+    const size_t value = find_size<T, INITIAL_GUESS, SIZE>::value;
+
+  private:
+
+    // The first guess is that there is no overhead.
+    const size_t INITIAL_GUESS = SIZE / sizeof(T);
+
+    // Does it fit in a buffer of size S?
+    template <typename U, const size_t N, const size_t S>
+    struct is_a_fit
+    {
+      const bool value = (sizeof(etl::vector<U, N>) <= S);
+    };
+
+    // Recursively check decreasing values of N until it fits.
+    template <typename U, const size_t S, const size_t N>
+    struct find_size
+    {
+      const size_t value = is_a_fit<T, N, S>::value ? N : find_size<T, N - 1, S>::value;
+    };
+  };
 }
 
 #include "private/ivectorpointer.h"
