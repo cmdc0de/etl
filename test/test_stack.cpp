@@ -422,5 +422,38 @@ namespace
       CHECK_EQUAL(1, stack.top());
       stack.pop();
     }
+
+    //*************************************************************************
+    TEST(test_max_n_size)
+    {
+      const size_t BUFFER_SIZE = 100;
+      const size_t N = etl::max_stack_size<uint16_t, BUFFER_SIZE>::value;
+
+      // Initialise the buffer.
+      char buffer[BUFFER_SIZE + 4];
+      std::fill(buffer, buffer + BUFFER_SIZE + 4, 0);
+
+      // Create it.
+      etl::stack<uint16_t, N>& data = etl::make_stack_at<uint16_t, N>(buffer);
+
+      // Fill it with data.
+      for (size_t i = 0; i < N; ++i)
+      {
+        data.push(0x5A6B);
+      }
+
+      // Check that we didn't overflow.
+      CHECK_EQUAL(0, buffer[BUFFER_SIZE + 0]);
+      CHECK_EQUAL(0, buffer[BUFFER_SIZE + 1]);
+      CHECK_EQUAL(0, buffer[BUFFER_SIZE + 2]);
+      CHECK_EQUAL(0, buffer[BUFFER_SIZE + 3]);
+
+      // Check that we have the correct contents.
+      for (size_t i = 0; i < N; ++i)
+      {
+        CHECK_EQUAL(0x5A6B, data.top());
+        data.pop();
+      }
+    }
   };
 }

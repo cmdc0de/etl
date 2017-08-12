@@ -1364,29 +1364,61 @@ namespace etl
   template <typename T, const size_t SIZE>
   class max_vector_size
   {
-  public:
-
-    const size_t value = find_size<T, INITIAL_GUESS, SIZE>::value;
-
   private:
-
-    // The first guess is that there is no overhead.
-    const size_t INITIAL_GUESS = SIZE / sizeof(T);
 
     // Does it fit in a buffer of size S?
     template <typename U, const size_t N, const size_t S>
     struct is_a_fit
     {
-      const bool value = (sizeof(etl::vector<U, N>) <= S);
+      enum
+      {
+        value = (sizeof(etl::vector<U, N>) <= S)
+      };
     };
 
-    // Recursively check decreasing values of N until it fits.
-    template <typename U, const size_t S, const size_t N>
+    // Recursively check decreasing values of N until it fits or hits zero.
+    template <typename U, const size_t N, const size_t S>
     struct find_size
     {
-      const size_t value = is_a_fit<T, N, S>::value ? N : find_size<T, N - 1, S>::value;
+      enum
+      {
+        value = (is_a_fit<U, N, S>::value > 0) ? N : find_size<U, N - 1, S>::value
+      };
+    };
+
+    // Tell the compiler when to stop recursing.
+    template <typename U, const size_t S>
+    struct find_size<U, 0, S>
+    {
+      enum
+      {
+        value = 0
+      };
+    };
+
+    // The first guess is that there is no overhead.
+    enum
+    {
+      INITIAL_GUESS = SIZE / sizeof(T)
+    };
+
+  public:
+
+    enum
+    {
+      value = find_size<T, INITIAL_GUESS, SIZE>::value
     };
   };
+
+  //*****************************************************************************
+  // Make a vector at a specific location.
+  //*****************************************************************************
+  template <typename T, size_t N>
+  etl::vector<T, N>& make_vector_at(void* p)
+  {
+    new (p) etl::vector<T, N>();
+    return *reinterpret_cast<etl::vector<T, N>*>(p);
+  }
 }
 
 #include "private/ivectorpointer.h"

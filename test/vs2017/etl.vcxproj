@@ -72,7 +72,7 @@
       </PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;_LIB;_CRT_SECURE_NO_WARNINGS;_SCL_SECURE_NO_WARNINGS;ETL_IVECTOR_REPAIR_ENABLE;ETL_ISTRING_REPAIR_ENABLE;ETL_IDEQUE_REPAIR_ENABLE;ETL_IN_UNIT_TEST;ETL_THROW_EXCEPTIONS;ETL_VERBOSE_ERRORS;ETL_CHECK_PUSH_POP;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;_LIB;_CRT_SECURE_NO_WARNINGS;_SCL_SECURE_NO_WARNINGS;ETL_DEBUG_COUNT_ENABLE;ETL_IVECTOR_REPAIR_ENABLE;ETL_ISTRING_REPAIR_ENABLE;ETL_IDEQUE_REPAIR_ENABLE;ETL_IN_UNIT_TEST;ETL_THROW_EXCEPTIONS;ETL_VERBOSE_ERRORS;ETL_CHECK_PUSH_POP;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>../../unittest-cpp/UnitTest++/;../../src</AdditionalIncludeDirectories>
       <UndefinePreprocessorDefinitions>
       </UndefinePreprocessorDefinitions>
@@ -206,7 +206,6 @@
     <ClInclude Include="..\..\src\function.h" />
     <ClInclude Include="..\..\src\functional.h" />
     <ClInclude Include="..\..\src\hash.h" />
-    <ClInclude Include="..\..\src\icache.h" />
     <ClInclude Include="..\..\src\ihash.h" />
     <ClInclude Include="..\..\src\instance_count.h" />
     <ClInclude Include="..\..\src\integral_limits.h" />
@@ -227,7 +226,6 @@
     <ClInclude Include="..\..\src\memory.h" />
     <ClInclude Include="..\..\src\multimap.h" />
     <ClInclude Include="..\..\src\multiset.h" />
-    <ClInclude Include="..\..\src\multi_array.h" />
     <ClInclude Include="..\..\src\murmur3.h" />
     <ClInclude Include="..\..\src\nullptr.h" />
     <ClInclude Include="..\..\src\numeric.h" />

@@ -210,6 +210,69 @@ namespace etl
     }
   };
 #endif
+
+  //*****************************************************************************
+  /// Compile time calculation to find the maximum number of elements that will
+  /// fit in a specifically sized buffer.
+  //*****************************************************************************
+  template <const size_t SIZE>
+  class max_string_size
+  {
+  private:
+
+    // Does it fit in a buffer of size S?
+    template <const size_t N, const size_t S>
+    struct is_a_fit
+    {
+      enum
+      {
+        value = (sizeof(etl::string<N>) <= S)
+      };
+    };
+
+    // Recursively check decreasing values of N until it fits or hits zero.
+    template <const size_t N, const size_t S>
+    struct find_size
+    {
+      enum
+      {
+        value = (is_a_fit<N, S>::value > 0) ? N : find_size<N - 1, S>::value
+      };
+    };
+
+    // Tell the compiler when to stop recursing.
+    template <const size_t S>
+    struct find_size<0, S>
+    {
+      enum
+      {
+        value = 0
+      };
+    };
+
+    // The first guess is that there is no overhead.
+    enum
+    {
+      INITIAL_GUESS = SIZE / sizeof(etl::string<1>::value_type)
+    };
+
+  public:
+
+    enum
+    {
+      value = find_size<INITIAL_GUESS, SIZE>::value
+    };
+  };
+
+  //*****************************************************************************
+  // Make a string at a specific location.
+  //*****************************************************************************
+  template <size_t N>
+  etl::string<N>& make_string_at(void* p)
+  {
+    new (p) etl::string<N>();
+    return *reinterpret_cast<etl::string<N>*>(p);
+  }
 }
 
 #if defined(ETL_COMPILER_MICROSOFT)

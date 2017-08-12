@@ -1165,5 +1165,37 @@ namespace
       CHECK(data1 < data3);
       CHECK(data3 > data1);
     }
+
+    //*************************************************************************
+    TEST_FIXTURE(SetupFixture, test_max_size)
+    {
+      const size_t BUFFER_SIZE = 100;
+      const size_t N = etl::max_forward_list_size<uint16_t, BUFFER_SIZE>::value;
+
+      // Initialise the buffer.
+      char buffer[BUFFER_SIZE + 4];
+      std::fill(buffer, buffer + BUFFER_SIZE + 4, 0);
+
+      // Create it.
+      etl::iforward_list<uint16_t>& data = etl::make_forward_list_at<uint16_t, N>(buffer);
+
+      // Fill it with data.
+      data.assign(N, 0x5A6B);
+
+      // Check that we didn't overflow.
+      CHECK_EQUAL(0, buffer[BUFFER_SIZE + 0]);
+      CHECK_EQUAL(0, buffer[BUFFER_SIZE + 1]);
+      CHECK_EQUAL(0, buffer[BUFFER_SIZE + 2]);
+      CHECK_EQUAL(0, buffer[BUFFER_SIZE + 3]);
+
+      // Check that we have the correct contents.
+      etl::forward_list<uint16_t, N>::const_iterator itr = data.begin();
+
+      while (itr != data.end())
+      {
+        CHECK_EQUAL(0x5A6B, *itr);
+        ++itr;
+      }
+    }
   };
 }

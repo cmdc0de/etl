@@ -258,14 +258,8 @@
     <ClInclude Include="..\..\src\private\vector_base.h">
       <Filter>ETL\Private</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\multi_array.h">
-      <Filter>ETL\Containers</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\src\char_traits.h">
       <Filter>ETL\Utilities</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\icache.h">
-      <Filter>ETL\Containers</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\intrusive_links.h">
       <Filter>ETL\Containers</Filter>

@@ -476,6 +476,69 @@ namespace etl
     /// The uninitialised buffer of T used in the stack.
     typename etl::aligned_storage<sizeof(T), etl::alignment_of<T>::value>::type buffer[SIZE];
   };
+
+  //*****************************************************************************
+  /// Compile time calculation to find the maximum number of elements that will
+  /// fit in a specifically sized buffer.
+  //*****************************************************************************
+  template <typename T, const size_t SIZE>
+  class max_queue_size
+  {
+  private:
+
+    // Does it fit in a buffer of size S?
+    template <typename U, const size_t N, const size_t S>
+    struct is_a_fit
+    {
+      enum
+      {
+        value = (sizeof(etl::queue<U, N>) <= S)
+      };
+    };
+
+    // Recursively check decreasing values of N until it fits or hits zero.
+    template <typename U, const size_t N, const size_t S>
+    struct find_size
+    {
+      enum
+      {
+        value = (is_a_fit<U, N, S>::value > 0) ? N : find_size<U, N - 1, S>::value
+      };
+    };
+
+    // Tell the compiler when to stop recursing.
+    template <typename U, const size_t S>
+    struct find_size<U, 0, S>
+    {
+      enum
+      {
+        value = 0
+      };
+    };
+
+    // The first guess is that there is no overhead.
+    enum
+    {
+      INITIAL_GUESS = SIZE / sizeof(T)
+    };
+
+  public:
+
+    enum
+    {
+      value = find_size<T, INITIAL_GUESS, SIZE>::value
+    };
+  };
+
+  //*****************************************************************************
+  // Make a queue at a specific location.
+  //*****************************************************************************
+  template <typename T, size_t N>
+  etl::queue<T, N>& make_queue_at(void* p)
+  {
+    new (p) etl::queue<T, N>();
+    return *reinterpret_cast<etl::queue<T, N>*>(p);
+  }
 }
 
 #undef ETL_FILE

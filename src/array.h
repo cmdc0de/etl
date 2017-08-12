@@ -551,6 +551,69 @@ namespace etl
     T _buffer[SIZE];
   };
 
+  //*****************************************************************************
+  /// Compile time calculation to find the maximum number of elements that will
+  /// fit in a specifically sized buffer.
+  //*****************************************************************************
+  template <typename T, const size_t SIZE>
+  class max_array_size
+  {
+  private:
+
+    // Does it fit in a buffer of size S?
+    template <typename U, const size_t N, const size_t S>
+    struct is_a_fit
+    {
+      enum
+      {
+        value = (sizeof(etl::array<U, N>) <= S)
+      };
+    };
+
+    // Recursively check decreasing values of N until it fits or hits zero.
+    template <typename U, const size_t N, const size_t S>
+    struct find_size
+    {
+      enum
+      {
+        value = (is_a_fit<U, N, S>::value > 0) ? N : find_size<U, N - 1, S>::value
+      };
+    };
+
+    // Tell the compiler when to stop recursing.
+    template <typename U, const size_t S>
+    struct find_size<U, 0, S>
+    {
+      enum
+      {
+        value = 0
+      };
+    };
+
+    // The first guess is that there is no overhead.
+    enum
+    {
+      INITIAL_GUESS = SIZE / sizeof(T)
+    };
+
+  public:
+
+    enum
+    {
+      value = find_size<T, INITIAL_GUESS, SIZE>::value
+    };
+  };
+
+  //*****************************************************************************
+  // Make an array at a specific location.
+  //*****************************************************************************
+  template <typename T, size_t N>
+  etl::array<T, N>& make_array_at(void* p)
+  {
+    new (p) etl::array<T, N>();
+    return *reinterpret_cast<etl::array<T, N>*>(p);
+  }
+
   //*************************************************************************
   /// Overloaded swap for etl::array<T, SIZE>
   ///\param lhs The first array.

@@ -3082,5 +3082,34 @@ namespace
       is_equal = Equal(text, itext);
       CHECK(!is_equal);
     }
+
+    //*************************************************************************
+    TEST_FIXTURE(SetupFixture, test_max_size)
+    {
+      const size_t BUFFER_SIZE = 100;
+      const size_t N = etl::max_wstring_size<BUFFER_SIZE>::value;
+
+      // Initialise the buffer.
+      char buffer[BUFFER_SIZE + 4];
+      std::fill(buffer, buffer + BUFFER_SIZE + 4, 0);
+
+      // Create it.
+      etl::iwstring& data = etl::make_wstring_at<N>(buffer);
+
+      // Fill it with data.
+      data.assign(N, STR('Z'));
+
+      // Check that we didn't overflow.
+      CHECK_EQUAL(0, buffer[BUFFER_SIZE + 0]);
+      CHECK_EQUAL(0, buffer[BUFFER_SIZE + 1]);
+      CHECK_EQUAL(0, buffer[BUFFER_SIZE + 2]);
+      CHECK_EQUAL(0, buffer[BUFFER_SIZE + 3]);
+
+      // Check that we have the correct contents.
+      for (size_t i = 0; i < N; ++i)
+      {
+        CHECK_EQUAL(STR('Z'), data[i]);
+      }
+    }
   };
 }
