@@ -45,14 +45,14 @@ namespace etl
   /// Used to count instances.
   /// Asserts if the count is decremented below zero.
   /// Asserts if the count is not zero when destructed.
-  /// Does nothing in a non-debug build.
+  /// Does nothing unless ETL_DEBUG_COUNT_ENABLE is defined.
   ///\ingroup reference
   //***************************************************************************
   class debug_count
   {
   public:
     
-#if defined(ETL_DEBUG)
+#if defined(ETL_DEBUG_COUNT_ENABLE)
     inline debug_count()
       : count(0)
     {
