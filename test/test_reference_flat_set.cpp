@@ -38,7 +38,7 @@ SOFTWARE.
 
 #include "data.h"
 
-#include "reference_flat_set.h"
+#include "etl/reference_flat_set.h"
 
 namespace
 {
@@ -165,6 +165,19 @@ namespace
 
       CHECK(data.size() == SIZE);
       CHECK(!data.empty());
+    }
+
+    //*************************************************************************
+    TEST(test_destruct_via_ireference_flat_set)
+    {
+      int current_count = NDC::get_instance_count();
+
+      DataNDC* pdata = new DataNDC(initial_data.begin(), initial_data.end());
+
+      IDataNDC* pidata = pdata;
+      delete pidata;
+
+      CHECK_EQUAL(current_count, NDC::get_instance_count());
     }
 
     //*************************************************************************

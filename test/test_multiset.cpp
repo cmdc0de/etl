@@ -35,17 +35,17 @@ SOFTWARE.
 #include <iterator>
 #include <string>
 
-#include "multiset.h"
+#include "etl/multiset.h"
 
-static const size_t SIZE = 10;
+static const size_t MAX_SIZE = 10;
 
 #define TEST_GREATER_THAN
 #ifdef TEST_GREATER_THAN
-typedef etl::multiset<int, SIZE, std::greater<int> > Data;
+typedef etl::multiset<int, MAX_SIZE, std::greater<int> > Data;
 typedef etl::imultiset<int, std::greater<int> >      IData;
 typedef std::multiset<int, std::greater<int> >       Compare_Data;
 #else
-typedef etl::multiset<int, SIZE, std::less<int> > Data;
+typedef etl::multiset<int, MAX_SIZE, std::less<int> > Data;
 typedef etl::multiset<int, std::less<int> >       IData;
 typedef std::multiset<int, std::less<int> >       Compare_Data;
 #endif
@@ -171,8 +171,18 @@ namespace
 
       CHECK_EQUAL(data.size(), size_t(0));
       CHECK(data.empty());
-      CHECK_EQUAL(data.capacity(), SIZE);
-      CHECK_EQUAL(data.max_size(), SIZE);
+      CHECK_EQUAL(data.capacity(), MAX_SIZE);
+      CHECK_EQUAL(data.max_size(), MAX_SIZE);
+      CHECK(data.begin() == data.end());
+    }
+
+    //*************************************************************************
+    TEST_FIXTURE(SetupFixture, test_destruct_via_imultiset)
+    {
+      Data* pdata = new Data(initial_data.begin(), initial_data.end());
+
+      IData* pidata = pdata;
+      delete pidata;
     }
 
     //*************************************************************************
@@ -182,8 +192,22 @@ namespace
 
       Data data(compare_data.begin(), compare_data.end());
 
-      CHECK(data.size() == SIZE);
+      CHECK(data.size() == MAX_SIZE);
       CHECK(!data.empty());
+    }
+
+    //*************************************************************************
+    TEST_FIXTURE(SetupFixture, test_constructor_initializer_list)
+    {
+      Compare_Data compare_data = { 0, 1, 1, 3, 4, 4, 6, 7, 7, 9 };
+
+      Data data = { 0, 1, 1, 3, 4, 4, 6, 7, 7, 9 };
+
+      CHECK_EQUAL(compare_data.size(), data.size());
+      CHECK(!data.empty());
+
+      bool isEqual = std::equal(data.begin(), data.end(), compare_data.begin());
+      CHECK(isEqual);
     }
 
     //*************************************************************************
@@ -944,5 +968,42 @@ namespace
 #endif
     }
 
+    //*************************************************************************
+    TEST_FIXTURE(SetupFixture, test_key_compare)
+    {
+      const Data data(initial_data.begin(), initial_data.end());
+
+      Data::key_compare compare = data.key_comp();
+
+      Data::key_type a(1);
+      Data::key_type b(2);
+
+#ifdef TEST_GREATER_THAN
+      CHECK(!compare(a, b));
+      CHECK(compare(b, a));
+#else
+      CHECK(compare(a, b));
+      CHECK(!compare(b, a));
+#endif
+    }
+
+    //*************************************************************************
+    TEST_FIXTURE(SetupFixture, test_value_compare)
+    {
+      const Data data(initial_data.begin(), initial_data.end());
+
+      Data::value_compare compare = data.value_comp();
+
+      Data::value_type a(1);
+      Data::value_type b(2);
+
+#ifdef TEST_GREATER_THAN
+      CHECK(!compare(a, b));
+      CHECK(compare(b, a));
+#else
+      CHECK(compare(a, b));
+      CHECK(!compare(b, a));
+#endif
+    }
   };
 }

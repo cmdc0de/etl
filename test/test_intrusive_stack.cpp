@@ -28,8 +28,8 @@ SOFTWARE.
 
 #include "UnitTest++.h"
 
-#include "intrusive_stack.h"
-#include "intrusive_links.h"
+#include "etl/intrusive_stack.h"
+#include "etl/intrusive_links.h"
 
 #include <vector>
 
@@ -40,8 +40,8 @@ namespace
 
   struct Data : public link0, public link1
   {
-    Data(int i)
-      : i(i)
+    Data(int i_)
+      : i(i_)
     {
 
     }

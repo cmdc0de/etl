@@ -32,7 +32,7 @@ SOFTWARE.
 
 #include "data.h"
 
-#include "stack.h"
+#include "etl/stack.h"
 
 namespace
 {
@@ -54,6 +54,26 @@ namespace
   {
     return (lhs.c == rhs.c) && (lhs.i == rhs.i) && (lhs.d == rhs.d);
   }
+
+  struct ItemNTD
+  {
+    ItemNTD()
+    {
+      p = new char;
+    }
+
+    ItemNTD(const ItemNTD&)
+      : p(new char)
+    {
+    }
+
+    ~ItemNTD()
+    {
+      delete p;
+    }
+
+    char* p;
+  };
 
   SUITE(test_stack)
   {
@@ -80,6 +100,21 @@ namespace
         stack.pop();
         stack2.pop();
       }
+    }
+
+    //*************************************************************************
+    TEST(test_delete_via_istack)
+    {
+      etl::stack<int, 4>* pstack = new etl::stack<int, 4>;
+
+      etl::istack<int>* pistack = pstack;
+
+      pistack->push(1);
+      pistack->push(2);
+      pistack->push(3);
+      pistack->push(4);
+
+      delete pistack;
     }
 
     //*************************************************************************
@@ -138,6 +173,31 @@ namespace
       stack.push(2);
       stack.clear();
       CHECK_EQUAL(0U, stack.size());
+
+      // Do it again to check that clear() didn't screw up the internals.
+      stack.push(1);
+      stack.push(2);
+      CHECK_EQUAL(2U, stack.size());
+      stack.clear();
+      CHECK_EQUAL(0U, stack.size());
+    }
+
+    //*************************************************************************
+    TEST(test_clear_non_pod)
+    {
+      etl::stack<ItemNTD, 4> stack;
+
+      stack.push(ItemNTD());
+      stack.push(ItemNTD());
+      stack.clear();
+      CHECK_EQUAL(0U, stack.size());
+
+      // Do it again to check that clear() didn't screw up the internals.
+      stack.push(ItemNTD());
+      stack.push(ItemNTD());
+      CHECK_EQUAL(2U, stack.size());
+      stack.clear();
+      CHECK_EQUAL(0U, stack.size());
     }
 
     //*************************************************************************
@@ -180,23 +240,6 @@ namespace
       CHECK(stack.top() == Item('b', 2, 3.4));
       stack.pop();
       CHECK(stack.top() == Item('a', 1, 1.2));
-    }
-
-    //*************************************************************************
-    TEST(test_push_void)
-    {
-      etl::stack<int, 4> stack;
-
-      stack.push() = 1;
-      CHECK_EQUAL(1U, stack.size());
-
-      stack.push() = 2;
-      CHECK_EQUAL(2U, stack.size());
-
-      CHECK_EQUAL(2, stack.top());
-
-      stack.pop();
-      CHECK_EQUAL(1, stack.top());
     }
 
     //*************************************************************************
@@ -357,39 +400,6 @@ namespace
       stack.push(1);
       stack.push(2);
       stack.push(3);
-
-      bool pass = true;
-
-      if (stack.top() != 3)
-      {
-        pass = false;
-      }
-
-      stack.pop();
-
-      if (stack.top() != 2)
-      {
-        pass = false;
-      }
-
-      stack.pop();
-
-      if (stack.top() != 1)
-      {
-        pass = false;
-      }
-
-      CHECK(pass);
-    }
-
-    //*************************************************************************
-    TEST(test_multiple_push_void)
-    {
-      etl::stack<int, 4> stack;
-
-      stack.push() = 1;
-      stack.push() = 2;
-      stack.push() = 3;
 
       bool pass = true;
 

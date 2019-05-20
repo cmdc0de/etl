@@ -28,8 +28,8 @@ SOFTWARE.
 
 #include "UnitTest++.h"
 
-#include "algorithm.h"
-#include "container.h"
+#include "etl/algorithm.h"
+#include "etl/container.h"
 
 #include <vector>
 #include <list>
@@ -69,9 +69,9 @@ namespace
     }
   };
 
-  std::ostream& operator << (std::ostream& os, const StructData& data)
+  std::ostream& operator << (std::ostream& os, const StructData& data_)
   {
-    os << data.a << "," << data.b;
+    os << data_.a << "," << data_.b;
     return os;
   }
 
@@ -866,6 +866,84 @@ namespace
 
       is_same = std::equal(std::begin(output_false), std::end(output_false), std::begin(compare_false));
       CHECK(is_same);
+    }
+
+    //=========================================================================
+    TEST(sort_default)
+    {
+      std::vector<int> data(100, 0);
+      std::iota(data.begin(), data.end(), 1);
+
+      for (int i = 0; i < 100; ++i)
+      {
+        std::random_shuffle(data.begin(), data.end());
+
+        std::vector<int> data1 = data;
+        std::vector<int> data2 = data;
+
+        std::sort(data1.begin(), data1.end());
+        etl::sort(data2.begin(), data2.end());
+
+        bool is_same = std::equal(data1.begin(), data1.end(), data2.begin());
+        CHECK(is_same);
+      }
+    }
+
+    //=========================================================================
+    TEST(sort_greater)
+    {
+      std::vector<int> data(100, 0);
+      std::iota(data.begin(), data.end(), 1);
+
+      for (int i = 0; i < 100; ++i)
+      {
+        std::random_shuffle(data.begin(), data.end());
+
+        std::vector<int> data1 = data;
+        std::vector<int> data2 = data;
+
+        std::sort(data1.begin(), data1.end(), std::greater<int>());
+        etl::sort(data2.begin(), data2.end(), std::greater<int>());
+
+        bool is_same = std::equal(data1.begin(), data1.end(), data2.begin());
+        CHECK(is_same);
+      }
+    }
+
+    //=========================================================================
+    TEST(multimax)
+    {
+      CHECK_EQUAL(8, etl::multimax(1, 2, 3, 4, 5, 6, 7, 8));
+      CHECK_EQUAL(8, etl::multimax_compare(std::less<int>(), 1, 2, 3, 4, 5, 6, 7, 8));
+      CHECK_EQUAL(1, etl::multimax_compare(std::greater<int>(), 1, 2, 3, 4, 5, 6, 7, 8));
+    }
+
+    //=========================================================================
+    TEST(multimax_iter)
+    {
+      int i[8] = { 1, 2, 3, 4, 5, 6, 7, 8 };
+
+      CHECK_EQUAL(8, *etl::multimax_iter(&i[0], &i[1], &i[2], &i[3], &i[4], &i[5], &i[6], &i[7]));
+      CHECK_EQUAL(8, *etl::multimax_iter_compare(std::less<int>(), &i[0], &i[1], &i[2], &i[3], &i[4], &i[5], &i[6], &i[7]));
+      CHECK_EQUAL(1, *etl::multimax_iter_compare(std::greater<int>(), &i[0], &i[1], &i[2], &i[3], &i[4], &i[5], &i[6], &i[7]));
+    }
+
+    //=========================================================================
+    TEST(multimin)
+    {
+      CHECK_EQUAL(1, etl::multimin(1, 2, 3, 4, 5, 6, 7, 8));
+      CHECK_EQUAL(1, etl::multimin_compare(std::less<int>(), 1, 2, 3, 4, 5, 6, 7, 8));
+      CHECK_EQUAL(8, etl::multimin_compare(std::greater<int>(), 1, 2, 3, 4, 5, 6, 7, 8));
+    }
+
+    //=========================================================================
+    TEST(multimin_iter)
+    {
+      int i[8] = { 1, 2, 3, 4, 5, 6, 7, 8 };
+
+      CHECK_EQUAL(1, *etl::multimin_iter(&i[0], &i[1], &i[2], &i[3], &i[4], &i[5], &i[6], &i[7]));
+      CHECK_EQUAL(1, *etl::multimin_iter_compare(std::less<int>(), &i[0], &i[1], &i[2], &i[3], &i[4], &i[5], &i[6], &i[7]));
+      CHECK_EQUAL(8, *etl::multimin_iter_compare(std::greater<int>(), &i[0], &i[1], &i[2], &i[3], &i[4], &i[5], &i[6], &i[7]));
     }
   };
 }

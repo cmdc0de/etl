@@ -29,7 +29,7 @@ SOFTWARE.
 #include "UnitTest++.h"
 #include <string>
 
-#include "endianness.h"
+#include "etl/endianness.h"
 
 namespace 
 {		
@@ -41,6 +41,9 @@ namespace
       // Intel platform is little endian.
       CHECK(etl::endianness()() == etl::endian::little);
       CHECK(etl::endianness()() != etl::endian::big);
+
+      CHECK(etl::endianness::value() == etl::endian::little);
+      CHECK(etl::endianness::value() != etl::endian::big);
     }
   };
 }

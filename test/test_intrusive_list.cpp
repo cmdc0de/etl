@@ -31,7 +31,7 @@ SOFTWARE.
 
 #include "data.h"
 
-#include "intrusive_list.h"
+#include "etl/intrusive_list.h"
 
 #include <algorithm>
 #include <array>
@@ -644,7 +644,7 @@ namespace
       std::vector<ItemNDCNode>::iterator i_compare_data = compare_data.begin();
       std::advance(i_compare_data, 5);
 
-      std::vector<ItemNDCNode>::iterator i_compare_result = compare_data.erase(i_compare_data, compare_data.end());
+      compare_data.erase(i_compare_data, compare_data.end());
 
       DataNDC0::iterator i_result = data0.erase(i_data, data0.end());
 
@@ -803,8 +803,6 @@ namespace
 
       while (ditr != data.end())
       {
-        const ItemNDC& v = ditr->data;
-
         CHECK_EQUAL(citr->data.index, ditr->data.index);
 
         ++citr;

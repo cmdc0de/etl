@@ -28,8 +28,8 @@ SOFTWARE.
 
 #include "UnitTest++.h"
 
-#include "memory.h"
-#include "debug_count.h"
+#include "etl/memory.h"
+#include "etl/debug_count.h"
 
 #include <string>
 #include <array>
@@ -506,7 +506,7 @@ namespace
       std::fill(std::begin(n), std::end(n), 0xFF);
       CHECK_EQUAL(0x00000000U, etl::make_default_at(pn));
 
-      std::fill(std::begin(n), std::end(n), 0x00);      
+      std::fill(std::begin(n), std::end(n), 0x00);
       CHECK_EQUAL(0xFFFFFFFFU, etl::make_value_at(pn, 0xFFFFFFFFU));
 
       std::fill(std::begin(n), std::end(n), 0xFF);
@@ -527,6 +527,132 @@ namespace
       std::fill(std::begin(n), std::end(n), 0xFF);
       CHECK_EQUAL(test_item_trivial, etl::make_copy_at(pn, test_item_trivial, count));
       CHECK_EQUAL(3U, count);
+    }
+
+    //*************************************************************************
+    TEST(test_memory_clear)
+    {
+      struct Data
+      {
+        uint32_t d1;
+        char     d2;
+      };
+
+      Data data = { 0xFFFFFFFF, char(0xFF) };
+
+      etl::memory_clear(data);
+
+      CHECK_EQUAL(0x00000000, data.d1);
+      CHECK_EQUAL(0x00,       data.d2);
+    }
+
+    //*************************************************************************
+    TEST(test_memory_clear_range_pointer_n)
+    {
+      struct Data
+      {
+        uint32_t d1;
+        char     d2;
+      };
+
+      Data data[3] = { { 0xFFFFFFFF, char(0xFF) }, { 0xFFFFFFFF, char(0xFF) }, { 0xFFFFFFFF, char(0xFF) } };
+
+      etl::memory_clear_range(data, 3);
+
+      CHECK_EQUAL(0x00000000, data[0].d1);
+      CHECK_EQUAL(0x00, data[0].d2);
+
+      CHECK_EQUAL(0x00000000, data[1].d1);
+      CHECK_EQUAL(0x00, data[1].d2);
+
+      CHECK_EQUAL(0x00000000, data[2].d1);
+      CHECK_EQUAL(0x00, data[2].d2);
+    }
+
+    //*************************************************************************
+    TEST(test_memory_clear_range_pointer_pointer)
+    {
+      struct Data
+      {
+        uint32_t d1;
+        char     d2;
+      };
+
+      Data data[3] = { { 0xFFFFFFFF, char(0xFF) }, { 0xFFFFFFFF, char(0xFF) }, { 0xFFFFFFFF, char(0xFF) } };
+
+      etl::memory_clear_range(std::begin(data), std::end(data));
+
+      CHECK_EQUAL(0x00000000, data[0].d1);
+      CHECK_EQUAL(0x00, data[0].d2);
+
+      CHECK_EQUAL(0x00000000, data[1].d1);
+      CHECK_EQUAL(0x00, data[1].d2);
+
+      CHECK_EQUAL(0x00000000, data[2].d1);
+      CHECK_EQUAL(0x00, data[2].d2);
+    }
+
+    //*************************************************************************
+    TEST(test_memory_set)
+    {
+      struct Data
+      {
+        uint32_t d1;
+        char     d2;
+      };
+
+      Data data = { 0xFFFFFFFF, char(0xFF) };
+
+      etl::memory_set(data, 0x5A);
+
+      CHECK_EQUAL(0x5A5A5A5A, data.d1);
+      CHECK_EQUAL(0x5A,       data.d2);
+    }
+
+    //*************************************************************************
+    TEST(test_memory_set_range_pointer_n)
+    {
+      struct Data
+      {
+        uint32_t d1;
+        char     d2;
+      };
+
+      Data data[3] = { { 0xFFFFFFFF, char(0xFF) }, { 0xFFFFFFFF, char(0xFF) }, { 0xFFFFFFFF, char(0xFF) } };
+
+      etl::memory_set_range(data, 3, 0x5A);
+
+      CHECK_EQUAL(0x5A5A5A5A, data[0].d1);
+      CHECK_EQUAL(0x5A, data[0].d2);
+
+      CHECK_EQUAL(0x5A5A5A5A, data[1].d1);
+      CHECK_EQUAL(0x5A, data[1].d2);
+
+      CHECK_EQUAL(0x5A5A5A5A, data[2].d1);
+      CHECK_EQUAL(0x5A, data[2].d2);
+    }
+
+    //*************************************************************************
+    TEST(test_memory_set_range_pointer_pointer)
+    {
+      struct Data
+      {
+        uint32_t d1;
+        char     d2;
+      };
+
+      Data data[3] = { { 0xFFFFFFFF, char(0xFF) }, { 0xFFFFFFFF, char(0xFF) }, { 0xFFFFFFFF, char(0xFF) } };
+
+      etl::memory_set_range(std::begin(data), std::end(data), 0x5A);
+
+      CHECK_EQUAL(0x5A5A5A5A, data[0].d1);
+      CHECK_EQUAL(0x5A, data[0].d2);
+
+      CHECK_EQUAL(0x5A5A5A5A, data[1].d1);
+      CHECK_EQUAL(0x5A, data[1].d2);
+
+      CHECK_EQUAL(0x5A5A5A5A, data[2].d1);
+      CHECK_EQUAL(0x5A, data[2].d2);
     }
   };
 }

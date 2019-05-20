@@ -31,11 +31,12 @@ SOFTWARE.
 #include <string>
 #include <ostream>
 
-#include "optional.h"
-#include "vector.h"
+#include "etl/optional.h"
+#include "etl/vector.h"
 #include "data.h"
 
 typedef TestDataNDC<std::string> Data;
+typedef TestDataM<uint32_t>      DataM;
 
 std::ostream& operator << (std::ostream& os, const Data& data)
 {
@@ -86,6 +87,23 @@ namespace
     }
 
     //*************************************************************************
+    TEST(test_emplace)
+    {
+      etl::optional<DataM> data;
+
+      data.emplace(1U);
+      CHECK_EQUAL(1U, data.value().value);
+
+      data.emplace(2U);
+      CHECK_EQUAL(2U, data.value().value);
+
+      data.emplace(3U);
+      CHECK_EQUAL(3U, data.value().value);
+
+      CHECK_EQUAL(1, DataM::get_instance_count());
+    }
+
+    //*************************************************************************
     TEST(test_nullopt)
     {
       etl::optional<Data> data;
@@ -114,24 +132,71 @@ namespace
       etl::optional<Data> data2;
 
       CHECK(data1 == data2);
+      CHECK(data2 == data1);
 
       data1 = Data("Data1");
       CHECK(!(data1 == data2));
+      CHECK(!(data2 == data1));
 
       data1 = etl::nullopt;
       data2 = Data("Data2");
       CHECK(!(data1 == data2));
+      CHECK(!(data2 == data1));
 
       data1 = Data("Data1");
       data2 = Data("Data1");
       CHECK(data1 == data2);
+      CHECK(data2 == data1);
 
       data1 = Data("Data1");
       data2 = Data("Data2");
       CHECK(!(data1 == data2));
+      CHECK(!(data2 == data1));
+
+      CHECK(!(etl::nullopt == data2));
+      CHECK(!(data1 == etl::nullopt));
 
       CHECK(data1 == Data("Data1"));
       CHECK(!(data1 == Data("Data2")));
+      CHECK(Data("Data1") == data1);
+      CHECK(!(Data("Data2") == data1));
+    }
+
+    //*************************************************************************
+    TEST(test_inequality)
+    {
+      etl::optional<Data> data1;
+      etl::optional<Data> data2;
+
+      CHECK(!(data1 != data2));
+      CHECK(!(data2 != data1));
+
+      data1 = Data("Data1");
+      CHECK(data1 != data2);
+      CHECK(data2 != data1);
+
+      data1 = etl::nullopt;
+      data2 = Data("Data2");
+      CHECK(data1 != data2);
+      CHECK(data2 != data1);
+
+      data1 = Data("Data1");
+      data2 = Data("Data1");
+      CHECK(!(data1 != data2));
+      CHECK(!(data2 != data1));
+
+      data1 = Data("Data1");
+      data2 = Data("Data2");
+      CHECK(data1 != data2);
+      CHECK(data2 != data1);
+
+      CHECK(etl::nullopt != data2);
+      CHECK(data1 != etl::nullopt);
+
+      CHECK(!(data1 != Data("Data1")));
+      CHECK(data1 != Data("Data2"));
+      CHECK(!(Data("Data1") != data1));
+      CHECK(Data("Data2") != data1);
     }
 
     //*************************************************************************
@@ -140,22 +205,130 @@ namespace
       etl::optional<Data> data1;
       etl::optional<Data> data2;
 
+      CHECK(!(data2 < data1));
       CHECK(!(data1 < data2));
 
       data1 = Data("Data1");
       CHECK(!(data1 < data2));
+      CHECK(data2 < data1);
 
       data1 = etl::nullopt;
       data2 = Data("Data2");
       CHECK(data1 < data2);
+      CHECK(!(data2 < data2));
 
       data1 = Data("Data1");
       data2 = Data("Data2");
       CHECK(data1 < data2);
       CHECK(!(data2 < data1));
 
+      CHECK(etl::nullopt < data2);
+      CHECK(!(data1 < etl::nullopt));
+
       CHECK(data1 < Data("Data2"));
       CHECK(!(data1 < Data("Data1")));
+      CHECK(!(Data("Data2") < data1));
+      CHECK(Data("Data1") < data2);
+    }
+
+    //*************************************************************************
+    TEST(test_less_than_equal)
+    {
+      etl::optional<Data> data1;
+      etl::optional<Data> data2;
+
+      CHECK(data1 <= data2);
+      CHECK(data2 <= data1);
+
+      data1 = Data("Data1");
+      CHECK(!(data1 <= data2));
+      CHECK(data2 <= data1);
+
+      data1 = etl::nullopt;
+      data2 = Data("Data2");
+      CHECK(data1 <= data2);
+      CHECK(!(data2 <= data1));
+
+      data1 = Data("Data1");
+      data2 = Data("Data2");
+      CHECK(data1 <= data2);
+      CHECK(!(data2 <= data1));
+
+      CHECK(etl::nullopt <= data2);
+      CHECK(!(data1 <= etl::nullopt));
+
+      CHECK(data1 <= Data("Data2"));
+      CHECK(!(data2 <= Data("Data1")));
+      CHECK(data1 <= Data("Data1"));
+      CHECK(!(Data("Data2") <= data1));
+      CHECK(Data("Data1") <= data2);
+      CHECK(Data("Data1") <= data1);
+    }
+
+    //*************************************************************************
+    TEST(test_greater_than)
+    {
+      etl::optional<Data> data1;
+      etl::optional<Data> data2;
+
+      CHECK(!(data1 > data2));
+      CHECK(!(data2 > data1));
+
+      data1 = Data("Data1");
+      CHECK(data1 > data2);
+      CHECK(!(data2 > data1));
+
+      data1 = etl::nullopt;
+      data2 = Data("Data2");
+      CHECK(!(data1 > data2));
+      CHECK(data2 > data1);
+
+      data1 = Data("Data1");
+      data2 = Data("Data2");
+      CHECK(data2 > data1);
+      CHECK(!(data1 > data2));
+
+      CHECK(!(etl::nullopt > data2));
+      CHECK(data1 > etl::nullopt);
+
+      CHECK(!(data1 > Data("Data2")));
+      CHECK(data2 > Data("Data1"));
+      CHECK(Data("Data2") > data1);
+      CHECK(!(Data("Data1") > data2));
+    }
+
+    //*************************************************************************
+    TEST(test_greater_than_equal)
+    {
+      etl::optional<Data> data1;
+      etl::optional<Data> data2;
+
+      CHECK(data1 >= data2);
+      CHECK(data2 >= data1);
+
+      data1 = Data("Data1");
+      CHECK(data1 >= data2);
+      CHECK(!(data2 >= data1));
+
+      data1 = etl::nullopt;
+      data2 = Data("Data2");
+      CHECK(!(data1 >= data2));
+      CHECK(data2 >= data1);
+
+      data1 = Data("Data1");
+      data2 = Data("Data2");
+      CHECK(!(data1 >= data2));
+      CHECK(data2 >= data1);
+
+      CHECK(!(etl::nullopt >= data2));
+      CHECK(data1 >= etl::nullopt);
+
+      CHECK(!(data1 >= Data("Data2")));
+      CHECK(data2 >= Data("Data1"));
+      CHECK(data1 >= Data("Data1"));
+      CHECK(Data("Data2") >= data1);
+      CHECK(!(Data("Data1") >= data2));
+      CHECK(Data("Data1") >= data1);
     }
 
     //*************************************************************************
@@ -240,6 +413,16 @@ namespace
       CHECK(bool(data2));
       CHECK_EQUAL(data1, original2);
       CHECK_EQUAL(data2, original1);
+    }
+
+    //*************************************************************************
+    TEST(test_reset)
+    {
+      etl::optional<Data> data(Data("1"));
+      CHECK(bool(data));
+
+      data.reset();
+      CHECK(!bool(data));
     }
   };
 }

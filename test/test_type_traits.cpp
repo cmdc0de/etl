@@ -38,8 +38,25 @@ namespace std
 }
 #endif
 
-#include "type_traits.h"
+#include "etl/type_traits.h"
 #include <type_traits>
+
+namespace
+{
+  struct TestData { };
+}
+
+namespace etl
+{
+  template <>
+  struct size_of<TestData>
+  {
+    enum
+    {
+      size = 20
+    };
+  };
+}
 
 namespace
 {
@@ -462,6 +479,7 @@ namespace
       CHECK((std::is_same<etl::make_signed<volatile int>::type,       std::make_signed<volatile int>::type>::value));
       CHECK((std::is_same<etl::make_signed<const int>::type,          std::make_signed<const int>::type>::value));
       CHECK((std::is_same<etl::make_signed<const volatile int>::type, std::make_signed<const volatile int>::type>::value));
+      CHECK((std::is_same<etl::make_signed<size_t>::type,             std::make_signed<size_t>::type>::value));
     }
 
     //*************************************************************************
@@ -487,6 +505,7 @@ namespace
       CHECK((std::is_same<etl::make_unsigned<volatile int>::type,       std::make_unsigned<volatile int>::type>::value));
       CHECK((std::is_same<etl::make_unsigned<const int>::type,          std::make_unsigned<const int>::type>::value));
       CHECK((std::is_same<etl::make_unsigned<const volatile int>::type, std::make_unsigned<const volatile int>::type>::value));
+      CHECK((std::is_same<etl::make_unsigned<size_t>::type,             std::make_unsigned<size_t>::type>::value));
     }
 
     //*************************************************************************
@@ -594,6 +613,10 @@ namespace
       CHECK((std::is_base_of<C, A>::value) == (etl::is_base_of<C, A>::value));
       CHECK((std::is_base_of<C, B>::value) == (etl::is_base_of<C, B>::value));
       CHECK((std::is_base_of<C, C>::value) == (etl::is_base_of<C, C>::value));
+
+      CHECK((std::is_base_of<char, char>::value) == (etl::is_base_of<char, char>::value));
+      CHECK((std::is_base_of<char, int>::value)  == (etl::is_base_of<char, int>::value));
+      CHECK((std::is_base_of<int,  char>::value) == (etl::is_base_of<int,  char>::value));
     }
 
     //*************************************************************************
@@ -712,4 +735,24 @@ namespace
       CHECK((std::is_same<const int* const, etl::types<const volatile int&>::const_pointer_const>::value));
     }
   };
+
+  //*************************************************************************
+  TEST(conditional_integral_constant)
+  {
+    int v1 = etl::conditional_integral_constant<true,  int, 1, 2>::value;
+    int v2 = etl::conditional_integral_constant<false, int, 1, 2>::value;
+
+    CHECK_EQUAL(1, v1);
+    CHECK_EQUAL(2, v2);
+  }
+
+  //*************************************************************************
+  TEST(size_of)
+  {
+    CHECK_EQUAL(1, etl::size_of<void>::size);
+    CHECK_EQUAL(1, etl::size_of<char>::size);
+    CHECK_EQUAL(2, etl::size_of<short>::size);
+    CHECK_EQUAL(4, etl::size_of<int>::size);
+    CHECK_EQUAL(20, etl::size_of<TestData>::size);
+  }
 }

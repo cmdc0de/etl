@@ -26,16 +26,18 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ******************************************************************************/
 
-#ifndef __test_data__
-#define __test_data__
+#ifndef ETL_TEST_DATA_INCLUDED
+#define ETL_TEST_DATA_INCLUDED
 
 #include <ostream>
+
+#include "etl/instance_count.h"
 
 //*****************************************************************************
 // Default constructor.
 //*****************************************************************************
 template <typename T>
-class TestDataDC
+class TestDataDC : public etl::instance_count<TestDataDC<T>>
 {
 public:
 
@@ -45,9 +47,13 @@ public:
   {
   }
 
-  explicit TestDataDC(const T& value, int index = 0)
-    : value(value),
-      index(index)
+  explicit TestDataDC(const T& value_, int index_ = 0)
+    : value(value_),
+      index(index_)
+  {
+  }
+
+  virtual ~TestDataDC()
   {
   }
 
@@ -59,6 +65,16 @@ public:
   bool operator > (const TestDataDC& other) const
   {
     return value > other.value;
+  }
+
+  bool operator <= (const TestDataDC& other) const
+  {
+    return !(value > other.value);
+  }
+
+  bool operator >= (const TestDataDC& other) const
+  {
+    return !(value < other.value);
   }
 
   T   value;
@@ -88,14 +104,18 @@ std::ostream& operator << (std::ostream& s, const TestDataDC<T>& rhs)
 // No default constructor.
 //*****************************************************************************
 template <typename T>
-class TestDataNDC
+class TestDataNDC : public etl::instance_count<TestDataNDC<T>>
 {
 public:
 
-  explicit TestDataNDC(const T& value, int index = 0)
-    : value(value),
-      index(index)
+  explicit TestDataNDC(const T& value_, int index_ = 0)
+    : value(value_),
+      index(index_)
   {}
+
+  virtual ~TestDataNDC()
+  {
+  }
 
   bool operator < (const TestDataNDC& other) const
   {
@@ -105,6 +125,16 @@ public:
   bool operator > (const TestDataNDC& other) const
   {
     return value > other.value;
+  }
+
+  bool operator <= (const TestDataNDC& other) const
+  {
+    return !(value > other.value);
+  }
+
+  bool operator >= (const TestDataNDC& other) const
+  {
+    return !(value < other.value);
   }
 
   T value;
@@ -129,5 +159,94 @@ std::ostream& operator << (std::ostream& s, const TestDataNDC<T>& rhs)
   s << rhs.value;
   return s;
 }
+
+//*****************************************************************************
+// Movable.
+//*****************************************************************************
+template <typename T>
+class TestDataM : public etl::instance_count<TestDataM<T>>
+{
+public:
+
+  explicit TestDataM(const T& value_)
+    : value(value_)
+    , valid(true)
+  {
+  }
+
+  TestDataM(TestDataM&& other)
+    : value(other.value)
+    , valid(true)
+  {
+    other.value = T();
+    other.valid = false;
+  }
+
+  virtual ~TestDataM()
+  {
+  }
+
+  TestDataM& operator =(TestDataM&& other)
+  {
+    value = other.value;
+    valid = true;
+
+    other.value = T();
+    other.valid = false;
+  }
+
+  bool operator < (const TestDataM& other) const
+  {
+    return value < other.value;
+  }
+
+  bool operator > (const TestDataM& other) const
+  {
+    return other.value < value;
+  }
+
+  bool operator <= (const TestDataM& other) const
+  {
+    return !(other.value < value);
+  }
+
+  bool operator >= (const TestDataM& other) const
+  {
+    return !(value < other.value);
+  }
+
+  operator bool() const
+  {
+    return valid;
+  }
+
+  T    value;
+  bool valid;
+
+private:
+
+  TestDataM(const TestDataM& other) = delete;
+  TestDataM& operator =(const TestDataM& other) = delete;
+};
+
+template <typename T>
+bool operator == (const TestDataM<T>& lhs, const TestDataM<T>& rhs)
+{
+  return lhs.value == rhs.value;
+}
+
+template <typename T>
+bool operator != (const TestDataM<T>& lhs, const TestDataM<T>& rhs)
+{
+  return lhs.value != rhs.value;
+}
+
+template <typename T>
+std::ostream& operator << (std::ostream& s, const TestDataM<T>& rhs)
+{
+  s << rhs.value;
+  return s;
+}
+
 
 #endif

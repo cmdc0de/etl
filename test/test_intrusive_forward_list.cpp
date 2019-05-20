@@ -31,7 +31,7 @@ SOFTWARE.
 
 #include "data.h"
 
-#include "intrusive_forward_list.h"
+#include "etl/intrusive_forward_list.h"
 
 #include <algorithm>
 #include <array>
@@ -612,7 +612,7 @@ namespace
       std::forward_list<ItemNDCNode>::iterator i_compare_data = compare_data.begin();
       std::advance(i_compare_data, 4);
 
-      std::forward_list<ItemNDCNode>::iterator i_compare_result = compare_data.erase_after(i_compare_data, compare_data.end());
+      compare_data.erase_after(i_compare_data, compare_data.end());
 
       DataNDC0::iterator i_result = data0.erase_after(i_data, data0.end());
 
@@ -759,8 +759,6 @@ namespace
 
       while (ditr != data.end())
       {
-        const ItemNDC& v = ditr->data;
-
         CHECK_EQUAL(citr->data.index, ditr->data.index);
 
         ++citr;
@@ -786,8 +784,6 @@ namespace
     //*************************************************************************
     TEST_FIXTURE(SetupFixture, test_splice_list)
     {
-      bool are_equal;
-
       DataNDC0 data0(sorted_data.begin(), sorted_data.end());
       DataNDC0 data1(sorted_data2.begin(), sorted_data2.end());
 
@@ -813,8 +809,6 @@ namespace
     //*************************************************************************
     TEST_FIXTURE(SetupFixture, test_splice_list_self)
     {
-      bool are_equal;
-
       DataNDC0 data0(sorted_data.begin(), sorted_data.end());
 
       DataNDC0::iterator idata_destination = data0.begin();
@@ -833,8 +827,6 @@ namespace
     //*************************************************************************
     TEST_FIXTURE(SetupFixture, test_splice_range)
     {
-      bool are_equal;
-
       DataNDC0 data0(sorted_data.begin(), sorted_data.end());
       DataNDC0 data1(sorted_data2.begin(), sorted_data2.end());
 
@@ -872,8 +864,6 @@ namespace
     //*************************************************************************
     TEST_FIXTURE(SetupFixture, test_splice_range_self)
     {
-      bool are_equal;
-
       DataNDC0 data0(sorted_data.begin(), sorted_data.end());
 
       DataNDC0::iterator idata_destination = data0.begin();
@@ -908,8 +898,6 @@ namespace
     //*************************************************************************
     TEST_FIXTURE(SetupFixture, test_merge_0_1)
     {
-      bool are_equal;
-
       DataNDC0 data0(merge_data0.begin(), merge_data0.end());
       DataNDC0 data1(merge_data1.begin(), merge_data1.end());
 
@@ -929,8 +917,6 @@ namespace
     //*************************************************************************
     TEST_FIXTURE(SetupFixture, test_merge_0_2)
     {
-      bool are_equal;
-
       DataNDC0 data0(merge_data0.begin(), merge_data0.end());
       DataNDC0 data2(merge_data2.begin(), merge_data2.end());
 
@@ -950,8 +936,6 @@ namespace
     //*************************************************************************
     TEST_FIXTURE(SetupFixture, test_merge_0_3)
     {
-      bool are_equal;
-
       DataNDC0 data0(merge_data0.begin(), merge_data0.end());
       DataNDC0 data3(merge_data3.begin(), merge_data3.end());
 
@@ -971,8 +955,6 @@ namespace
     //*************************************************************************
     TEST_FIXTURE(SetupFixture, test_merge_0_4)
     {
-      bool are_equal;
-
       DataNDC0 data0(merge_data0.begin(), merge_data0.end());
       DataNDC0 data4(merge_data4.begin(), merge_data4.end());
 
@@ -992,8 +974,6 @@ namespace
     //*************************************************************************
     TEST_FIXTURE(SetupFixture, test_merge_0_1_reverse_order)
     {
-      bool are_equal;
-
       DataNDC0 data0(merge_data0.begin(), merge_data0.end());
       DataNDC0 data1(merge_data1.begin(), merge_data1.end());
 

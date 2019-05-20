@@ -32,10 +32,7 @@ SOFTWARE.
 #include <type_traits>
 #include <bitset>
 
-#include "bitset.h"
-
-#undef min
-#undef max
+#include "etl/bitset.h"
 
 namespace
 {
