@@ -3,7 +3,7 @@ The MIT License(MIT)
 
 Embedded Template Library.
 https://github.com/ETLCPP/etl
-http://www.etlcpp.com
+https://www.etlcpp.com
 
 Copyright(c) 2016 jwellbelove
 
@@ -32,15 +32,20 @@ SOFTWARE.
 #include <array>
 #include <algorithm>
 
-#include "u32string.h"
-
-#undef min
+#include "etl/u32string.h"
 
 #undef STR
 #define STR(x) U##x
 
 namespace
 {
+  bool compares_agree(int result1, int result2)
+  {
+    return ((result1 < 0)  && (result2 < 0)) ||
+           ((result1 == 0) && (result2 == 0)) ||
+           ((result1 > 0)  && (result2 > 0));
+  }
+
   SUITE(test_string_char)
   {
     static const size_t SIZE = 11;
@@ -49,6 +54,8 @@ namespace
     typedef etl::iu32string      IText;
     typedef std::u32string       Compare_Text;
     typedef Text::value_type     value_t;
+    typedef etl::u32string<52>   TextL;
+    typedef etl::u32string<4>    TextS;
 
     Compare_Text initial_text;
     Compare_Text less_text;
@@ -94,6 +101,8 @@ namespace
       CHECK(text.empty());
       CHECK_EQUAL(text.capacity(), SIZE);
       CHECK_EQUAL(text.max_size(), SIZE);
+      CHECK(text.begin() == text.end());
+      CHECK(!text.truncated());
     }
 
     //*************************************************************************
@@ -101,10 +110,11 @@ namespace
     {
       Text text;
 
-      CHECK(text.begin() == text.end());
-      CHECK(text.cbegin() == text.cend());
-      CHECK(text.rbegin() == text.rend());
+      CHECK(text.begin()   == text.end());
+      CHECK(text.cbegin()  == text.cend());
+      CHECK(text.rbegin()  == text.rend());
       CHECK(text.crbegin() == text.crend());
+      CHECK(!text.truncated());
     }
 
     //*************************************************************************
@@ -122,6 +132,7 @@ namespace
       bool is_equal = Equal(compare_text, text);
 
       CHECK(is_equal);
+      CHECK(!text.truncated());
     }
 
     //*************************************************************************
@@ -130,6 +141,7 @@ namespace
       Text text(SIZE + 1, STR('A'));
 
       CHECK_EQUAL(SIZE, text.size());
+      CHECK(text.truncated());
     }
 
     //*************************************************************************
@@ -143,6 +155,21 @@ namespace
 
       bool is_equal = Equal(compare_text, text);
       CHECK(is_equal);
+      CHECK(!text.truncated());
+    }
+
+    //*************************************************************************
+    TEST_FIXTURE(SetupFixture, test_constructor_char_pointer_excess)
+    {
+      Compare_Text compare_text(initial_text.c_str());
+
+      Text text(longer_text.c_str());
+
+      CHECK(!text.empty());
+
+      bool is_equal = Equal(compare_text, text);
+      CHECK(is_equal);
+      CHECK(text.truncated());
     }
 
     //*************************************************************************
@@ -156,6 +183,21 @@ namespace
 
       bool is_equal = Equal(compare_text, text);
       CHECK(is_equal);
+      CHECK(!text.truncated());
+    }
+
+    //*************************************************************************
+    TEST_FIXTURE(SetupFixture, test_constructor_char_pointer_size_excess)
+    {
+      Compare_Text compare_text(SIZE, STR('A'));
+
+      Text text(SIZE + 1, STR('A'));
+
+      CHECK(!text.empty());
+
+      bool is_equal = Equal(compare_text, text);
+      CHECK(is_equal);
+      CHECK(text.truncated());
     }
 
     //*************************************************************************
@@ -169,6 +211,21 @@ namespace
 
       bool is_equal = Equal(compare_text, text);
       CHECK(is_equal);
+      CHECK(!text.truncated());
+    }
+
+    //*************************************************************************
+    TEST_FIXTURE(SetupFixture, test_constructor_size_char_excess)
+    {
+      Compare_Text compare_text(initial_text.c_str(), initial_text.size());
+
+      Text text(longer_text.c_str(), longer_text.size());
+
+      CHECK(!text.empty());
+
+      bool is_equal = Equal(compare_text, text);
+      CHECK(is_equal);
+      CHECK(text.truncated());
     }
 
     //*************************************************************************
@@ -180,19 +237,19 @@ namespace
 
       CHECK(text.size() == SIZE);
       CHECK(!text.empty());
+      CHECK(!text.truncated());
     }
 
     //*************************************************************************
     TEST_FIXTURE(SetupFixture, test_constructor_range_excess)
     {
-      Text text;
-
-      text.assign(longer_text.begin(), longer_text.end());
+      Text text(longer_text.begin(), longer_text.end());
 
       bool is_equal = Equal(initial_text, text);
       CHECK(is_equal);
       CHECK(text.size() == SIZE);
       CHECK(!text.empty());
+      CHECK(text.truncated());
     }
 
     //*************************************************************************
@@ -201,6 +258,35 @@ namespace
       Text text(initial_text.c_str());
       Text text2(text);
       CHECK(text2 == text);
+      CHECK(!text2.truncated());
+    }
+
+    //*************************************************************************
+    TEST_FIXTURE(SetupFixture, test_copy_constructor_i)
+    {
+      Text text(initial_text.c_str());
+      IText& itext = text;
+      Text text2(itext);
+      CHECK(text2 == text);
+      CHECK(!text2.truncated());
+    }
+
+    //*************************************************************************
+    TEST_FIXTURE(SetupFixture, test_copy_constructor_excess)
+    {
+      Text  text(initial_text.c_str());
+      TextL textl(longer_text.c_str());
+      Text  text2(textl);
+      CHECK(text2 == text);
+      CHECK(text2.truncated());
+    }
+
+    //*************************************************************************
+    TEST_FIXTURE(SetupFixture, test_copy_constructor_from_truncated)
+    {
+      Text  text(longer_text.c_str());
+      Text  text2(text);
+      CHECK(text2.truncated());
     }
 
     //*************************************************************************
@@ -214,6 +300,46 @@ namespace
 
       bool is_equal = Equal(compare_text2, text2);
       CHECK(is_equal);
+      CHECK(!text2.truncated());
+    }
+
+    //*************************************************************************
+    TEST_FIXTURE(SetupFixture, test_construct_position_length_excess)
+    {
+      Compare_Text compare_text(longer_text.c_str());
+      Compare_Text compare_text2(compare_text, 2, 11);
+
+      TextL textl(longer_text.c_str());
+      Text text2(textl, 2, 12);
+
+      bool is_equal = Equal(compare_text2, text2);
+      CHECK(is_equal);
+      CHECK(text2.truncated());
+    }
+
+    //*************************************************************************
+    TEST_FIXTURE(SetupFixture, test_construct_initializer_list)
+    {
+      Compare_Text compare_text = { STR('H'), STR('e'), STR('l') , STR('l') , STR('o') };
+      Text text = { STR('H'), STR('e'), STR('l') , STR('l') , STR('o') };
+
+      bool is_equal = Equal(compare_text, text);
+      CHECK(is_equal);
+      CHECK(!text.truncated());
+    }
+
+    //*************************************************************************
+    TEST_FIXTURE(SetupFixture, test_construct_initializer_list_excess)
+    {
+      Compare_Text compare_text = { STR('H'), STR('e'), STR('l'), STR('l'), STR('o'),  STR(' '),
+        STR('W'), STR('o'), STR('r'), STR('l'), STR('d') };
+      Text text = { STR('H'), STR('e'), STR('l'), STR('l'), STR('o'),  STR(' '),
+        STR('W'), STR('o'), STR('r'), STR('l'), STR('d'),  STR(' '),
+        STR('T'), STR('h'), STR('e'), STR('r'), STR('e') };
+
+      bool is_equal = Equal(compare_text, text);
+      CHECK(is_equal);
+      CHECK(text.truncated());
     }
 
     //*************************************************************************
@@ -226,6 +352,22 @@ namespace
 
       bool is_equal = Equal(text, other_text);
       CHECK(is_equal);
+      CHECK(!text.truncated());
+      CHECK(!other_text.truncated());
+    }
+
+    //*************************************************************************
+    TEST_FIXTURE(SetupFixture, test_assignment_excess)
+    {
+      Text text(longer_text.begin(), longer_text.end());
+      Text other_text;
+
+      other_text = text;
+
+      bool is_equal = Equal(text, other_text);
+      CHECK(is_equal);
+      CHECK(text.truncated());
+      CHECK(other_text.truncated());
     }
 
     //*************************************************************************
@@ -242,8 +384,27 @@ namespace
       bool is_equal = Equal(text1, text2);
 
       CHECK(is_equal);
+      CHECK(!text1.truncated());
+      CHECK(!text2.truncated());
     }
 
+    //*************************************************************************
+    TEST_FIXTURE(SetupFixture, test_assignment_iterface_excess)
+    {
+      Text text1(longer_text.begin(), longer_text.end());
+      Text text2;
+
+      IText& itext1 = text1;
+      IText& itext2 = text2;
+
+      itext2 = itext1;
+
+      bool is_equal = Equal(text1, text2);
+
+      CHECK(is_equal);
+      CHECK(text1.truncated());
+      CHECK(text2.truncated());
+    }
 
     //*************************************************************************
     TEST_FIXTURE(SetupFixture, test_self_assignment)
@@ -256,6 +417,73 @@ namespace
       bool is_equal = Equal(text, other_text);
 
       CHECK(is_equal);
+      CHECK(!text.truncated());
+      CHECK(!other_text.truncated());
+    }
+
+    //*************************************************************************
+    TEST_FIXTURE(SetupFixture, test_self_assignment_excess)
+    {
+      Text text(longer_text.begin(), longer_text.end());
+      Text other_text(text);
+
+      other_text = other_text;
+
+      bool is_equal = Equal(text, other_text);
+
+      CHECK(is_equal);
+      CHECK(text.truncated());
+      CHECK(other_text.truncated());
+    }
+
+    //*************************************************************************
+    TEST_FIXTURE(SetupFixture, test_assignment_from_literal)
+    {
+      Text text;
+
+      text = STR("Hello World");
+
+      bool is_equal = Equal(std::u32string(STR("Hello World")), text);
+      CHECK(is_equal);
+      CHECK(!text.truncated());
+    }
+
+    //*************************************************************************
+    TEST_FIXTURE(SetupFixture, test_assignment_from_literal_excess)
+    {
+      Text text;
+
+      text = STR("Hello World There");
+
+      bool is_equal = Equal(std::u32string(STR("Hello World")), text);
+      CHECK(is_equal);
+      CHECK(text.truncated());
+    }
+
+    //*************************************************************************
+    TEST_FIXTURE(SetupFixture, test_assignment_from_literal_via_interface)
+    {
+      Text text;
+      IText& itext = text;
+
+      itext = STR("Hello World");
+
+      bool is_equal = Equal(std::u32string(STR("Hello World")), itext);
+      CHECK(is_equal);
+      CHECK(!itext.truncated());
+    }
+
+    //*************************************************************************
+    TEST_FIXTURE(SetupFixture, test_assignment_from_literal_via_interface_excess)
+    {
+      Text text;
+      IText& itext = text;
+
+      itext = STR("Hello World There");
+
+      bool is_equal = Equal(std::u32string(STR("Hello World")), itext);
+      CHECK(is_equal);
+      CHECK(itext.truncated());
     }
 
     //*************************************************************************
@@ -264,7 +492,7 @@ namespace
       Text text(initial_text.c_str());
       const Text constText(initial_text.c_str());
 
-      CHECK_EQUAL(&text[0], text.begin());
+      CHECK_EQUAL(&text[0],      text.begin());
       CHECK_EQUAL(&constText[0], constText.begin());
     }
 
@@ -275,7 +503,7 @@ namespace
       Text text(initial_text.c_str());
       const Text constText(initial_text.c_str());
 
-      CHECK_EQUAL(&text[initial_text.size()], text.end());
+      CHECK_EQUAL(&text[initial_text.size()],      text.end());
       CHECK_EQUAL(&constText[initial_text.size()], constText.end());
     }
 
@@ -289,6 +517,7 @@ namespace
       text.resize(NEW_SIZE);
 
       CHECK_EQUAL(text.size(), NEW_SIZE);
+      CHECK(!text.truncated());
     }
 
     //*************************************************************************
@@ -305,8 +534,8 @@ namespace
       compare_text.fill(INITIAL_VALUE);
 
       bool is_equal = Equal(compare_text, text);
-
       CHECK(is_equal);
+      CHECK(!text.truncated());
     }
 
 
@@ -319,6 +548,7 @@ namespace
       Text text(INITIAL_SIZE, STR('A'));
       text.resize(NEW_SIZE, STR('A'));
       CHECK_EQUAL(SIZE, text.size());
+      CHECK(text.truncated());
     }
 
     //*************************************************************************
@@ -331,6 +561,7 @@ namespace
       text.resize(NEW_SIZE);
 
       CHECK_EQUAL(text.size(), NEW_SIZE);
+      CHECK(!text.truncated());
     }
 
     //*************************************************************************
@@ -350,26 +581,66 @@ namespace
 
       bool is_equal = Equal(compare_text, text);
       CHECK(is_equal);
+      CHECK(!text.truncated());
     }
 
 
     //*************************************************************************
-    TEST_FIXTURE(SetupFixture, test_empty)
+    TEST_FIXTURE(SetupFixture, test_empty_full)
+    {
+      Text text;
+      text.resize(text.max_size(), STR('A'));
+
+      CHECK(!text.empty());
+      CHECK(!text.truncated());
+    }
+
+    //*************************************************************************
+    TEST_FIXTURE(SetupFixture, test_empty_half)
+    {
+      Text text;
+      text.resize(text.max_size() / 2, STR('A'));
+
+      CHECK(!text.empty());
+      CHECK(!text.truncated());
+    }
+
+    //*************************************************************************
+    TEST_FIXTURE(SetupFixture, test_empty_empty)
+    {
+      Text text;
+
+      CHECK(text.empty());
+      CHECK(!text.truncated());
+    }
+
+    //*************************************************************************
+    TEST_FIXTURE(SetupFixture, test_full_full)
     {
       Text text;
       text.resize(text.max_size(), STR('A'));
 
       CHECK(text.full());
-      CHECK(!text.empty());
+      CHECK(!text.truncated());
     }
 
     //*************************************************************************
-    TEST_FIXTURE(SetupFixture, test_full)
+    TEST_FIXTURE(SetupFixture, test_full_half)
+    {
+      Text text;
+      text.resize(text.max_size() / 2, STR('A'));
+
+      CHECK(!text.full());
+      CHECK(!text.truncated());
+    }
+
+    //*************************************************************************
+    TEST_FIXTURE(SetupFixture, test_full_empty)
     {
       Text text;
 
       CHECK(!text.full());
-      CHECK(text.empty());
+      CHECK(!text.truncated());
     }
 
     //*************************************************************************
@@ -382,6 +653,8 @@ namespace
       {
         CHECK_EQUAL(text[i], compare_text[i]);
       }
+
+      CHECK(!text.truncated());
     }
 
     //*************************************************************************
@@ -394,6 +667,8 @@ namespace
       {
         CHECK_EQUAL(text[i], compare_text[i]);
       }
+
+      CHECK(!text.truncated());
     }
 
     //*************************************************************************
@@ -406,6 +681,8 @@ namespace
       {
         CHECK_EQUAL(text.at(i), compare_text.at(i));
       }
+
+      CHECK(!text.truncated());
 
       CHECK_THROW(text.at(text.size()), etl::string_out_of_bounds);
     }
@@ -421,6 +698,8 @@ namespace
         CHECK_EQUAL(text.at(i), compare_text.at(i));
       }
 
+      CHECK(!text.truncated());
+
       CHECK_THROW(text.at(text.size()), etl::string_out_of_bounds);
     }
 
@@ -431,6 +710,7 @@ namespace
       Text text(initial_text.c_str());
 
       CHECK(text.front() == compare_text.front());
+      CHECK(!text.truncated());
     }
 
     //*************************************************************************
@@ -440,6 +720,7 @@ namespace
       const Text text(initial_text.c_str());
 
       CHECK(text.front() == compare_text.front());
+      CHECK(!text.truncated());
     }
 
     //*************************************************************************
@@ -449,6 +730,7 @@ namespace
       Text text(initial_text.c_str());
 
       CHECK(text.back() == compare_text.back());
+      CHECK(!text.truncated());
     }
 
     //*************************************************************************
@@ -458,6 +740,7 @@ namespace
       const Text text(initial_text.c_str());
 
       CHECK(text.back() == compare_text.back());
+      CHECK(!text.truncated());
     }
 
     //*************************************************************************
@@ -472,6 +755,7 @@ namespace
         compare_text.begin());
 
       CHECK(is_equal);
+      CHECK(!text.truncated());
     }
 
     //*************************************************************************
@@ -486,6 +770,41 @@ namespace
         compare_text.begin());
 
       CHECK(is_equal);
+      CHECK(!text.truncated());
+    }
+
+    //*************************************************************************
+    TEST_FIXTURE(SetupFixture, test_assign_string)
+    {
+      Compare_Text compare_input(initial_text.c_str());
+      Text input(initial_text.c_str());
+
+      Compare_Text compare_text;
+      Text text;
+
+      compare_text.assign(compare_input);
+      text.assign(input);
+
+      bool is_equal = Equal(compare_text, text);
+      CHECK(is_equal);
+      CHECK(!text.truncated());
+    }
+
+    //*************************************************************************
+    TEST_FIXTURE(SetupFixture, test_assign_string_excess)
+    {
+      Compare_Text compare_input(initial_text.c_str());
+      TextL input(longer_text.c_str());
+
+      Compare_Text compare_text;
+      Text text;
+
+      compare_text.assign(compare_input);
+      text.assign(input);
+
+      bool is_equal = Equal(compare_text, text);
+      CHECK(is_equal);
+      CHECK(text.truncated());
     }
 
     //*************************************************************************
@@ -494,20 +813,24 @@ namespace
       Compare_Text compare_text(initial_text.c_str());
 
       Text text;
-
-      text.assign(compare_text.c_str());
+      text.assign(initial_text.c_str());
 
       bool is_equal = Equal(compare_text, text);
       CHECK(is_equal);
+      CHECK(!text.truncated());
+    }
 
-      compare_text.assign(longer_text.c_str());
-      compare_text.resize(std::min(compare_text.size(), SIZE));
+    //*************************************************************************
+    TEST_FIXTURE(SetupFixture, test_assign_pointer_excess)
+    {
+      Compare_Text compare_text(initial_text.c_str());
 
-      text.assign(compare_text.c_str());
+      Text text;
+      text.assign(longer_text.c_str());
 
-      is_equal = Equal(compare_text, text);
-
+      bool is_equal = Equal(compare_text, text);
       CHECK(is_equal);
+      CHECK(text.truncated());
     }
 
     //*************************************************************************
@@ -520,8 +843,8 @@ namespace
       text.assign(compare_text.begin(), compare_text.end());
 
       bool is_equal = Equal(compare_text, text);
-
       CHECK(is_equal);
+      CHECK(!text.truncated());
     }
 
     //*************************************************************************
@@ -533,11 +856,9 @@ namespace
 
       CHECK_EQUAL(initial_text.size(), text.size());
 
-      bool is_equal = std::equal(text.begin(),
-        text.end(),
-        initial_text.begin());
-
+      bool is_equal = Equal(initial_text, text);
       CHECK(is_equal);
+      CHECK(text.truncated());
     }
 
     //*************************************************************************
@@ -555,8 +876,8 @@ namespace
       CHECK(text.size() == INITIAL_SIZE);
 
       bool is_equal = Equal(compare_text, text);
-
       CHECK(is_equal);
+      CHECK(!text.truncated());
     }
 
     //*************************************************************************
@@ -573,9 +894,8 @@ namespace
 
       bool is_equal = Equal(compare_text, text);
       CHECK(is_equal);
+      CHECK(text.truncated());
     }
-
-
 
     //*************************************************************************
     TEST_FIXTURE(SetupFixture, test_push_back)
@@ -593,16 +913,24 @@ namespace
         text.push_back(STR('A') + value_t(i));
       }
 
+      CHECK_EQUAL(etl::strlen(compare_text.data()), etl::strlen(text.data()));
       CHECK_EQUAL(compare_text.size(), text.size());
 
       bool is_equal = Equal(compare_text, text);
       CHECK(is_equal);
+      CHECK(!text.truncated());
     }
 
     //*************************************************************************
     TEST_FIXTURE(SetupFixture, test_push_back_excess)
     {
+      Compare_Text compare_text;
       Text text;
+
+      for (size_t i = 0; i < SIZE; ++i)
+      {
+        compare_text.push_back(STR('A') + value_t(i));
+      }
 
       for (size_t i = 0; i < SIZE; ++i)
       {
@@ -612,8 +940,12 @@ namespace
 
       text.push_back(STR('A') + value_t(SIZE));
 
+      CHECK_EQUAL(etl::strlen(compare_text.data()), etl::strlen(text.data()));
+      CHECK_EQUAL(compare_text.size(), text.size());
+
+      bool is_equal = Equal(compare_text, text);
+      CHECK(is_equal);
       CHECK(text.truncated());
-      CHECK_EQUAL(SIZE, text.size());
     }
 
     //*************************************************************************
@@ -639,7 +971,7 @@ namespace
     TEST_FIXTURE(SetupFixture, test_insert_position_value)
     {
       const size_t INITIAL_SIZE = 5;
-      const value_t INITIAL_VALUE = STR('A');
+      const value_t INITIAL_VALUE  = STR('A');
 
       for (size_t offset = 0; offset <= INITIAL_SIZE; ++offset)
       {
@@ -705,15 +1037,12 @@ namespace
       Compare_Text compare_text;
       Text text;
 
-      const size_t INITIAL_SIZE = 5;
-      const size_t INSERT_SIZE = 3;
-      const value_t INITIAL_VALUE = STR('A');
+      const size_t INITIAL_SIZE     = 5;
+      const size_t INSERT_SIZE      = 3;
+      const value_t INITIAL_VALUE      = STR('A');
 
       for (size_t offset = 0; offset <= INITIAL_SIZE; ++offset)
       {
-        Compare_Text compare_text;
-        Text text;
-
         text.assign(initial_text.begin(), initial_text.begin() + INITIAL_SIZE);
         compare_text.assign(initial_text.begin(), initial_text.begin() + INITIAL_SIZE);
         text.insert(text.begin() + offset, INSERT_SIZE, INITIAL_VALUE);
@@ -733,7 +1062,7 @@ namespace
       Text text;
 
       const size_t INSERT_SIZE = 4;
-      const value_t INSERT_VALUE = STR('A');
+      const value_t INSERT_VALUE  = STR('A');
 
       size_t offset = 0;
       compare_text.assign(initial_text.begin(), initial_text.end());
@@ -781,7 +1110,7 @@ namespace
       text.assign(initial_text.begin(), initial_text.end());
       text.insert(text.begin() + offset, INSERT_SIZE, INSERT_VALUE);
 
-      CHECK(!text.truncated());
+      CHECK(text.truncated());
 
       is_equal = Equal(compare_text, text);
       CHECK(is_equal);
@@ -791,7 +1120,6 @@ namespace
     TEST_FIXTURE(SetupFixture, test_insert_position_range)
     {
       const size_t INITIAL_SIZE = 5;
-      const value_t INITIAL_VALUE = STR('A');
 
       for (size_t offset = 0; offset <= INITIAL_SIZE; ++offset)
       {
@@ -814,7 +1142,7 @@ namespace
     TEST_FIXTURE(SetupFixture, test_insert_position_range_excess)
     {
       const size_t INITIAL_SIZE = 5;
-      const value_t INITIAL_VALUE = STR('A');
+      const value_t INITIAL_VALUE  = STR('A');
 
       Compare_Text compare_text;
       Text text;
@@ -862,6 +1190,25 @@ namespace
     }
 
     //*************************************************************************
+    TEST_FIXTURE(SetupFixture, test_insert_position_range_self)
+    {
+      size_t length = TextL::MAX_SIZE / 2;
+
+      for (size_t offset = 10; offset < length; ++offset)
+      {
+        Compare_Text compare_text = STR("ABCDEFGHIJKLMNOPQRSTUVWXYZ");
+        TextL text = STR("ABCDEFGHIJKLMNOPQRSTUVWXYZ");
+
+        text.insert(text.begin() + offset, text.begin() + 5, text.begin() + 10);
+        compare_text.insert(compare_text.begin() + offset, compare_text.begin() + 5, compare_text.begin() + 10);
+
+        bool is_equal = Equal(compare_text, text);
+        CHECK(is_equal);
+        CHECK(!text.truncated());
+      }
+    }
+
+    //*************************************************************************
     TEST_FIXTURE(SetupFixture, test_insert_size_t_position_string)
     {
       for (size_t offset = 0; offset <= short_text.size(); ++offset)
@@ -876,6 +1223,7 @@ namespace
 
         bool is_equal = Equal(compare_text, text);
         CHECK(is_equal);
+        CHECK(!text.truncated());
       }
     }
 
@@ -894,6 +1242,28 @@ namespace
 
         bool is_equal = Equal(compare_text, text);
         CHECK(is_equal);
+        CHECK(text.truncated());
+      }
+    }
+
+    //*************************************************************************
+    TEST_FIXTURE(SetupFixture, test_insert_size_t_position_string_from_truncated)
+    {
+      for (size_t offset = 0; offset <= short_text.size(); ++offset)
+      {
+        Compare_Text compare_text(short_text.begin(), short_text.end());
+        Text text(short_text.begin(), short_text.end());
+        Text insert(longer_text.begin(), longer_text.end());
+        insert.erase(insert.begin(), insert.end());
+        insert.append(insert_text.begin(), insert_text.end());
+
+        text.insert(offset, insert);
+        compare_text.insert(offset, insert_text);
+        compare_text.resize(std::min(compare_text.size(), SIZE));
+
+        bool is_equal = Equal(compare_text, text);
+        CHECK(is_equal);
+        CHECK(text.truncated());
       }
     }
 
@@ -910,6 +1280,7 @@ namespace
 
       bool is_equal = Equal(compare_text, text);
       CHECK(is_equal);
+      CHECK(!text.truncated());
 
       compare_text.assign(short_text.begin(), short_text.end());
       text.assign(short_text.begin(), short_text.end());
@@ -922,6 +1293,7 @@ namespace
 
       is_equal = Equal(compare_text, text);
       CHECK(is_equal);
+      CHECK(!text.truncated());
 
       compare_text.assign(short_text.begin(), short_text.end());
       text.assign(short_text.begin(), short_text.end());
@@ -932,6 +1304,7 @@ namespace
 
       is_equal = Equal(compare_text, text);
       CHECK(is_equal);
+      CHECK(!text.truncated());
     }
 
     //*************************************************************************
@@ -947,6 +1320,7 @@ namespace
 
       bool is_equal = Equal(compare_text, text);
       CHECK(is_equal);
+      CHECK(!text.truncated());
 
       // Overflow.
       compare_text.assign(short_text.c_str());
@@ -959,6 +1333,45 @@ namespace
 
       is_equal = Equal(compare_text, text);
       CHECK(is_equal);
+      CHECK(text.truncated());
+    }
+
+    //*************************************************************************
+    TEST_FIXTURE(SetupFixture, test_append_truncated_string)
+    {
+      Text text(short_text.c_str());
+      TextS append(short_text.c_str());
+      CHECK(append.truncated());
+
+      text.append(append);
+      CHECK(text.truncated());
+    }
+
+    //*************************************************************************
+    TEST_FIXTURE(SetupFixture, test_append_string_to_self)
+    {
+      Compare_Text compare_text(short_text.c_str());
+      Text text(short_text.c_str());
+
+      // Non-overflow.
+      compare_text.append(compare_text);
+      text.append(text);
+
+      bool is_equal = Equal(compare_text, text);
+      CHECK(is_equal);
+      CHECK(!text.truncated());
+
+      // Overflow.
+      compare_text.assign(shorter_text.c_str());
+      text.assign(shorter_text.c_str());
+
+      compare_text.append(compare_text);
+      compare_text.resize(std::min(compare_text.size(), SIZE));
+      text.append(text);
+
+      is_equal = Equal(compare_text, text);
+      CHECK(is_equal);
+      CHECK(text.truncated());
     }
 
     //*************************************************************************
@@ -970,10 +1383,11 @@ namespace
 
       // Whole string.
       compare_text.append(insert_text, 0, std::u32string::npos);
-      text.append(append, 0, etl::iu32string::npos);
+      text.append(append, 0, Text::npos);
 
       bool is_equal = Equal(compare_text, text);
       CHECK(is_equal);
+      CHECK(!text.truncated());
 
       // Partial string.
       compare_text.assign(short_text.c_str());
@@ -986,6 +1400,7 @@ namespace
 
       is_equal = Equal(compare_text, text);
       CHECK(is_equal);
+      CHECK(!text.truncated());
 
       // Overflow.
       compare_text.assign(short_text.c_str());
@@ -998,6 +1413,18 @@ namespace
 
       is_equal = Equal(compare_text, text);
       CHECK(is_equal);
+      CHECK(text.truncated());
+    }
+
+    //*************************************************************************
+    TEST_FIXTURE(SetupFixture, test_append_truncated_string_subpos_sublen)
+    {
+      Text text(short_text.c_str());
+      TextS append(short_text.c_str());
+      CHECK(append.truncated());
+
+      text.append(append, 1, 2);
+      CHECK(text.truncated());
     }
 
     //*************************************************************************
@@ -1013,6 +1440,7 @@ namespace
 
       bool is_equal = Equal(compare_text, text);
       CHECK(is_equal);
+      CHECK(!text.truncated());
 
       // Overflow.
       compare_text.assign(short_text.c_str());
@@ -1024,6 +1452,7 @@ namespace
 
       is_equal = Equal(compare_text, text);
       CHECK(is_equal);
+      CHECK(text.truncated());
     }
 
     //*************************************************************************
@@ -1039,6 +1468,7 @@ namespace
 
       bool is_equal = Equal(compare_text, text);
       CHECK(is_equal);
+      CHECK(!text.truncated());
 
       // Overflow.
       compare_text.assign(short_text.c_str());
@@ -1050,6 +1480,7 @@ namespace
 
       is_equal = Equal(compare_text, text);
       CHECK(is_equal);
+      CHECK(text.truncated());
     }
 
     //*************************************************************************
@@ -1065,6 +1496,7 @@ namespace
 
       bool is_equal = Equal(compare_text, text);
       CHECK(is_equal);
+      CHECK(!text.truncated());
 
       // Overflow.
       compare_text.assign(short_text.c_str());
@@ -1077,6 +1509,7 @@ namespace
 
       is_equal = Equal(compare_text, text);
       CHECK(is_equal);
+      CHECK(text.truncated());
     }
 
     //*************************************************************************
@@ -1092,6 +1525,7 @@ namespace
 
       bool is_equal = Equal(compare_text, text);
       CHECK(is_equal);
+      CHECK(!text.truncated());
 
       // Non-overflow short text.
       compare_text.assign(short_text.c_str());
@@ -1103,6 +1537,7 @@ namespace
 
       is_equal = Equal(compare_text, text);
       CHECK(is_equal);
+      CHECK(!text.truncated());
 
       // Overflow short text.
       compare_text.assign(short_text.c_str());
@@ -1114,6 +1549,7 @@ namespace
 
       is_equal = Equal(compare_text, text);
       CHECK(is_equal);
+      CHECK(text.truncated());
 
       // Overflow short text, npos.
       compare_text.assign(short_text.c_str());
@@ -1125,17 +1561,19 @@ namespace
 
       is_equal = Equal(compare_text, text);
       CHECK(is_equal);
+      CHECK(text.truncated());
 
       // Non-overflow.
       compare_text.assign(initial_text.c_str());
       text.assign(initial_text.c_str());
 
-      compare_text.replace(2, 2, Compare_Text(STR("Replace")));
+      compare_text.replace(2, 7, Compare_Text(STR("Replace")));
       compare_text.resize(std::min(compare_text.size(), SIZE));
-      text.replace(2, 2, Text(STR("Replace")));
+      text.replace(2, 7, Text(STR("Replace")));
 
       is_equal = Equal(compare_text, text);
       CHECK(is_equal);
+      CHECK(!text.truncated());
 
       // Overflow.
       compare_text.assign(initial_text.c_str());
@@ -1147,6 +1585,7 @@ namespace
 
       is_equal = Equal(compare_text, text);
       CHECK(is_equal);
+      CHECK(text.truncated());
 
       // Overflow, npos.
       compare_text.assign(initial_text.c_str());
@@ -1158,6 +1597,7 @@ namespace
 
       is_equal = Equal(compare_text, text);
       CHECK(is_equal);
+      CHECK(text.truncated());
     }
 
     //*************************************************************************
@@ -1173,6 +1613,7 @@ namespace
 
       bool is_equal = Equal(compare_text, text);
       CHECK(is_equal);
+      CHECK(!text.truncated());
 
       // Overflow short text.
       compare_text.assign(short_text.c_str());
@@ -1184,17 +1625,19 @@ namespace
 
       is_equal = Equal(compare_text, text);
       CHECK(is_equal);
+      CHECK(text.truncated());
 
       // Non-overflow.
       compare_text.assign(initial_text.c_str());
       text.assign(initial_text.c_str());
 
-      compare_text.replace(compare_text.begin() + 2, compare_text.begin() + 4, Compare_Text(STR("Replace")));
+      compare_text.replace(compare_text.begin() + 2, compare_text.begin() + 9, Compare_Text(STR("Replace")));
       compare_text.resize(std::min(compare_text.size(), SIZE));
-      text.replace(text.begin() + 2, text.begin() + 4, Text(STR("Replace")));
+      text.replace(text.begin() + 2, text.begin() + 9, Text(STR("Replace")));
 
       is_equal = Equal(compare_text, text);
       CHECK(is_equal);
+      CHECK(!text.truncated());
 
       // Overflow.
       compare_text.assign(initial_text.c_str());
@@ -1206,6 +1649,7 @@ namespace
 
       is_equal = Equal(compare_text, text);
       CHECK(is_equal);
+      CHECK(text.truncated());
     }
 
     //*************************************************************************
@@ -1221,6 +1665,7 @@ namespace
 
       bool is_equal = Equal(compare_text, text);
       CHECK(is_equal);
+      CHECK(!text.truncated());
 
       // Non-overflow short text, npos.
       compare_text.assign(short_text.c_str());
@@ -1232,6 +1677,7 @@ namespace
 
       is_equal = Equal(compare_text, text);
       CHECK(is_equal);
+      CHECK(!text.truncated());
 
       // Overflow short text.
       compare_text.assign(short_text.c_str());
@@ -1243,6 +1689,7 @@ namespace
 
       is_equal = Equal(compare_text, text);
       CHECK(is_equal);
+      CHECK(text.truncated());
 
       // Overflow short text, npos.
       compare_text.assign(short_text.c_str());
@@ -1254,17 +1701,19 @@ namespace
 
       is_equal = Equal(compare_text, text);
       CHECK(is_equal);
+      CHECK(text.truncated());
 
       // Non-overflow.
       compare_text.assign(initial_text.c_str());
       text.assign(initial_text.c_str());
 
-      compare_text.replace(2, 4, Compare_Text(STR("Replace")), 1, 5);
+      compare_text.replace(2, 7, Compare_Text(STR("Replace")), 1, 5);
       compare_text.resize(std::min(compare_text.size(), SIZE));
-      text.replace(2, 4, Text(STR("Replace")), 1, 5);
+      text.replace(2, 7, Text(STR("Replace")), 1, 5);
 
       is_equal = Equal(compare_text, text);
       CHECK(is_equal);
+      CHECK(!text.truncated());
 
       // Non-overflow, npos.
       compare_text.assign(initial_text.c_str());
@@ -1276,6 +1725,7 @@ namespace
 
       is_equal = Equal(compare_text, text);
       CHECK(is_equal);
+      CHECK(!text.truncated());
 
       // Overflow.
       compare_text.assign(initial_text.c_str());
@@ -1287,6 +1737,7 @@ namespace
 
       is_equal = Equal(compare_text, text);
       CHECK(is_equal);
+      CHECK(text.truncated());
 
       // Overflow, npos.
       compare_text.assign(initial_text.c_str());
@@ -1298,6 +1749,7 @@ namespace
 
       is_equal = Equal(compare_text, text);
       CHECK(is_equal);
+      CHECK(text.truncated());
     }
 
     //*************************************************************************
@@ -1313,6 +1765,7 @@ namespace
 
       bool is_equal = Equal(compare_text, text);
       CHECK(is_equal);
+      CHECK(!text.truncated());
 
       // Non-overflow short text, npos.
       compare_text.assign(short_text.c_str());
@@ -1324,6 +1777,7 @@ namespace
 
       is_equal = Equal(compare_text, text);
       CHECK(is_equal);
+      CHECK(!text.truncated());
 
       // Overflow short text.
       compare_text.assign(short_text.c_str());
@@ -1335,6 +1789,7 @@ namespace
 
       is_equal = Equal(compare_text, text);
       CHECK(is_equal);
+      CHECK(text.truncated());
 
       // Overflow short text, npos.
       compare_text.assign(short_text.c_str());
@@ -1346,17 +1801,19 @@ namespace
 
       is_equal = Equal(compare_text, text);
       CHECK(is_equal);
+      CHECK(text.truncated());
 
       // Non-overflow.
       compare_text.assign(initial_text.c_str());
       text.assign(initial_text.c_str());
 
-      compare_text.replace(2, 4, Compare_Text(STR("Replace")).c_str());
+      compare_text.replace(2, 7, Compare_Text(STR("Replace")).c_str());
       compare_text.resize(std::min(compare_text.size(), SIZE));
-      text.replace(2, 4, Text(STR("Replace")).c_str());
+      text.replace(2, 7, Text(STR("Replace")).c_str());
 
       is_equal = Equal(compare_text, text);
       CHECK(is_equal);
+      CHECK(!text.truncated());
 
       // Non-overflow, npos.
       compare_text.assign(initial_text.c_str());
@@ -1368,6 +1825,7 @@ namespace
 
       is_equal = Equal(compare_text, text);
       CHECK(is_equal);
+      CHECK(!text.truncated());
 
       // Overflow.
       compare_text.assign(initial_text.c_str());
@@ -1379,6 +1837,7 @@ namespace
 
       is_equal = Equal(compare_text, text);
       CHECK(is_equal);
+      CHECK(text.truncated());
 
       // Overflow, npos.
       compare_text.assign(initial_text.c_str());
@@ -1390,6 +1849,7 @@ namespace
 
       is_equal = Equal(compare_text, text);
       CHECK(is_equal);
+      CHECK(text.truncated());
     }
 
     //*************************************************************************
@@ -1405,6 +1865,7 @@ namespace
 
       bool is_equal = Equal(compare_text, text);
       CHECK(is_equal);
+      CHECK(!text.truncated());
 
       // Overflow short text.
       compare_text.assign(short_text.c_str());
@@ -1416,17 +1877,19 @@ namespace
 
       is_equal = Equal(compare_text, text);
       CHECK(is_equal);
+      CHECK(text.truncated());
 
       // Non-overflow.
       compare_text.assign(initial_text.c_str());
       text.assign(initial_text.c_str());
 
-      compare_text.replace(compare_text.begin() + 2, compare_text.begin() + 4, Compare_Text(STR("Replace")).c_str());
+      compare_text.replace(compare_text.begin() + 2, compare_text.begin() + 9, Compare_Text(STR("Replace")).c_str());
       compare_text.resize(std::min(compare_text.size(), SIZE));
-      text.replace(text.begin() + 2, text.begin() + 4, Text(STR("Replace")).c_str());
+      text.replace(text.begin() + 2, text.begin() + 9, Text(STR("Replace")).c_str());
 
       is_equal = Equal(compare_text, text);
       CHECK(is_equal);
+      CHECK(!text.truncated());
 
       // Overflow.
       compare_text.assign(initial_text.c_str());
@@ -1438,6 +1901,7 @@ namespace
 
       is_equal = Equal(compare_text, text);
       CHECK(is_equal);
+      CHECK(text.truncated());
     }
 
     //*************************************************************************
@@ -1453,6 +1917,7 @@ namespace
 
       bool is_equal = Equal(compare_text, text);
       CHECK(is_equal);
+      CHECK(!text.truncated());
 
       // Non-overflow short text, npos.
       compare_text.assign(short_text.c_str());
@@ -1464,6 +1929,7 @@ namespace
 
       is_equal = Equal(compare_text, text);
       CHECK(is_equal);
+      CHECK(!text.truncated());
 
       // Overflow short text.
       compare_text.assign(short_text.c_str());
@@ -1475,6 +1941,7 @@ namespace
 
       is_equal = Equal(compare_text, text);
       CHECK(is_equal);
+      CHECK(text.truncated());
 
       // Overflow short text, npos.
       compare_text.assign(short_text.c_str());
@@ -1486,17 +1953,19 @@ namespace
 
       is_equal = Equal(compare_text, text);
       CHECK(is_equal);
+      CHECK(text.truncated());
 
       // Non-overflow.
       compare_text.assign(initial_text.c_str());
       text.assign(initial_text.c_str());
 
-      compare_text.replace(2, 4, Compare_Text(STR("Replace")).c_str(), 5);
+      compare_text.replace(2, 7, Compare_Text(STR("Replace")).c_str(), 5);
       compare_text.resize(std::min(compare_text.size(), SIZE));
-      text.replace(2, 4, Text(STR("Replace")).c_str(), 5);
+      text.replace(2, 7, Text(STR("Replace")).c_str(), 5);
 
       is_equal = Equal(compare_text, text);
       CHECK(is_equal);
+      CHECK(!text.truncated());
 
       // Non-overflow, npos.
       compare_text.assign(initial_text.c_str());
@@ -1508,6 +1977,7 @@ namespace
 
       is_equal = Equal(compare_text, text);
       CHECK(is_equal);
+      CHECK(!text.truncated());
 
       // Overflow.
       compare_text.assign(initial_text.c_str());
@@ -1519,6 +1989,7 @@ namespace
 
       is_equal = Equal(compare_text, text);
       CHECK(is_equal);
+      CHECK(text.truncated());
 
       // Overflow, npos.
       compare_text.assign(initial_text.c_str());
@@ -1530,6 +2001,7 @@ namespace
 
       is_equal = Equal(compare_text, text);
       CHECK(is_equal);
+      CHECK(text.truncated());
     }
 
     //*************************************************************************
@@ -1545,6 +2017,7 @@ namespace
 
       bool is_equal = Equal(compare_text, text);
       CHECK(is_equal);
+      CHECK(!text.truncated());
 
       // Overflow short text.
       compare_text.assign(short_text.c_str());
@@ -1556,17 +2029,19 @@ namespace
 
       is_equal = Equal(compare_text, text);
       CHECK(is_equal);
+      CHECK(text.truncated());
 
       // Non-overflow.
       compare_text.assign(initial_text.c_str());
       text.assign(initial_text.c_str());
 
-      compare_text.replace(compare_text.begin() + 2, compare_text.begin() + 4, Compare_Text(STR("Replace")).c_str(), 5);
+      compare_text.replace(compare_text.begin() + 2, compare_text.begin() + 9, Compare_Text(STR("Replace")).c_str(), 5);
       compare_text.resize(std::min(compare_text.size(), SIZE));
-      text.replace(text.begin() + 2, text.begin() + 4, Text(STR("Replace")).c_str(), 5);
+      text.replace(text.begin() + 2, text.begin() + 9, Text(STR("Replace")).c_str(), 5);
 
       is_equal = Equal(compare_text, text);
       CHECK(is_equal);
+      CHECK(!text.truncated());
 
       // Overflow.
       compare_text.assign(initial_text.c_str());
@@ -1578,6 +2053,7 @@ namespace
 
       is_equal = Equal(compare_text, text);
       CHECK(is_equal);
+      CHECK(text.truncated());
     }
 
     //*************************************************************************
@@ -1593,6 +2069,7 @@ namespace
 
       bool is_equal = Equal(compare_text, text);
       CHECK(is_equal);
+      CHECK(!text.truncated());
 
       // Non-overflow short text, npos.
       compare_text.assign(short_text.c_str());
@@ -1604,6 +2081,7 @@ namespace
 
       is_equal = Equal(compare_text, text);
       CHECK(is_equal);
+      CHECK(!text.truncated());
 
       // Overflow short text.
       compare_text.assign(short_text.c_str());
@@ -1615,6 +2093,7 @@ namespace
 
       is_equal = Equal(compare_text, text);
       CHECK(is_equal);
+      CHECK(text.truncated());
 
       // Overflow short text, npos.
       compare_text.assign(short_text.c_str());
@@ -1626,17 +2105,19 @@ namespace
 
       is_equal = Equal(compare_text, text);
       CHECK(is_equal);
+      CHECK(text.truncated());
 
       // Non-overflow.
       compare_text.assign(initial_text.c_str());
       text.assign(initial_text.c_str());
 
-      compare_text.replace(2, 4, 7, STR('A'));
+      compare_text.replace(2, 7, 7, STR('A'));
       compare_text.resize(std::min(compare_text.size(), SIZE));
-      text.replace(2, 4, 7, STR('A'));
+      text.replace(2, 7, 7, STR('A'));
 
       is_equal = Equal(compare_text, text);
       CHECK(is_equal);
+      CHECK(!text.truncated());
 
       // Non-overflow, npos.
       compare_text.assign(initial_text.c_str());
@@ -1648,6 +2129,7 @@ namespace
 
       is_equal = Equal(compare_text, text);
       CHECK(is_equal);
+      CHECK(!text.truncated());
 
       // Overflow.
       compare_text.assign(initial_text.c_str());
@@ -1659,6 +2141,7 @@ namespace
 
       is_equal = Equal(compare_text, text);
       CHECK(is_equal);
+      CHECK(text.truncated());
 
       // Overflow, npos.
       compare_text.assign(initial_text.c_str());
@@ -1670,6 +2153,7 @@ namespace
 
       is_equal = Equal(compare_text, text);
       CHECK(is_equal);
+      CHECK(text.truncated());
     }
 
     //*************************************************************************
@@ -1685,6 +2169,7 @@ namespace
 
       bool is_equal = Equal(compare_text, text);
       CHECK(is_equal);
+      CHECK(!text.truncated());
 
       // Overflow short text.
       compare_text.assign(short_text.c_str());
@@ -1696,17 +2181,19 @@ namespace
 
       is_equal = Equal(compare_text, text);
       CHECK(is_equal);
+      CHECK(text.truncated());
 
       // Non-overflow.
       compare_text.assign(initial_text.c_str());
       text.assign(initial_text.c_str());
 
-      compare_text.replace(compare_text.begin() + 2, compare_text.begin() + 4, 7, STR('A'));
+      compare_text.replace(compare_text.begin() + 2, compare_text.begin() + 9, 7, STR('A'));
       compare_text.resize(std::min(compare_text.size(), SIZE));
-      text.replace(text.begin() + 2, text.begin() + 4, 7, STR('A'));
+      text.replace(text.begin() + 2, text.begin() + 9, 7, STR('A'));
 
       is_equal = Equal(compare_text, text);
       CHECK(is_equal);
+      CHECK(!text.truncated());
 
       // Overflow.
       compare_text.assign(initial_text.c_str());
@@ -1718,6 +2205,7 @@ namespace
 
       is_equal = Equal(compare_text, text);
       CHECK(is_equal);
+      CHECK(text.truncated());
     }
 
     //*************************************************************************
@@ -1736,6 +2224,7 @@ namespace
 
       bool is_equal = Equal(compare_text, text);
       CHECK(is_equal);
+      CHECK(!text.truncated());
 
       // Overflow short text.
       compare_text.assign(short_text.c_str());
@@ -1747,17 +2236,19 @@ namespace
 
       is_equal = Equal(compare_text, text);
       CHECK(is_equal);
+      CHECK(text.truncated());
 
       // Non-overflow.
       compare_text.assign(initial_text.c_str());
       text.assign(initial_text.c_str());
 
-      compare_text.replace(compare_text.begin() + 2, compare_text.begin() + 4, replace.begin() + 1, replace.begin() + 5);
+      compare_text.replace(compare_text.begin() + 2, compare_text.begin() + 7, replace.begin() + 1, replace.begin() + 5);
       compare_text.resize(std::min(compare_text.size(), SIZE));
-      text.replace(text.begin() + 2, text.begin() + 4, replace_long.begin() + 1, replace_long.begin() + 5);
+      text.replace(text.begin() + 2, text.begin() + 7, replace_long.begin() + 1, replace_long.begin() + 5);
 
       is_equal = Equal(compare_text, text);
       CHECK(is_equal);
+      CHECK(!text.truncated());
 
       // Overflow.
       compare_text.assign(initial_text.c_str());
@@ -1769,6 +2260,7 @@ namespace
 
       is_equal = Equal(compare_text, text);
       CHECK(is_equal);
+      CHECK(text.truncated());
     }
 
     //*************************************************************************
@@ -1782,6 +2274,7 @@ namespace
 
       bool is_equal = Equal(compare_text, text);
       CHECK(is_equal);
+      CHECK(!text.truncated());
     }
 
     //*************************************************************************
@@ -1796,6 +2289,7 @@ namespace
 
       bool is_equal = Equal(compare_text, text);
       CHECK(is_equal);
+      CHECK(!text.truncated());
     }
 
     //*************************************************************************
@@ -1805,6 +2299,7 @@ namespace
       text.clear();
 
       CHECK_EQUAL(text.size(), size_t(0));
+      CHECK(!text.truncated());
     }
 
     //*************************************************************************
@@ -1813,8 +2308,9 @@ namespace
       Compare_Text compare_text(initial_text.c_str());
       Text text(initial_text.c_str());
 
-      bool is_equal = Equal(compare_text, text);
+      bool is_equal = std::equal(text.begin(), text.end(), compare_text.begin());
       CHECK(is_equal);
+      CHECK(!text.truncated());
     }
 
     //*************************************************************************
@@ -1823,8 +2319,9 @@ namespace
       Compare_Text compare_text(initial_text.c_str());
       Text text(initial_text.c_str());
 
-      bool is_equal = Equal(compare_text, text);
+      bool is_equal = std::equal(text.cbegin(), text.cend(), compare_text.cbegin());
       CHECK(is_equal);
+      CHECK(!text.truncated());
     }
 
     //*************************************************************************
@@ -1833,8 +2330,9 @@ namespace
       Compare_Text compare_text(initial_text.c_str());
       Text text(initial_text.c_str());
 
-      bool is_equal = Equal(compare_text, text);
+      bool is_equal = std::equal(text.rbegin(), text.rend(), compare_text.rbegin());
       CHECK(is_equal);
+      CHECK(!text.truncated());
     }
 
     //*************************************************************************
@@ -1843,8 +2341,9 @@ namespace
       Compare_Text compare_text(initial_text.c_str());
       Text text(initial_text.c_str());
 
-      bool is_equal = Equal(compare_text, text);
+      bool is_equal = std::equal(text.crbegin(), text.crend(), compare_text.crbegin());
       CHECK(is_equal);
+      CHECK(!text.truncated());
     }
 
     //*************************************************************************
@@ -1902,18 +2401,18 @@ namespace
       CHECK((initial < initial) == (initial_text < initial_text));
       CHECK((initial < initial) == (initial_text < initial_text));
 
-      // String-Pointer Pointer-String 
+      // String-Pointer Pointer-String
       CHECK((less          < pinitial_text) == (less_text     < pinitial_text));
-      CHECK((pinitial_text < less) == (pinitial_text < less_text));
+      CHECK((pinitial_text < less)          == (pinitial_text < less_text));
 
       CHECK((greater       < pinitial_text) == (greater_text  < pinitial_text));
-      CHECK((pinitial_text < greater) == (pinitial_text < greater_text));
+      CHECK((pinitial_text < greater)       == (pinitial_text < greater_text));
 
       CHECK((shorter       < pinitial_text) == (shorter_text  < pinitial_text));
-      CHECK((pinitial_text < shorter) == (pinitial_text < shorter_text));
+      CHECK((pinitial_text < shorter)       == (pinitial_text < shorter_text));
 
       CHECK((initial       < pinitial_text) == (initial_text  < pinitial_text));
-      CHECK((pinitial_text < initial) == (pinitial_text < initial_text));
+      CHECK((pinitial_text < initial)       == (pinitial_text < initial_text));
     }
 
     //*************************************************************************
@@ -1923,8 +2422,8 @@ namespace
       const Text initial(initial_text.c_str());
 
       // String-String
-      CHECK((less <= initial) == (less_text <= initial_text));
-      CHECK((initial <= less) == (initial_text <= less_text));
+      CHECK((less    <= initial) == (less_text    <= initial_text));
+      CHECK((initial <= less)    == (initial_text <= less_text));
 
       const Text greater(greater_text.c_str());
       CHECK((greater <= initial) == (greater_text <= initial_text));
@@ -1937,18 +2436,18 @@ namespace
       CHECK((initial <= initial) == (initial_text <= initial_text));
       CHECK((initial <= initial) == (initial_text <= initial_text));
 
-      // String-Pointer Pointer-String 
-      CHECK((less <= pinitial_text) == (less_text <= pinitial_text));
-      CHECK((pinitial_text <= less) == (pinitial_text <= less_text));
+      // String-Pointer Pointer-String
+      CHECK((less          <= pinitial_text) == (less_text     <= pinitial_text));
+      CHECK((pinitial_text <= less)          == (pinitial_text <= less_text));
 
-      CHECK((greater <= pinitial_text) == (greater_text <= pinitial_text));
-      CHECK((pinitial_text <= greater) == (pinitial_text <= greater_text));
+      CHECK((greater       <= pinitial_text) == (greater_text  <= pinitial_text));
+      CHECK((pinitial_text <= greater)       == (pinitial_text <= greater_text));
 
-      CHECK((shorter <= pinitial_text) == (shorter_text <= pinitial_text));
-      CHECK((pinitial_text <= shorter) == (pinitial_text <= shorter_text));
+      CHECK((shorter       <= pinitial_text) == (shorter_text  <= pinitial_text));
+      CHECK((pinitial_text <= shorter)       == (pinitial_text <= shorter_text));
 
-      CHECK((initial <= pinitial_text) == (initial_text <= pinitial_text));
-      CHECK((pinitial_text <= initial) == (pinitial_text <= initial_text));
+      CHECK((initial       <= pinitial_text) == (initial_text  <= pinitial_text));
+      CHECK((pinitial_text <= initial)       == (pinitial_text <= initial_text));
     }
 
     //*************************************************************************
@@ -1972,18 +2471,18 @@ namespace
       CHECK((initial > initial) == (initial_text > initial_text));
       CHECK((initial > initial) == (initial_text > initial_text));
 
-      // String-Pointer Pointer-String 
+      // String-Pointer Pointer-String
       CHECK((less          > pinitial_text) == (less_text     > pinitial_text));
-      CHECK((pinitial_text > less) == (pinitial_text > less_text));
+      CHECK((pinitial_text > less)          == (pinitial_text > less_text));
 
       CHECK((greater       > pinitial_text) == (greater_text  > pinitial_text));
-      CHECK((pinitial_text > greater) == (pinitial_text > greater_text));
+      CHECK((pinitial_text > greater)       == (pinitial_text > greater_text));
 
       CHECK((shorter       > pinitial_text) == (shorter_text  > pinitial_text));
-      CHECK((pinitial_text > shorter) == (pinitial_text > shorter_text));
+      CHECK((pinitial_text > shorter)       == (pinitial_text > shorter_text));
 
       CHECK((initial       > pinitial_text) == (initial_text  > pinitial_text));
-      CHECK((pinitial_text > initial) == (pinitial_text > initial_text));
+      CHECK((pinitial_text > initial)       == (pinitial_text > initial_text));
     }
 
     //*************************************************************************
@@ -1993,8 +2492,8 @@ namespace
       const Text initial(initial_text.begin(), initial_text.end());
 
       // String-String
-      CHECK((less >= initial) == (less_text >= initial_text));
-      CHECK((initial >= less) == (initial_text >= less_text));
+      CHECK((less    >= initial) == (less_text    >= initial_text));
+      CHECK((initial >= less)    == (initial_text >= less_text));
 
       const Text greater(greater_text.begin(), greater_text.end());
       CHECK((greater >= initial) == (greater_text >= initial_text));
@@ -2007,18 +2506,18 @@ namespace
       CHECK((initial >= initial) == (initial_text >= initial_text));
       CHECK((initial >= initial) == (initial_text >= initial_text));
 
-      // String-Pointer Pointer-String 
-      CHECK((less >= pinitial_text) == (less_text >= pinitial_text));
-      CHECK((pinitial_text >= less) == (pinitial_text >= less_text));
+      // String-Pointer Pointer-String
+      CHECK((less          >= pinitial_text) == (less_text     >= pinitial_text));
+      CHECK((pinitial_text >= less)          == (pinitial_text >= less_text));
 
-      CHECK((greater >= pinitial_text) == (greater_text >= pinitial_text));
-      CHECK((pinitial_text >= greater) == (pinitial_text >= greater_text));
+      CHECK((greater       >= pinitial_text) == (greater_text  >= pinitial_text));
+      CHECK((pinitial_text >= greater)       == (pinitial_text >= greater_text));
 
-      CHECK((shorter >= pinitial_text) == (shorter_text >= pinitial_text));
-      CHECK((pinitial_text >= shorter) == (pinitial_text >= shorter_text));
+      CHECK((shorter       >= pinitial_text) == (shorter_text  >= pinitial_text));
+      CHECK((pinitial_text >= shorter)       == (pinitial_text >= shorter_text));
 
-      CHECK((initial >= pinitial_text) == (initial_text >= pinitial_text));
-      CHECK((pinitial_text >= initial) == (pinitial_text >= initial_text));
+      CHECK((initial       >= pinitial_text) == (initial_text  >= pinitial_text));
+      CHECK((pinitial_text >= initial)       == (pinitial_text >= initial_text));
     }
 
     //*************************************************************************
@@ -2033,21 +2532,22 @@ namespace
       size_t length1 = compare_text.copy(buffer1, 5, 2);
       buffer1[length1] = STR('\0');
 
-      size_t length2 = compare_text.copy(buffer2, 5, 2);
+      size_t length2 = text.copy(buffer2, 5, 2);
       buffer2[length2] = STR('\0');
 
       CHECK_EQUAL(length1, length2);
+      CHECK(!text.truncated());
 
       bool is_equal = std::equal(buffer1,
-                                 buffer1 + length1,
-                                 buffer2);
+        buffer1 + length1,
+        buffer2);
       CHECK(is_equal);
     }
 
     //*************************************************************************
     TEST_FIXTURE(SetupFixture, test_find_string)
     {
-      const value_t *the_haystack = STR("A haystack with a needle and another needle");
+      const value_t* the_haystack = STR("A haystack with a needle and another needle");
 
       std::u32string compare_needle(STR("needle"));
       etl::u32string<50> needle(STR("needle"));
@@ -2067,7 +2567,7 @@ namespace
       CHECK_EQUAL(position1, position2);
 
       position2 = haystack.find(needle, position2 + 1);
-      CHECK_EQUAL(etl::iu32string::npos, position2);
+      CHECK_EQUAL(etl::u32string<50>::npos, position2);
 
       etl::u32string<50> pin(STR("pin"));
       position2 = haystack.find(pin);
@@ -2075,9 +2575,9 @@ namespace
     }
 
     //*************************************************************************
-    TEST_FIXTURE(SetupFixture, test_find_char_pointer)
+    TEST_FIXTURE(SetupFixture, test_find_pointer)
     {
-      const value_t *the_haystack = STR("A haystack with a needle and another needle");
+      const value_t* the_haystack = STR("A haystack with a needle and another needle");
 
       const value_t* needle = STR("needle");
 
@@ -2106,7 +2606,7 @@ namespace
     //*************************************************************************
     TEST_FIXTURE(SetupFixture, test_find_char_pointer_n)
     {
-      const value_t *the_haystack = STR("A haystack with a needle and another needle");
+      const value_t* the_haystack = STR("A haystack with a needle and another needle");
 
       const value_t* needle = STR("needle");
 
@@ -2242,7 +2742,7 @@ namespace
       Compare_Text compare_result;
       Text result;
 
-      // Empty string.
+      // Equal.
       compare_result = compare_text.substr(compare_text.size());
       result = text.substr(text.size());
       CHECK(Equal(compare_result, result));
@@ -2283,27 +2783,27 @@ namespace
       // Equal.
       compare_result = compare_text.compare(Compare_Text(STR("ABCDEF")));
       result = text.compare(Text(STR("ABCDEF")));
-      CHECK_EQUAL(compare_result, result);
+      CHECK(compares_agree(compare_result, result));
 
       // Less.
       compare_result = compare_text.compare(Compare_Text(STR("ABCDEE")));
       result = text.compare(Text(STR("ABCDEE")));
-      CHECK_EQUAL(compare_result, result);
+      CHECK(compares_agree(compare_result, result));
 
       // Greater.
       compare_result = compare_text.compare(Compare_Text(STR("ABCDEG")));
       result = text.compare(Text(STR("ABCDEG")));
-      CHECK_EQUAL(compare_result, result);
+      CHECK(compares_agree(compare_result, result));
 
       // Shorter.
       compare_result = compare_text.compare(Compare_Text(STR("ABCDE")));
       result = text.compare(Text(STR("ABCDE")));
-      CHECK_EQUAL(compare_result, result);
+      CHECK(compares_agree(compare_result, result));
 
       // Longer.
       compare_result = compare_text.compare(Compare_Text(STR("ABCDEFG")));
       result = text.compare(Text(STR("ABCDEFG")));
-      CHECK_EQUAL(compare_result, result);
+      CHECK(compares_agree(compare_result, result));
     }
 
     //*************************************************************************
@@ -2318,27 +2818,27 @@ namespace
       // Equal.
       compare_result = compare_text.compare(3, 6, Compare_Text(STR("ABCDEF")));
       result = text.compare(3, 6, Text(STR("ABCDEF")));
-      CHECK_EQUAL(compare_result, result);
+      CHECK(compares_agree(compare_result, result));
 
       // Less.
       compare_result = compare_text.compare(3, 6, Compare_Text(STR("ABCDEE")));
       result = text.compare(3, 6, Text(STR("ABCDEE")));
-      CHECK_EQUAL(compare_result, result);
+      CHECK(compares_agree(compare_result, result));
 
       // Greater.
       compare_result = compare_text.compare(3, 6, Compare_Text(STR("ABCDEG")));
       result = text.compare(3, 6, Text(STR("ABCDEG")));
-      CHECK_EQUAL(compare_result, result);
+      CHECK(compares_agree(compare_result, result));
 
       // Shorter.
       compare_result = compare_text.compare(3, 6, Compare_Text(STR("ABCDE")));
       result = text.compare(3, 6, Text(STR("ABCDE")));
-      CHECK_EQUAL(compare_result, result);
+      CHECK(compares_agree(compare_result, result));
 
       // Longer.
       compare_result = compare_text.compare(3, 6, Compare_Text(STR("ABCDEFG")));
       result = text.compare(3, 6, Text(STR("ABCDEFG")));
-      CHECK_EQUAL(compare_result, result);
+      CHECK(compares_agree(compare_result, result));
     }
 
     //*************************************************************************
@@ -2353,27 +2853,27 @@ namespace
       // Equal.
       compare_result = compare_text.compare(3, 6, Compare_Text(STR("aaABCDEFbb")), 2, 6);
       result = text.compare(3, 6, Text(STR("aaABCDEFbb")), 2, 6);
-      CHECK_EQUAL(compare_result, result);
+      CHECK(compares_agree(compare_result, result));
 
       // Less.
       compare_result = compare_text.compare(3, 6, Compare_Text(STR("aaABCDEEbb")), 2, 6);
       result = text.compare(3, 6, Text(STR("aaABCDEEbb")), 2, 6);
-      CHECK_EQUAL(compare_result, result);
+      CHECK(compares_agree(compare_result, result));
 
       // Greater.
       compare_result = compare_text.compare(3, 6, Compare_Text(STR("aaABCDEGbb")), 2, 6);
       result = text.compare(3, 6, Text(STR("aaABCDEGbb")), 2, 6);
-      CHECK_EQUAL(compare_result, result);
+      CHECK(compares_agree(compare_result, result));
 
       // Shorter.
       compare_result = compare_text.compare(3, 6, Compare_Text(STR("aaABCDEbb")), 2, 5);
       result = text.compare(3, 6, Text(STR("aaABCDEbb")), 2, 5);
-      CHECK_EQUAL(compare_result, result);
+      CHECK(compares_agree(compare_result, result));
 
       // Longer.
       compare_result = compare_text.compare(3, 6, Compare_Text(STR("aaABCDEFGbb")), 2, 7);
       result = text.compare(3, 6, Text(STR("aaABCDEFGbb")), 2, 7);
-      CHECK_EQUAL(compare_result, result);
+      CHECK(compares_agree(compare_result, result));
     }
 
     //*************************************************************************
@@ -2388,27 +2888,27 @@ namespace
       // Equal.
       compare_result = compare_text.compare(STR("ABCDEF"));
       result = text.compare(STR("ABCDEF"));
-      CHECK_EQUAL(compare_result, result);
+      CHECK(compares_agree(compare_result, result));
 
       // Less.
       compare_result = compare_text.compare(STR("ABCDEE"));
       result = text.compare(STR("ABCDEE"));
-      CHECK_EQUAL(compare_result, result);
+      CHECK(compares_agree(compare_result, result));
 
       // Greater.
       compare_result = compare_text.compare(STR("ABCDEG"));
       result = text.compare(STR("ABCDEG"));
-      CHECK_EQUAL(compare_result, result);
+      CHECK(compares_agree(compare_result, result));
 
       // Shorter.
       compare_result = compare_text.compare(STR("ABCDE"));
       result = text.compare(STR("ABCDE"));
-      CHECK_EQUAL(compare_result, result);
+      CHECK(compares_agree(compare_result, result));
 
       // Longer.
       compare_result = compare_text.compare(STR("ABCDEFG"));
       result = text.compare(STR("ABCDEFG"));
-      CHECK_EQUAL(compare_result, result);
+      CHECK(compares_agree(compare_result, result));
     }
 
     //*************************************************************************
@@ -2423,27 +2923,27 @@ namespace
       // Equal.
       compare_result = compare_text.compare(3, 6, STR("ABCDEF"));
       result = text.compare(3, 6, STR("ABCDEF"));
-      CHECK_EQUAL(compare_result, result);
+      CHECK(compares_agree(compare_result, result));
 
       // Less.
       compare_result = compare_text.compare(3, 6, STR("ABCDEE"));
       result = text.compare(3, 6, STR("ABCDEE"));
-      CHECK_EQUAL(compare_result, result);
+      CHECK(compares_agree(compare_result, result));
 
       // Greater.
       compare_result = compare_text.compare(3, 6, STR("ABCDEG"));
       result = text.compare(3, 6, STR("ABCDEG"));
-      CHECK_EQUAL(compare_result, result);
+      CHECK(compares_agree(compare_result, result));
 
       // Shorter.
       compare_result = compare_text.compare(3, 6, STR("ABCDE"));
       result = text.compare(3, 6, STR("ABCDE"));
-      CHECK_EQUAL(compare_result, result);
+      CHECK(compares_agree(compare_result, result));
 
       // Longer.
       compare_result = compare_text.compare(3, 6, STR("ABCDEFG"));
       result = text.compare(3, 6, STR("ABCDEFG"));
-      CHECK_EQUAL(compare_result, result);
+      CHECK(compares_agree(compare_result, result));
     }
 
     //*************************************************************************
@@ -2458,27 +2958,27 @@ namespace
       // Equal.
       compare_result = compare_text.compare(3, 6, STR("ABCDEFbb"), 6);
       result = text.compare(3, 6, STR("ABCDEFbb"), 6);
-      CHECK_EQUAL(compare_result, result);
+      CHECK(compares_agree(compare_result, result));
 
       // Less.
       compare_result = compare_text.compare(3, 6, STR("ABCDEEbb"), 6);
       result = text.compare(3, 6, STR("ABCDEEbb"), 6);
-      CHECK_EQUAL(compare_result, result);
+      CHECK(compares_agree(compare_result, result));
 
       // Greater.
       compare_result = compare_text.compare(3, 6, STR("ABCDEGbb"), 6);
       result = text.compare(3, 6, STR("ABCDEGbb"), 6);
-      CHECK_EQUAL(compare_result, result);
+      CHECK(compares_agree(compare_result, result));
 
       // Shorter.
       compare_result = compare_text.compare(3, 6, STR("ABCDEbb"), 5);
       result = text.compare(3, 6, STR("ABCDEbb"), 5);
-      CHECK_EQUAL(compare_result, result);
+      CHECK(compares_agree(compare_result, result));
 
       // Longer.
       compare_result = compare_text.compare(3, 6, STR("ABCDEFGbb"), 7);
       result = text.compare(3, 6, STR("ABCDEFGbb"), 7);
-      CHECK_EQUAL(compare_result, result);
+      CHECK(compares_agree(compare_result, result));
     }
 
     //*************************************************************************
@@ -2593,8 +3093,8 @@ namespace
 
       CHECK_EQUAL(position1, position2);
 
-      position1 = compare_text.find_first_of(STR('C'), 5);
-      position2 = text.find_first_of(STR('C'), 5);
+      position1 = compare_text.find_first_of(STR('C'), compare_text.size());
+      position2 = text.find_first_of(STR('C'), text.size());
 
       CHECK_EQUAL(position1, position2);
 
@@ -2620,13 +3120,13 @@ namespace
 
       CHECK_EQUAL(position1, position2);
 
-      position1 = compare_text.find_last_of(Compare_Text(STR("ZCXE")), 3);
-      position2 = text.find_last_of(Text(STR("ZCXE")), 3);
+      position1 = compare_text.find_last_of(Compare_Text(STR("ZCXE")), 5);
+      position2 = text.find_last_of(Text(STR("ZCXE")), 5);
 
       CHECK_EQUAL(position1, position2);
 
-      position1 = compare_text.find_last_of(Compare_Text(STR("ZCXE")), 10);
-      position2 = text.find_last_of(Text(STR("ZCXE")), 10);
+      position1 = compare_text.find_last_of(Compare_Text(STR("ZCXE")), compare_text.size());
+      position2 = text.find_last_of(Text(STR("ZCXE")), text.size());
 
       CHECK_EQUAL(position1, position2);
 
@@ -2652,8 +3152,8 @@ namespace
 
       CHECK_EQUAL(position1, position2);
 
-      position1 = compare_text.find_last_of(STR("ZCXE"), 3);
-      position2 = text.find_last_of(STR("ZCXE"), 3);
+      position1 = compare_text.find_last_of(STR("ZCXE"), 5);
+      position2 = text.find_last_of(STR("ZCXE"), 5);
 
       CHECK_EQUAL(position1, position2);
 
@@ -2662,8 +3162,8 @@ namespace
 
       CHECK_EQUAL(position1, position2);
 
-      position1 = compare_text.find_last_of(STR("ZCXE"), 10);
-      position2 = text.find_last_of(STR("ZCXE"), 10);
+      position1 = compare_text.find_last_of(STR("ZCXE"), compare_text.size());
+      position2 = text.find_last_of(STR("ZCXE"), text.size());
 
       CHECK_EQUAL(position1, position2);
 
@@ -2679,8 +3179,8 @@ namespace
       Compare_Text compare_text(STR("ABCDEFABCDE"));
       Text text(STR("ABCDEFABCDE"));
 
-      size_t position1 = compare_text.find_last_of(STR("ZCXE"), 11, 4);
-      size_t position2 = text.find_last_of(STR("ZCXE"), 11, 4);
+      size_t position1 = compare_text.find_last_of(STR("AZCXE"), 0, 4);
+      size_t position2 = text.find_last_of(STR("AZCXE"), 0, 4);
 
       CHECK_EQUAL(position1, position2);
 
@@ -2689,8 +3189,8 @@ namespace
 
       CHECK_EQUAL(position1, position2);
 
-      position1 = compare_text.find_last_of(STR("ZCXE"), 4, 3);
-      position2 = text.find_last_of(STR("ZCXE"), 4, 3);
+      position1 = compare_text.find_last_of(STR("ZCXE"), 5, 3);
+      position2 = text.find_last_of(STR("ZCXE"), 5, 3);
 
       CHECK_EQUAL(position1, position2);
 
@@ -2699,8 +3199,8 @@ namespace
 
       CHECK_EQUAL(position1, position2);
 
-      position1 = compare_text.find_last_of(STR("ZCXE"), 10, 4);
-      position2 = text.find_last_of(STR("ZCXE"), 10, 4);
+      position1 = compare_text.find_last_of(STR("ZCXE"), compare_text.size(), 4);
+      position2 = text.find_last_of(STR("ZCXE"), text.size(), 4);
 
       CHECK_EQUAL(position1, position2);
 
@@ -2726,8 +3226,8 @@ namespace
 
       CHECK_EQUAL(position1, position2);
 
-      position1 = compare_text.find_last_of(STR('F'), 5);
-      position2 = text.find_last_of(STR('F'), 5);
+      position1 = compare_text.find_last_of(STR('F'), compare_text.size());
+      position2 = text.find_last_of(STR('F'), text.size());
 
       CHECK_EQUAL(position1, position2);
 
@@ -2736,8 +3236,8 @@ namespace
 
       CHECK_EQUAL(position1, position2);
 
-      position1 = compare_text.find_last_of(STR('C'), 5);
-      position2 = text.find_last_of(STR('C'), 5);
+      position1 = compare_text.find_last_of(STR('C'), compare_text.size());
+      position2 = text.find_last_of(STR('C'), text.size());
 
       CHECK_EQUAL(position1, position2);
 
@@ -3024,7 +3524,7 @@ namespace
       // Test with actual string type.
       Text text(STR("ABCDEFHIJKL"));
       size_t hash = etl::hash<Text>()(text);
-      size_t compare_hash = etl::fnv_1a_32(reinterpret_cast<const uint8_t*>(&text[0]), reinterpret_cast<const uint8_t*>(&text[text.size()]));
+      size_t compare_hash = etl::private_hash::generic_hash<size_t>(reinterpret_cast<const uint8_t*>(&text[0]), reinterpret_cast<const uint8_t*>(&text[text.size()]));
       CHECK_EQUAL(compare_hash, hash);
 
       // Test with interface string type.
@@ -3032,7 +3532,8 @@ namespace
       hash = etl::hash<IText>()(itext);
       CHECK_EQUAL(compare_hash, hash);
     }
-    
+
+    //*************************************************************************
     TEST_FIXTURE(SetupFixture, test_memcpy_repair)
     {
       Text text;
@@ -3080,6 +3581,173 @@ namespace
       text = STR("GHIJKL");
       is_equal = Equal(text, itext);
       CHECK(!is_equal);
+    }
+
+    //*************************************************************************
+    TEST_FIXTURE(SetupFixture, test_truncate_over_many_operations)
+    {
+      Text text(short_text.c_str());
+      CHECK(!text.truncated());
+
+      text.insert(3, initial_text.c_str());
+      CHECK(text.truncated());
+
+      while (text.size() != 0)
+      {
+        text.pop_back();
+        CHECK(text.truncated());
+      }
+
+      text.clear();
+      CHECK(!text.truncated());
+
+      text.assign(longer_text.c_str());
+      CHECK(text.truncated());
+
+      text.assign(short_text.c_str());
+      CHECK(!text.truncated());
+    }
+
+    //*************************************************************************
+    TEST_FIXTURE(SetupFixture, test_add_from_truncated)
+    {
+      Text  text1(short_text.c_str());
+      TextS text2(short_text.c_str());
+
+      CHECK(!text1.truncated());
+      CHECK(text2.truncated());
+
+      // text2 has the truncate flag set.
+      text1 += text2;
+
+      CHECK(text1.truncated());
+    }
+
+    //*************************************************************************
+    TEST_FIXTURE(SetupFixture, test_add_to_truncated)
+    {
+      Text text1(longer_text.c_str());
+      Text text2(short_text.c_str());
+
+      CHECK(text1.truncated());
+      CHECK(!text2.truncated());
+
+      // Clear text but not the truncate flag.
+      text1.erase(text1.begin(), text1.end());
+
+      // text1 still has the truncate flag set.
+      text1 += text2;
+
+      CHECK(text1.truncated());
+    }
+
+    //*************************************************************************
+    TEST_FIXTURE(SetupFixture, test_clear_truncated)
+    {
+      Text text(longer_text.c_str());
+      CHECK(text.truncated());
+
+      text.clear_truncated();
+      CHECK(!text.truncated());
+    }
+
+    //*************************************************************************
+    TEST_FIXTURE(SetupFixture, test_secure_after_destructor)
+    {
+      char buffer[sizeof(Text)];
+      std::fill_n(buffer, sizeof(Text), 0);
+      ::new (buffer) Text(STR("ABCDEF"));
+
+      Text& text = *reinterpret_cast<Text*>(buffer);
+      text.set_secure();
+
+      CHECK(Text(STR("ABCDEF")) == text);
+
+      Text::pointer pb = text.begin();
+      Text::pointer pe = text.end();
+
+      // Destroy the text object.
+      text.~Text();
+
+      // Check there no non-zero values in the string.
+      CHECK(std::find_if(pb, pe, [](Text::value_type x) { return x != 0; }) == pe);
+    }
+
+    //*************************************************************************
+    TEST_FIXTURE(SetupFixture, test_secure_after_assign)
+    {
+      Text text;
+      text.set_secure();
+      text.assign(STR("ABCDEF"));
+
+      Text::pointer pb = text.begin();
+      Text::pointer pe = text.end();
+
+      text.assign(STR("ABC"));
+
+      CHECK(std::find_if(text.end(), pe, [](Text::value_type x) { return x != 0; }) == pe);
+    }
+
+    //*************************************************************************
+    TEST_FIXTURE(SetupFixture, test_secure_after_resize_down)
+    {
+      Text text;
+      text.set_secure();
+      text.assign(STR("ABCDEF"));
+
+      Text::pointer pe = text.end();
+
+      text.resize(text.size() - 3U);
+
+      CHECK(std::find_if(text.end(), pe, [](Text::value_type x) { return x != 0; }) == pe);
+    }
+
+    //*************************************************************************
+    TEST_FIXTURE(SetupFixture, test_secure_after_erase)
+    {
+      Text text;
+      text.set_secure();
+      text.assign(STR("ABCDEF"));
+
+      Text::pointer pb = text.begin();
+      Text::pointer pe = text.end();
+
+      text.erase(pb + 2, pb + 5);
+
+      // Check there no non-zero values in the remainder of the string.
+      CHECK(std::find_if(text.end(), pe, [](Text::value_type x) { return x != 0; }) == pe);
+    }
+
+    //*************************************************************************
+    TEST_FIXTURE(SetupFixture, test_secure_after_replace)
+    {
+      Text text;
+      text.set_secure();
+      text.assign(STR("ABCDEF"));
+
+      Text::pointer pb = text.begin();
+      Text::pointer pe = text.end();
+
+      text.replace(pb + 1, pb + 4, STR("G"));
+
+      // Check there no non-zero values in the remainder of the string.
+      CHECK(std::find_if(text.end(), pe, [](Text::value_type x) { return x != 0; }) == pe);
+    }
+
+    //*************************************************************************
+    TEST_FIXTURE(SetupFixture, test_secure_after_clear)
+    {
+      Text text;
+      text.set_secure();
+      text.assign(STR("ABCDEF"));
+
+      Text::pointer pb = text.begin();
+      Text::pointer pe = text.end();
+
+      text.clear();
+
+      // Check there no non-zero values in the remainder of the string.
+      CHECK(std::find_if(pb, pe, [](Text::value_type x) { return x != 0; }) == pe);
     }
   };
 }

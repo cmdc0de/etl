@@ -29,7 +29,7 @@ SOFTWARE.
 #include "UnitTest++.h"
 #include "ExtraCheckMacros.h"
 
-#include "deque.h"
+#include "etl/deque.h"
 
 #include "data.h"
 
@@ -39,6 +39,7 @@ SOFTWARE.
 #include <iostream>
 #include <numeric>
 #include <cstring>
+#include <memory>
 
 namespace
 {
@@ -88,7 +89,6 @@ namespace
     std::vector<int> int_data1 = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13 };
     std::vector<int> int_data2 = { 15, 16, 17, 18 };
 
-
     //*************************************************************************
     TEST(test_constructor)
     {
@@ -108,6 +108,19 @@ namespace
     }
 
     //*************************************************************************
+    TEST(test_destruct_via_ideque)
+    {
+      int current_count = NDC::get_instance_count();
+
+      DataNDC* pdata = new DataNDC(SIZE, N999);
+      CHECK_EQUAL(int(current_count + SIZE), NDC::get_instance_count());
+
+      IDataNDC* pidata = pdata;
+      delete pidata;
+      CHECK_EQUAL(current_count, NDC::get_instance_count());
+    }
+
+    //*************************************************************************
     TEST(test_constructor_fill_excess)
     {
       CHECK_THROW(DataNDC(SIZE + 1, N999), etl::deque_full);
@@ -124,6 +137,16 @@ namespace
     }
 
     //*************************************************************************
+    TEST(test_constructor_initializer_list)
+    {
+      Compare_Data compare_data = { N0, N1, N2, N3 };
+      DataNDC data = { N0, N1, N2, N3 };
+
+      CHECK_EQUAL(compare_data.size(), data.size());
+      CHECK(std::equal(compare_data.begin(), compare_data.end(), data.begin()));
+    }
+
+    //*************************************************************************
     TEST(test_copy_constructor)
     {
       DataNDC deque1(initial_data.begin(), initial_data.end());
@@ -131,6 +154,34 @@ namespace
 
       CHECK_EQUAL(deque1.size(), deque2.size());
       CHECK(std::equal(deque1.begin(), deque1.end(), deque2.begin()));
+    }
+
+    //*************************************************************************
+    TEST(test_move_constructor)
+    {
+      const size_t SIZE = 10U;
+      typedef etl::deque<std::unique_ptr<uint32_t>, SIZE> Data;
+
+      std::unique_ptr<uint32_t> p1(new uint32_t(1U));
+      std::unique_ptr<uint32_t> p2(new uint32_t(2U));
+      std::unique_ptr<uint32_t> p3(new uint32_t(3U));
+      std::unique_ptr<uint32_t> p4(new uint32_t(4U));
+
+      Data deque1;
+      deque1.push_back(std::move(p1));
+      deque1.push_back(std::move(p2));
+      deque1.push_back(std::move(p3));
+      deque1.push_back(std::move(p4));
+
+      Data deque2(std::move(deque1));
+
+      CHECK_EQUAL(0U, deque1.size());
+      CHECK_EQUAL(4U, deque2.size());
+
+      CHECK_EQUAL(1U, *deque2[0]);
+      CHECK_EQUAL(2U, *deque2[1]);
+      CHECK_EQUAL(3U, *deque2[2]);
+      CHECK_EQUAL(4U, *deque2[3]);
     }
 
     //*************************************************************************
@@ -146,6 +197,35 @@ namespace
     }
 
     //*************************************************************************
+    TEST(test_move_assignment)
+    {
+      const size_t SIZE = 10U;
+      typedef etl::deque<std::unique_ptr<uint32_t>, SIZE> Data;
+
+      std::unique_ptr<uint32_t> p1(new uint32_t(1U));
+      std::unique_ptr<uint32_t> p2(new uint32_t(2U));
+      std::unique_ptr<uint32_t> p3(new uint32_t(3U));
+      std::unique_ptr<uint32_t> p4(new uint32_t(4U));
+
+      Data deque1;
+      deque1.push_back(std::move(p1));
+      deque1.push_back(std::move(p2));
+      deque1.push_back(std::move(p3));
+      deque1.push_back(std::move(p4));
+
+      Data deque2;
+      deque2 = std::move(deque1);
+
+      CHECK_EQUAL(0U, deque1.size());
+      CHECK_EQUAL(4U, deque2.size());
+
+      CHECK_EQUAL(1U, *deque2[0]);
+      CHECK_EQUAL(2U, *deque2[1]);
+      CHECK_EQUAL(3U, *deque2[2]);
+      CHECK_EQUAL(4U, *deque2[3]);
+    }
+
+    //*************************************************************************
     TEST(test_assignment_interface)
     {
       DataNDC deque1(initial_data.begin(), initial_data.end());
@@ -158,6 +238,40 @@ namespace
 
       CHECK_EQUAL(deque1.size(), deque2.size());
       CHECK(std::equal(deque1.begin(), deque1.end(), deque2.begin()));
+    }
+
+    //*************************************************************************
+    TEST(test_move_assignment_interface)
+    {
+      const size_t SIZE = 10U;
+      typedef etl::deque<std::unique_ptr<uint32_t>, SIZE> Data;
+      typedef etl::ideque<std::unique_ptr<uint32_t>> IData;
+
+      std::unique_ptr<uint32_t> p1(new uint32_t(1U));
+      std::unique_ptr<uint32_t> p2(new uint32_t(2U));
+      std::unique_ptr<uint32_t> p3(new uint32_t(3U));
+      std::unique_ptr<uint32_t> p4(new uint32_t(4U));
+
+      Data deque1;
+      deque1.push_back(std::move(p1));
+      deque1.push_back(std::move(p2));
+      deque1.push_back(std::move(p3));
+      deque1.push_back(std::move(p4));
+
+      Data deque2;
+
+      IData& ideque1 = deque1;
+      IData& ideque2 = deque2;
+
+      ideque2 = std::move(ideque1);
+
+      CHECK_EQUAL(0U, deque1.size());
+      CHECK_EQUAL(4U, deque2.size());
+
+      CHECK_EQUAL(1U, *deque2[0]);
+      CHECK_EQUAL(2U, *deque2[1]);
+      CHECK_EQUAL(3U, *deque2[2]);
+      CHECK_EQUAL(4U, *deque2[3]);
     }
 
     //*************************************************************************
@@ -605,6 +719,27 @@ namespace
     {
       DataDC data;
 
+      data.resize(SIZE);
+      data.clear();
+      CHECK(data.empty());
+
+      // Do it again to check that clear() didn't screw up the internals.
+      data.resize(SIZE);
+      CHECK_EQUAL(SIZE, data.size());
+      data.clear();
+      CHECK(data.empty());
+    }
+
+    //*************************************************************************
+    TEST(test_clear_pod)
+    {
+      DataInt data;
+
+      data.resize(SIZE);
+      data.clear();
+      CHECK(data.empty());
+
+      // Do it again to check that clear() didn't screw up the internals.
       data.resize(SIZE);
       data.clear();
       CHECK(data.empty());
@@ -1171,35 +1306,6 @@ namespace
     }
 
     //*************************************************************************
-    TEST(test_push_back_null)
-    {
-      Compare_DataDC compare_data = { DC("1"), DC("2"), DC("3"), DC("4"), DC("5") };
-      DataDC data;
-
-      CHECK_NO_THROW(data.push_back());
-      CHECK_NO_THROW(data.back() = DC("1"));
-      CHECK_EQUAL(size_t(1), data.size());
-
-      CHECK_NO_THROW(data.push_back());
-      CHECK_NO_THROW(data.back() = DC("2"));
-      CHECK_EQUAL(size_t(2), data.size());
-
-      CHECK_NO_THROW(data.push_back());
-      CHECK_NO_THROW(data.back() = DC("3"));
-      CHECK_EQUAL(size_t(3), data.size());
-
-      CHECK_NO_THROW(data.push_back());
-      CHECK_NO_THROW(data.back() = DC("4"));
-      CHECK_EQUAL(size_t(4), data.size());
-
-      CHECK_NO_THROW(data.push_back());
-      CHECK_NO_THROW(data.back() = DC("5"));
-      CHECK_EQUAL(size_t(5), data.size());
-
-      CHECK(std::equal(compare_data.begin(), compare_data.end(), data.begin()));
-    }
-
-    //*************************************************************************
     TEST(test_push_back)
     {
       Compare_Data compare_data = { N1, N2, N3, N4, N5 };
@@ -1309,35 +1415,6 @@ namespace
       data.pop_back();
 
       CHECK_THROW(data.pop_back(), etl::deque_empty);
-    }
-
-    //*************************************************************************
-    TEST(test_push_front_null)
-    {
-      Compare_DataDC compare_data = { DC("5"), DC("4"), DC("3"), DC("2"), DC("1") };
-      DataDC data;
-
-      CHECK_NO_THROW(data.push_front());
-      CHECK_NO_THROW(data.front() = DC("1"));
-      CHECK_EQUAL(size_t(1), data.size());
-
-      CHECK_NO_THROW(data.push_front());
-      CHECK_NO_THROW(data.front() = DC("2"));
-      CHECK_EQUAL(size_t(2), data.size());
-
-      CHECK_NO_THROW(data.push_front());
-      CHECK_NO_THROW(data.front() = DC("3"));
-      CHECK_EQUAL(size_t(3), data.size());
-
-      CHECK_NO_THROW(data.push_front());
-      CHECK_NO_THROW(data.front() = DC("4"));
-      CHECK_EQUAL(size_t(4), data.size());
-
-      CHECK_NO_THROW(data.push_front());
-      CHECK_NO_THROW(data.front() = DC("5"));
-      CHECK_EQUAL(size_t(5), data.size());
-
-      CHECK(std::equal(compare_data.begin(), compare_data.end(), data.begin()));
     }
 
     //*************************************************************************
@@ -1701,6 +1778,67 @@ namespace
                             data.begin());
 
       CHECK(!is_equal);
+    }
+
+    //*************************************************************************
+    TEST(test_move)
+    {
+      const size_t SIZE = 10U;
+      typedef etl::deque<std::unique_ptr<uint32_t>, SIZE> Data;
+
+      Data data1;
+
+      std::unique_ptr<uint32_t> p1(new uint32_t(1U));
+      std::unique_ptr<uint32_t> p2(new uint32_t(2U));
+      std::unique_ptr<uint32_t> p3(new uint32_t(3U));
+      std::unique_ptr<uint32_t> p4(new uint32_t(4U));
+      std::unique_ptr<uint32_t> p5(new uint32_t(5U));
+
+      // Move items to data1.
+      data1.push_front(std::move(p1));
+      data1.push_back(std::move(p2));
+      data1.insert(data1.begin(),     std::move(p3));
+      data1.insert(data1.begin() + 1, std::move(p4));
+      data1.insert(data1.end(),       std::move(p5));
+
+      const size_t ACTUAL_SIZE = data1.size();
+
+      CHECK(!bool(p1));
+      CHECK(!bool(p2));
+      CHECK(!bool(p3));
+      CHECK(!bool(p4));
+      CHECK(!bool(p5));
+
+      CHECK_EQUAL(3U, *(*(data1.begin() + 0)));
+      CHECK_EQUAL(4U, *(*(data1.begin() + 1)));
+      CHECK_EQUAL(1U, *(*(data1.begin() + 2)));
+      CHECK_EQUAL(2U, *(*(data1.begin() + 3)));
+      CHECK_EQUAL(5U, *(*(data1.begin() + 4)));
+
+      // Move constructor.
+      Data data2(std::move(data1));
+
+      CHECK_EQUAL(3U, *(*(data2.begin() + 0)));
+      CHECK_EQUAL(4U, *(*(data2.begin() + 1)));
+      CHECK_EQUAL(1U, *(*(data2.begin() + 2)));
+      CHECK_EQUAL(2U, *(*(data2.begin() + 3)));
+      CHECK_EQUAL(5U, *(*(data2.begin() + 4)));
+
+      CHECK(data1.empty());
+      CHECK_EQUAL(ACTUAL_SIZE, data2.size());
+
+      // Move assignment.
+      Data data3;
+      data3 = std::move(data2);
+
+      CHECK_EQUAL(3U, *(*(data3.begin() + 0)));
+      CHECK_EQUAL(4U, *(*(data3.begin() + 1)));
+      CHECK_EQUAL(1U, *(*(data3.begin() + 2)));
+      CHECK_EQUAL(2U, *(*(data3.begin() + 3)));
+      CHECK_EQUAL(5U, *(*(data3.begin() + 4)));
+
+      CHECK(data2.empty());
+      CHECK_EQUAL(ACTUAL_SIZE, data3.size());
     }
   };
 }

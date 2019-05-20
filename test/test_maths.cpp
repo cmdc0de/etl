@@ -28,11 +28,13 @@ SOFTWARE.
 
 #include "UnitTest++.h"
 
-#include "log.h"
-#include "power.h"
-#include "fibonacci.h"
-#include "factorial.h"
-#include "sqrt.h"
+#include "etl/log.h"
+#include "etl/power.h"
+#include "etl/fibonacci.h"
+#include "etl/factorial.h"
+#include "etl/sqrt.h"
+#include "etl/permutations.h"
+#include "etl/combinations.h"
 
 namespace
 {
@@ -51,6 +53,36 @@ namespace
     }
 
     return 1;
+  }
+
+  size_t factorial(size_t n)
+  {
+    if (n == 1)
+    {
+      return 1;
+    }
+    else
+    {
+      return n * factorial(n - 1);
+    }
+  }
+
+  size_t permutations(size_t n, size_t k)
+  {
+    size_t p = 1;
+
+    for (size_t i = 0; i < k; ++i)
+    {
+      p *= n;
+      --n;
+    }
+
+    return p;
+  }
+
+  size_t combinations(size_t n, size_t k)
+  {
+    return permutations(n, k) / factorial(k);
   }
 
   SUITE(test_maths)
@@ -379,6 +411,39 @@ namespace
       CHECK_EQUAL(sqrt(8),  etl::sqrt<8>::value);
       CHECK_EQUAL(sqrt(9),  etl::sqrt<9>::value);
       CHECK_EQUAL(sqrt(10), etl::sqrt<10>::value);
+    }
+
+    //*************************************************************************
+    TEST(test_permutations)
+    {
+      size_t actual;
+
+
+      CHECK_EQUAL((permutations( 6,  2)), (actual = etl::permutations< 6,  2>::value));
+      CHECK_EQUAL((permutations( 7,  3)), (actual = etl::permutations< 7,  3>::value));
+      CHECK_EQUAL((permutations( 8,  4)), (actual = etl::permutations< 8,  4>::value));
+      CHECK_EQUAL((permutations( 9,  5)), (actual = etl::permutations< 9,  5>::value));
+      CHECK_EQUAL((permutations(10,  6)), (actual = etl::permutations<10,  6>::value));
+      CHECK_EQUAL((permutations(11,  7)), (actual = etl::permutations<11,  7>::value));
+      CHECK_EQUAL((permutations(12,  8)), (actual = etl::permutations<12,  8>::value));
+      CHECK_EQUAL((permutations(13,  9)), (actual = etl::permutations<13,  9>::value));
+      CHECK_EQUAL((permutations(14, 10)), (actual = etl::permutations<14, 10>::value));
+    }
+
+    //*************************************************************************
+    TEST(test_combinations)
+    {
+      size_t actual;
+
+      CHECK_EQUAL((combinations( 6,  2)), (actual = etl::combinations< 6,  2>::value));
+      CHECK_EQUAL((combinations( 7,  3)), (actual = etl::combinations< 7,  3>::value));
+      CHECK_EQUAL((combinations( 8,  4)), (actual = etl::combinations< 8,  4>::value));
+      CHECK_EQUAL((combinations( 9,  5)), (actual = etl::combinations< 9,  5>::value));
+      CHECK_EQUAL((combinations(10,  6)), (actual = etl::combinations<10,  6>::value));
+      CHECK_EQUAL((combinations(11,  7)), (actual = etl::combinations<11,  7>::value));
+      CHECK_EQUAL((combinations(12,  8)), (actual = etl::combinations<12,  8>::value));
+      CHECK_EQUAL((combinations(13,  9)), (actual = etl::combinations<13,  9>::value));
+      CHECK_EQUAL((combinations(14, 10)), (actual = etl::combinations<14, 10>::value));
     }
   };
 }

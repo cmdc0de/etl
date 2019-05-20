@@ -36,17 +36,17 @@ SOFTWARE.
 #include <string>
 #include <vector>
 
-#include "map.h"
+#include "etl/map.h"
 
-static const size_t SIZE = 10;
+static const size_t MAX_SIZE = 10;
 
 #define TEST_GREATER_THAN
 #ifdef TEST_GREATER_THAN
-typedef etl::map<std::string, int, SIZE, std::greater<std::string> >  Data;
+typedef etl::map<std::string, int, MAX_SIZE, std::greater<std::string> >  Data;
 typedef etl::imap<std::string, int, std::greater<std::string> >        IData;
 typedef std::map<std::string, int, std::greater<std::string> >        Compare_Data;
 #else
-typedef etl::map<std::string, int, SIZE, std::less<std::string> >  Data;
+typedef etl::map<std::string, int, MAX_SIZE, std::less<std::string> >  Data;
 typedef etl::imap<std::string, int, std::less<std::string> >       IData;
 typedef std::map<std::string, int, std::less<std::string> >        Compare_Data;
 #endif
@@ -179,8 +179,18 @@ namespace
 
       CHECK_EQUAL(data.size(), size_t(0));
       CHECK(data.empty());
-      CHECK_EQUAL(data.capacity(), SIZE);
-      CHECK_EQUAL(data.max_size(), SIZE);
+      CHECK_EQUAL(data.capacity(), MAX_SIZE);
+      CHECK_EQUAL(data.max_size(), MAX_SIZE);
+      CHECK(data.begin() == data.end());
+    }
+
+    //*************************************************************************
+    TEST_FIXTURE(SetupFixture, test_destruct_via_imap)
+    {
+      Data* pdata = new Data(initial_data.begin(), initial_data.end());
+
+      IData* pidata = pdata;
+      delete pidata;
     }
 
     //*************************************************************************
@@ -192,9 +202,28 @@ namespace
 
       size_t d = std::distance(data.begin(), data.end());
 
-      CHECK(d == SIZE);
-      CHECK(data.size() == SIZE);
+      CHECK(d == MAX_SIZE);
+      CHECK(data.size() == MAX_SIZE);
       CHECK(!data.empty());
+    }
+
+    //*************************************************************************
+    TEST_FIXTURE(SetupFixture, test_constructor_initializer_list)
+    {
+      Compare_Data compare_data = { Data::value_type(std::string("0"), 0), Data::value_type(std::string("1"), 1), 
+                                    Data::value_type(std::string("2"), 2), Data::value_type(std::string("3"), 3) };
+
+      Data data = { Data::value_type(std::string("0"), 0), Data::value_type(std::string("1"), 1), 
+                    Data::value_type(std::string("2"), 2), Data::value_type(std::string("3"), 3) };
+
+      CHECK_EQUAL(compare_data.size(), data.size());
+      CHECK(!data.empty());
+
+      bool isEqual = Check_Equal(data.begin(),
+                                 data.end(),
+                                 compare_data.begin());
+
+      CHECK(isEqual);
     }
 
     //*************************************************************************
@@ -1026,5 +1055,42 @@ namespace
 #endif
     }
 
+    //*************************************************************************
+    TEST_FIXTURE(SetupFixture, test_key_compare)
+    {
+      const Data data(initial_data.begin(), initial_data.end());
+
+      Data::key_compare compare = data.key_comp();
+
+      Data::key_type a("A");
+      Data::key_type b("B");
+
+#ifdef TEST_GREATER_THAN
+      CHECK(!compare(a, b));
+      CHECK(compare(b, a));
+#else
+      CHECK(compare(a, b));
+      CHECK(!compare(b, a));
+#endif
+    }
+
+    //*************************************************************************
+    TEST_FIXTURE(SetupFixture, test_value_compare)
+    {
+      const Data data(initial_data.begin(), initial_data.end());
+
+      Data::value_compare compare = data.value_comp();
+
+      Data::value_type a(std::string("A"), 0);
+      Data::value_type b(std::string("B"), 1);
+
+#ifdef TEST_GREATER_THAN
+      CHECK(!compare(a, b));
+      CHECK(compare(b, a));
+#else
+      CHECK(compare(a, b));
+      CHECK(!compare(b, a));
+#endif
+    }
   };
 }

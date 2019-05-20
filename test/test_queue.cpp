@@ -30,7 +30,7 @@ SOFTWARE.
 
 #include <queue>
 
-#include "queue.h"
+#include "etl/queue.h"
 
 namespace
 {
@@ -52,6 +52,26 @@ namespace
   {
     return (lhs.c == rhs.c) && (lhs.i == rhs.i) && (lhs.d == rhs.d);
   }
+
+  struct ItemNTD
+  {
+    ItemNTD()
+    {
+      p = new char;
+    }
+
+    ItemNTD(const ItemNTD&)
+      : p(new char)
+    {
+    }
+
+    ~ItemNTD()
+    {
+      delete p;
+    }
+
+    char* p;
+  };
 
   SUITE(test_queue)
   {
@@ -78,6 +98,21 @@ namespace
     }
 
     //*************************************************************************
+    TEST(test_delete_via_iqueue)
+    {
+      etl::queue<int, 4>* pqueue = new etl::queue<int, 4>;
+
+      etl::iqueue<int>* piqueue = pqueue;
+
+      piqueue->push(1);
+      piqueue->push(2);
+      piqueue->push(3);
+      piqueue->push(4);
+
+      delete piqueue;
+    }
+
+    //*************************************************************************
     TEST(test_size)
     {
       etl::queue<int, 4> queue;
@@ -96,6 +131,31 @@ namespace
 
       queue.push(1);
       queue.push(2);
+      queue.clear();
+      CHECK_EQUAL(0U, queue.size());
+
+      // Do it again to check that clear() didn't screw up the internals.
+      queue.push(1);
+      queue.push(2);
+      CHECK_EQUAL(2U, queue.size());
+      queue.clear();
+      CHECK_EQUAL(0U, queue.size());
+    }
+
+    //*************************************************************************
+    TEST(test_clear_non_pod)
+    {
+      etl::queue<ItemNTD, 4> queue;
+
+      queue.push(ItemNTD());
+      queue.push(ItemNTD());
+      queue.clear();
+      CHECK_EQUAL(0U, queue.size());
+
+      // Do it again to check that clear() didn't screw up the internals.
+      queue.push(ItemNTD());
+      queue.push(ItemNTD());
+      CHECK_EQUAL(2U, queue.size());
       queue.clear();
       CHECK_EQUAL(0U, queue.size());
     }
@@ -213,23 +273,6 @@ namespace
     }
 
     //*************************************************************************
-    TEST(test_push_void)
-    {
-      etl::queue<int, 4> queue;
-
-      queue.push() = 1;
-      CHECK_EQUAL(1U, queue.size());
-
-      queue.push() = 2;
-      CHECK_EQUAL(2U, queue.size());
-
-      CHECK_EQUAL(1, queue.front());
-
-      queue.pop();
-      CHECK_EQUAL(2, queue.front());
-    }
-
-    //*************************************************************************
     TEST(test_push_excess)
     {
       etl::queue<int, 4> queue;
@@ -293,39 +336,6 @@ namespace
       queue.pop();
       CHECK(queue.front() == Item('d', 4, 7.8));
       queue.pop();
-    }
-
-    //*************************************************************************
-    TEST(test_multiple_push_void)
-    {
-      etl::queue<int, 4> queue;
-
-      queue.push() = 1;
-      queue.push() = 2;
-      queue.push() = 3;
-
-      bool pass = true;
-
-      if (queue.front() != 1)
-      {
-        pass = false;
-      }
-
-      queue.pop();
-
-      if (queue.front() != 2)
-      {
-        pass = false;
-      }
-
-      queue.pop();
-
-      if (queue.front() != 3)
-      {
-        pass = false;
-      }
-
-      CHECK(pass);
     }
 
     //*************************************************************************

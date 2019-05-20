@@ -31,7 +31,7 @@ SOFTWARE.
 
 #include "data.h"
 
-#include "forward_list.h"
+#include "etl/forward_list.h"
 
 #include <algorithm>
 #include <array>
@@ -48,10 +48,16 @@ namespace
 
     typedef TestDataDC<std::string>  ItemDC;
     typedef TestDataNDC<std::string> ItemNDC;
+    typedef TestDataM<uint32_t>      ItemM;
 
     typedef etl::forward_list<ItemDC, SIZE>  DataDC;
     typedef etl::forward_list<ItemNDC, SIZE> DataNDC;
     typedef etl::iforward_list<ItemNDC>      IDataNDC;
+
+    typedef etl::forward_list<ItemM, SIZE>  DataM;
+    typedef etl::iforward_list<ItemM>       IDataM;
+
+    typedef etl::forward_list<int, SIZE> DataInt;
 
     typedef std::forward_list<ItemDC> CompareDataDC;
     typedef std::forward_list<ItemNDC> CompareDataNDC;
@@ -85,6 +91,7 @@ namespace
 
       CHECK(data.empty());
       CHECK_EQUAL(data.max_size(), SIZE);
+      CHECK(data.begin() == data.end());
     }
 
     //*************************************************************************
@@ -122,9 +129,39 @@ namespace
     //*************************************************************************
     TEST_FIXTURE(SetupFixture, test_constructor_range)
     {
+      CompareDataNDC compare(sorted_data.begin(), sorted_data.end());
       DataNDC data(sorted_data.begin(), sorted_data.end());
 
       CHECK(!data.empty());
+
+      are_equal = std::equal(data.begin(), data.end(), compare.begin());
+
+      CHECK(are_equal);
+    }
+
+    //*************************************************************************
+    TEST_FIXTURE(SetupFixture, test_constructor_initializer_list)
+    {
+      CompareDataNDC compare = { ItemNDC("0"), ItemNDC("1"), ItemNDC("2"), ItemNDC("3") };
+      DataNDC data = { ItemNDC("0"), ItemNDC("1"), ItemNDC("2"), ItemNDC("3") };
+
+      CHECK(!data.empty());
+
+      are_equal = std::equal(data.begin(), data.end(), compare.begin());
+      CHECK(are_equal);
+    }
+
+    //*************************************************************************
+    TEST(test_destruct_via_iforward_list)
+    {
+      int current_count = ItemNDC::get_instance_count();
+
+      DataNDC* pdata = new DataNDC(sorted_data.begin(), sorted_data.end());
+      CHECK_EQUAL(int(current_count + sorted_data.size()), ItemNDC::get_instance_count());
+
+      IDataNDC* pidata = pdata;
+      delete pidata;
+      CHECK_EQUAL(current_count, ItemNDC::get_instance_count());
     }
 
     //*************************************************************************
@@ -135,6 +172,98 @@ namespace
       DataNDC other_data(data);
 
       CHECK(std::equal(data.begin(), data.end(), other_data.begin()));
+    }
+
+    //*************************************************************************
+    TEST(test_move_constructor)
+    {
+      ItemM p1(1U);
+      ItemM p2(2U);
+      ItemM p3(3U);
+      ItemM p4(4U);
+
+      DataM data1;
+      data1.push_front(std::move(p1));
+      data1.push_front(std::move(p2));
+      data1.push_front(std::move(p3));
+      data1.push_front(std::move(p4));
+
+      CHECK(!bool(p1));
+      CHECK(!bool(p2));
+      CHECK(!bool(p3));
+      CHECK(!bool(p4));
+
+      DataM data2(std::move(data1));
+
+      CHECK_EQUAL(0U, data1.size());
+      CHECK_EQUAL(4U, data2.size());
+
+      DataM::const_iterator itr = data2.begin();
+
+      CHECK_EQUAL(4U, (*itr++).value);
+      CHECK_EQUAL(3U, (*itr++).value);
+      CHECK_EQUAL(2U, (*itr++).value);
+      CHECK_EQUAL(1U, (*itr++).value);
+    }
+
+    //*************************************************************************
+    TEST(test_move_assignment)
+    {
+      ItemM p1(1U);
+      ItemM p2(2U);
+      ItemM p3(3U);
+      ItemM p4(4U);
+
+      DataM data1;
+      data1.push_front(std::move(p1));
+      data1.push_front(std::move(p2));
+      data1.push_front(std::move(p3));
+      data1.push_front(std::move(p4));
+
+      DataM data2;
+      data2 = std::move(data1);
+
+      CHECK_EQUAL(0U, data1.size());
+      CHECK_EQUAL(4U, data2.size());
+
+      DataM::const_iterator itr = data2.begin();
+
+      CHECK_EQUAL(4U, (*itr++).value);
+      CHECK_EQUAL(3U, (*itr++).value);
+      CHECK_EQUAL(2U, (*itr++).value);
+      CHECK_EQUAL(1U, (*itr++).value);
+    }
+
+    //*************************************************************************
+    TEST(test_move_assignment_interface)
+    {
+      ItemM p1(1U);
+      ItemM p2(2U);
+      ItemM p3(3U);
+      ItemM p4(4U);
+
+      DataM data1;
+      data1.push_front(std::move(p1));
+      data1.push_front(std::move(p2));
+      data1.push_front(std::move(p3));
+      data1.push_front(std::move(p4));
+
+      DataM data2;
+
+      IDataM& idata1 = data1;
+      IDataM& idata2 = data2;
+
+      idata2 = std::move(idata1);
+
+      CHECK_EQUAL(0U, data1.size());
+      CHECK_EQUAL(4U, data2.size());
+
+      DataM::const_iterator itr = data2.begin();
+
+      CHECK_EQUAL(4U, (*itr++).value);
+      CHECK_EQUAL(3U, (*itr++).value);
+      CHECK_EQUAL(2U, (*itr++).value);
+      CHECK_EQUAL(1U, (*itr++).value);
     }
 
     //*************************************************************************
@@ -152,7 +281,7 @@ namespace
     TEST_FIXTURE(SetupFixture, test_const_iterator)
     {
       CompareDataNDC compare_data(sorted_data.begin(), sorted_data.end());
-      DataNDC data(compare_data.begin(), compare_data.end());
+      const DataNDC data(compare_data.begin(), compare_data.end());
 
       are_equal = std::equal(data.cbegin(), data.cend(), compare_data.cbegin());
 
@@ -249,8 +378,28 @@ namespace
     {
       DataNDC data(sorted_data.begin(), sorted_data.end());
       data.clear();
-
       CHECK(data.empty());
+
+      // Do it again to check that clear() didn't screw up the internals.
+      data.assign(sorted_data.begin(), sorted_data.end());
+      CHECK_EQUAL(SIZE, data.size());
+      data.clear();
+      CHECK_EQUAL(size_t(0), data.size());
+    }
+
+    //*************************************************************************
+    TEST_FIXTURE(SetupFixture, test_clear_pod)
+    {
+      DataInt data(SIZE, 1);
+
+      data.clear();
+      CHECK(data.empty());
+
+      // Do it again to check that clear() didn't screw up the internals.
+      data.resize(SIZE);
+      CHECK_EQUAL(SIZE, data.size());
+      data.clear();
+      CHECK_EQUAL(size_t(0), data.size());
     }
 
     //*************************************************************************
@@ -449,6 +598,35 @@ namespace
     }
 
     //*************************************************************************
+    TEST_FIXTURE(SetupFixture, test_push_front_move)
+    {
+      ItemM p1(1U);
+      ItemM p2(2U);
+      ItemM p3(3U);
+      ItemM p4(4U);
+
+      DataM data;
+      data.push_front(std::move(p1));
+      data.push_front(std::move(p2));
+      data.push_front(std::move(p3));
+      data.push_front(std::move(p4));
+
+      CHECK_EQUAL(4U, data.size());
+
+      CHECK(!bool(p1));
+      CHECK(!bool(p2));
+      CHECK(!bool(p3));
+      CHECK(!bool(p4));
+
+      DataM::const_iterator itr = data.begin();
+
+      CHECK_EQUAL(4U, (*itr++).value);
+      CHECK_EQUAL(3U, (*itr++).value);
+      CHECK_EQUAL(2U, (*itr++).value);
+      CHECK_EQUAL(1U, (*itr++).value);
+    }
+
+    //*************************************************************************
     TEST_FIXTURE(SetupFixture, test_emplace_front)
     {
       CompareDataNDC compare_data;
@@ -517,40 +695,6 @@ namespace
       CHECK_EQUAL(size_t(std::distance(compare_data.begin(), compare_data.end())), data.size());
 
       are_equal = std::equal(data.begin(), data.end(), compare_data.begin());
-      CHECK(are_equal);
-    }
-
-    //*************************************************************************
-    TEST_FIXTURE(SetupFixture, test_push_front_null)
-    {
-      CompareDataDC compare_data;
-      DataDC data;
-
-      compare_data.push_front(ItemDC("1"));
-      compare_data.push_front(ItemDC("2"));
-      compare_data.push_front(ItemDC("3"));
-      compare_data.push_front(ItemDC("4"));
-      compare_data.push_front(ItemDC("5"));
-      compare_data.push_front(ItemDC("6"));
-
-      CHECK_NO_THROW(data.push_front());
-      data.front() = ItemDC("1");
-      CHECK_NO_THROW(data.push_front());
-      data.front() = ItemDC("2");
-      CHECK_NO_THROW(data.push_front());
-      data.front() = ItemDC("3");
-      CHECK_NO_THROW(data.push_front());
-      data.front() = ItemDC("4");
-      CHECK_NO_THROW(data.push_front());
-      data.front() = ItemDC("5");
-      CHECK_NO_THROW(data.push_front());
-      data.front() = ItemDC("6");
-
-      CHECK_EQUAL(6U, data.size());
-      CHECK_EQUAL(6, std::distance(data.begin(), data.end()));
-
-      are_equal = std::equal(data.begin(), data.end(), compare_data.begin());
-
       CHECK(are_equal);
     }
 
@@ -718,7 +862,7 @@ namespace
       CompareDataNDC::iterator i_compare_data = compare_data.begin();
       std::advance(i_compare_data, 4);
 
-      CompareDataNDC::iterator i_compare_result = compare_data.erase_after(i_compare_data, compare_data.end());
+      compare_data.erase_after(i_compare_data, compare_data.end());
 
       DataNDC::iterator i_result = data.erase_after(i_data, data.end());
 
@@ -914,8 +1058,6 @@ namespace
 
       while (ditr != data.end())
       {
-        const ItemNDC& v = *ditr;
-
         CHECK_EQUAL(citr->index, ditr->index);
 
         ++citr;
@@ -1093,6 +1235,7 @@ namespace
       data.move_after(i_first_before, i_last, i_to_before);
 
       are_equal = std::equal(data.begin(), data.end(), compare_data.begin());
+      CHECK(are_equal);
 
       // Move to nearby.
       i_first_before = data.begin();
@@ -1117,6 +1260,7 @@ namespace
       data.move_after(i_first_before, i_last, i_to_before);
 
       are_equal = std::equal(data.begin(), data.end(), compare_data.begin());
+      CHECK(are_equal);
 
       // Move to same.
       i_first_before = data.begin();
@@ -1141,6 +1285,7 @@ namespace
       data.move_after(i_first_before, i_last, i_to_before);
 
       are_equal = std::equal(data.begin(), data.end(), compare_data.begin());
+      CHECK(are_equal);
 
       // Move to illegal place.
       i_first_before = data.begin();

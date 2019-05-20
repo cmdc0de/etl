@@ -28,6 +28,8 @@ SOFTWARE.
 
 #include "UnitTest++.h"
 
+#include <sstream>
+
 #include <map>
 #include <array>
 #include <algorithm>
@@ -39,7 +41,7 @@ SOFTWARE.
 
 #include "data.h"
 
-#include "unordered_map.h"
+#include "etl/unordered_map.h"
 
 namespace
 {
@@ -125,7 +127,7 @@ namespace
     DC M17 = DC("R");
     DC M18 = DC("S");
     DC M19 = DC("T");
-   
+
     const char* K0  = "FF"; // 0
     const char* K1  = "FG"; // 1
     const char* K2  = "FH"; // 2
@@ -229,6 +231,19 @@ namespace
       CHECK(data.size() == SIZE);
       CHECK(!data.empty());
       CHECK(data.full());
+    }
+
+    //*************************************************************************
+    TEST(test_destruct_via_iunordered_map)
+    {
+      int current_count = NDC::get_instance_count();
+
+      DataNDC* pdata = new DataNDC(initial_data.begin(), initial_data.end());
+
+      IDataNDC* pidata = pdata;
+      delete pidata;
+
+      CHECK_EQUAL(current_count, NDC::get_instance_count());
     }
 
     //*************************************************************************
@@ -497,7 +512,7 @@ namespace
 
       DataNDC::iterator idata_end = data.begin();
       std::advance(idata_end, 5);
-      
+
       data.erase(idata, idata_end);
 
       CHECK_EQUAL(initial_data.size() - 3, data.size());
@@ -674,9 +689,35 @@ namespace
     }
 
     //*************************************************************************
-    TEST_FIXTURE(SetupFixture, test_release)
+    TEST_FIXTURE(SetupFixture, test_insert_and_erase_bug)
     {
+      etl::unordered_map<uint32_t, char, 5> map;
 
+      map[1] = 'b';
+      map[2] = 'c';
+      map[3] = 'd';
+      map[4] = 'e';
+
+      auto it = map.find(1);
+      map.erase(it);
+      
+      it = map.find(4);
+      map.erase(it);
+
+      std::vector<std::string> s;
+
+      for (const auto &kv : map) 
+      {
+        std::stringstream ss;
+        ss << "map[" << kv.first << "] = " << kv.second;
+        s.push_back(ss.str());
+      }
+
+      CHECK_EQUAL(2, s.size());
+      CHECK_EQUAL("map[2] = c", s[0]);
+      CHECK_EQUAL("map[3] = d", s[1]);
+      CHECK_EQUAL('c', map[2]);
+      CHECK_EQUAL('d', map[3]);
     }
   };
 }

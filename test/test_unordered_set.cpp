@@ -38,8 +38,8 @@ SOFTWARE.
 
 #include "data.h"
 
-#include "unordered_set.h"
-#include "checksum.h"
+#include "etl/unordered_set.h"
+#include "etl/checksum.h"
 
 namespace
 {
@@ -132,6 +132,19 @@ namespace
       CHECK(data.size() == SIZE);
       CHECK(!data.empty());
       CHECK(data.full());
+    }
+
+    //*************************************************************************
+    TEST(test_destruct_via_iunordered_set)
+    {
+      int current_count = NDC::get_instance_count();
+
+      DataNDC* pdata = new DataNDC(initial_data.begin(), initial_data.end());
+
+      IDataNDC* pidata = pdata;
+      delete pidata;
+
+      CHECK_EQUAL(current_count, NDC::get_instance_count());
     }
 
     //*************************************************************************
@@ -366,7 +379,7 @@ namespace
 
       CHECK_EQUAL(data.size(), size_t(0));
     }
-    
+
     //*************************************************************************
     TEST_FIXTURE(SetupFixture, test_count_key)
     {
@@ -439,6 +452,36 @@ namespace
       data.clear();
       data.assign(initial_data.begin(), initial_data.end());
       CHECK_CLOSE(2.0, data.load_factor(), 0.01);
+    }
+
+    //*************************************************************************
+    TEST_FIXTURE(SetupFixture, test_insert_and_erase_bug)
+    {
+      etl::unordered_set<uint32_t, 5> set;
+
+      set.insert(1);
+      set.insert(2);
+      set.insert(3);
+      set.insert(4);
+
+      auto it = set.find(1);
+      set.erase(it);
+
+      it = set.find(4);
+      set.erase(it);
+
+      std::vector<std::string> s;
+
+      for (const auto &kv : set)
+      {
+        std::stringstream ss;
+        ss << "set" << " = " << kv;
+        s.push_back(ss.str());
+      }
+
+      CHECK_EQUAL(2, s.size());
+      CHECK_EQUAL("set = 2", s[0]);
+      CHECK_EQUAL("set = 3", s[1]);
     }
   };
 }

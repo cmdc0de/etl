@@ -30,7 +30,7 @@ SOFTWARE.
 
 #include <queue>
 
-#include "priority_queue.h"
+#include "etl/priority_queue.h"
 
 namespace
 {
@@ -76,6 +76,23 @@ namespace
       CHECK_EQUAL(priority_queue.size(), size_t(0));
       CHECK_EQUAL(priority_queue.available(), SIZE);
       CHECK_EQUAL(priority_queue.max_size(), SIZE);
+    }
+
+    //*************************************************************************
+    TEST(test_delete_via_ipriority_queue)
+    {
+      typedef etl::priority_queue<int, 4> priority_queue_t;
+
+      priority_queue_t* ppriority_queue = new etl::priority_queue<int, 4>;
+      
+      etl::ipriority_queue<int, priority_queue_t::container_type, priority_queue_t::compare_type>* pipriority_queue = ppriority_queue;
+
+      pipriority_queue->push(1);
+      pipriority_queue->push(2);
+      pipriority_queue->push(3);
+      pipriority_queue->push(4);
+
+      delete pipriority_queue;
     }
 
     //*************************************************************************

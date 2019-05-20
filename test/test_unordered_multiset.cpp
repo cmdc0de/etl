@@ -39,8 +39,8 @@ SOFTWARE.
 
 #include "data.h"
 
-#include "unordered_multiset.h"
-#include "checksum.h"
+#include "etl/unordered_multiset.h"
+#include "etl/checksum.h"
 
 namespace
 {
@@ -140,6 +140,19 @@ namespace
       CHECK(data.size() == SIZE);
       CHECK(!data.empty());
       CHECK(data.full());
+    }
+
+    //*************************************************************************
+    TEST(test_destruct_via_iunordered_multiset)
+    {
+      int current_count = NDC::get_instance_count();
+
+      DataNDC* pdata = new DataNDC(initial_data.begin(), initial_data.end());
+
+      IDataNDC* pidata = pdata;
+      delete pidata;
+
+      CHECK_EQUAL(current_count, NDC::get_instance_count());
     }
 
     //*************************************************************************
@@ -386,7 +399,7 @@ namespace
 
       CHECK_EQUAL(data.size(), size_t(0));
     }
-    
+
     //*************************************************************************
     TEST_FIXTURE(SetupFixture, test_count_key)
     {
@@ -463,7 +476,7 @@ namespace
       CHECK_EQUAL(std::distance(result.first, result.second), 1);
       CHECK_EQUAL(*result.first, N2);
     }
-    
+
     //*************************************************************************
     TEST_FIXTURE(SetupFixture, test_equal)
     {

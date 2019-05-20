@@ -28,7 +28,7 @@ SOFTWARE.
 
 #include "UnitTest++.h"
 
-#include "io_port.h"
+#include "etl/io_port.h"
 
 #include <stdint.h>
 #include <array>
@@ -40,6 +40,11 @@ SOFTWARE.
 #else
   #pragma warning(disable:4101) // Unused variable.
 #endif
+
+uint8_t rw  = 0x12;
+uint8_t ro  = 0x34;
+uint8_t wo  = 0x56;
+uint8_t wos = 0x78;
 
 namespace
 {
@@ -90,7 +95,14 @@ namespace
     //*************************************************************************
     TEST(test_dynamic_io_port)
     {
-      uint8_t memory[7];
+      union U
+      {
+        uint16_t dummy;
+        uint8_t memory[7];
+      } u;
+
+      uint8_t* memory = &u.memory[0];
+
       memory[0] = 0x12;
       memory[1] = 0x00;
       memory[2] = 0x00;
@@ -99,7 +111,7 @@ namespace
       memory[5] = 0x9A;
       memory[6] = 0x00;
 
-      dynamic_serial_port port(memory);
+      dynamic_serial_port port(&u.memory[0]);
 
       uint8_t rxdata = port.rxdata;
       CHECK_EQUAL(memory[0], rxdata);
@@ -122,9 +134,9 @@ namespace
       CHECK_EQUAL(0xDE, control2);
       CHECK_EQUAL(0xDE, port.control2);
 
-      port.control2.set_address(0x1000);
-      uint8_t* address = port.control2.get_address();
-      CHECK_EQUAL(reinterpret_cast<uint8_t* const>(0x1000), address);
+      port.control2.set_address((void*)0x1000);
+      volatile uint8_t* address = port.control2.get_address();
+      CHECK_EQUAL(reinterpret_cast<volatile uint8_t*>(0x1000), address);
     }
 
     //*************************************************************************
@@ -135,18 +147,16 @@ namespace
       uint8_t memory_wo  = 0x56;
       uint8_t memory_wos = 0x78;
 
-      iop_rw.set_address(uintptr_t(&memory_rw));
-      iop_ro.set_address(uintptr_t(&memory_ro));
-      iop_wo.set_address(uintptr_t(&memory_wo));
-      iop_wos.set_address(uintptr_t(&memory_wos));
+      iop_rw.set_address(&memory_rw);
+      iop_ro.set_address(&memory_ro);
+      iop_wo.set_address(&memory_wo);
+      iop_wos.set_address(&memory_wos);
 
       std::array<uint8_t, 10> compare;
       std::array<uint8_t, 10> result;
 
       // Read from RW IOP.
-      etl::io_port_rw<uint8_t>::iterator itr_rw = iop_rw.get_iterator();
-
-      std::copy_n(itr_rw, result.size(), result.begin());
+      std::copy_n(iop_rw, result.size(), result.begin());
       compare.fill(0x12);
 
       for (size_t i = 0; i < compare.size(); ++i)
@@ -156,14 +166,12 @@ namespace
 
       // Write to RW IOP.
       compare.fill(0x34);
-      std::copy_n(compare.begin(), compare.size(), itr_rw);
+      std::copy_n(compare.begin(), compare.size(), iop_rw);
 
       CHECK_EQUAL(compare[0], iop_rw);
 
       // Read from RO IOP.
-      etl::io_port_ro<uint8_t>::iterator itr_ro = iop_ro.get_iterator();
-
-      std::copy_n(itr_ro, result.size(), result.begin());
+      std::copy_n(iop_ro, result.size(), result.begin());
       compare.fill(0x34);
 
       for (size_t i = 0; i < compare.size(); ++i)
@@ -172,19 +180,15 @@ namespace
       }
 
       // Write to WO IOP.
-      etl::io_port_wo<uint8_t>::iterator itr_wo = iop_wo.get_iterator();
-
       compare.fill(0x56);
-      std::copy_n(compare.begin(), compare.size(), itr_wo);
+      std::copy_n(compare.begin(), compare.size(), iop_wo);
 
       CHECK_EQUAL(compare[0], memory_wo);
 
       // Read from WOS IOP.
-      etl::io_port_wos<uint8_t>::iterator itr_wos = iop_wos.get_iterator();
+      iop_wos = 0x78;
 
-      *itr_wos = 0x78;
-
-      std::copy_n(itr_wos, result.size(), result.begin());
+      std::copy_n(iop_wos, result.size(), result.begin());
       compare.fill(0x78);
 
       for (size_t i = 0; i < compare.size(); ++i)
@@ -194,9 +198,31 @@ namespace
 
       // Write to WOS IOP.
       compare.fill(0x90);
-      std::copy_n(compare.begin(), compare.size(), itr_wos);
+      std::copy_n(compare.begin(), compare.size(), iop_wos.get_iterator());
 
       CHECK_EQUAL(compare[0], iop_wos);
+    }
+    
+    TEST(compile)
+    {
+    //  etl::io_port_rw<uint8_t,  uintptr_t(1)> p_rw;
+    //  etl::io_port_ro<uint8_t,  uintptr_t(2)> p_ro;
+    //  etl::io_port_wo<uint8_t,  uintptr_t(3)> p_wo;
+    //  etl::io_port_wos<uint8_t, uintptr_t(4)> p_wos;
+
+    //  uint8_t c;
+
+    //  *p_rw = 1;
+    //  c = *p_rw;
+
+    //  *p_ro = 1;
+    //  c = *p_ro;
+
+    //  *p_wo = 1;
+    //  c = *p_wo;
+
+    //  *p_wos = 1;
+    //  c = *p_wos;
     }
   };
 }

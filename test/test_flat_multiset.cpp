@@ -38,7 +38,7 @@ SOFTWARE.
 
 #include "data.h"
 
-#include "flat_multiset.h"
+#include "etl/flat_multiset.h"
 
 namespace
 {
@@ -51,8 +51,113 @@ namespace
   typedef etl::flat_multiset<NDC, SIZE> DataNDC;
   typedef etl::iflat_multiset<NDC>      IDataNDC;
 
+  typedef etl::flat_multiset<int, SIZE> DataInt;
+
   typedef std::multiset<DC>  Compare_DataDC;
   typedef std::multiset<NDC> Compare_DataNDC;
+
+  struct D1
+  {
+    D1(const std::string& a_)
+      : a(a_)
+    {
+    }
+
+    std::string a;
+  };
+
+  struct D2
+  {
+    D2(const std::string& a_, const std::string& b_)
+      : a(a_),
+        b(b_)
+    {
+    }
+
+    std::string a;
+    std::string b;
+  };
+
+  struct D3
+  {
+    D3(const std::string& a_, const std::string& b_, const std::string& c_)
+      : a(a_),
+        b(b_),
+        c(c_)
+    {
+    }
+
+    std::string a;
+    std::string b;
+    std::string c;
+  };
+
+  struct D4
+  {
+    D4(const std::string& a_, const std::string& b_, const std::string& c_, const std::string& d_)
+      : a(a_),
+        b(b_),
+        c(c_),
+        d(d_)
+    {
+    }
+
+    std::string a;
+    std::string b;
+    std::string c;
+    std::string d;
+  };
+
+  bool operator == (const D1& lhs, const D1& rhs)
+  {
+    return (lhs.a == rhs.a);
+  }
+
+  bool operator == (const D2& lhs, const D2& rhs)
+  {
+    return (lhs.a == rhs.a) && (lhs.b == rhs.b);
+  }
+
+  bool operator == (const D3& lhs, const D3& rhs)
+  {
+    return (lhs.a == rhs.a) && (lhs.b == rhs.b) && (lhs.c == rhs.c);
+  }
+
+  bool operator == (const D4& lhs, const D4& rhs)
+  {
+    return (lhs.a == rhs.a) && (lhs.b == rhs.b) && (lhs.c == rhs.c) && (lhs.d == rhs.d);
+  }
+
+  bool operator < (const D1& lhs, const D1& rhs)
+  {
+    return (lhs.a < rhs.a);
+  }
+
+  bool operator < (const D2& lhs, const D2& rhs)
+  {
+    return (lhs.a < rhs.a) && (lhs.b < rhs.b);
+  }
+
+  bool operator < (const D3& lhs, const D3& rhs)
+  {
+    return (lhs.a < rhs.a) && (lhs.b < rhs.b) && (lhs.c < rhs.c);
+  }
+
+  bool operator < (const D4& lhs, const D4& rhs)
+  {
+    return (lhs.a < rhs.a) && (lhs.b < rhs.b) && (lhs.c < rhs.c) && (lhs.d < rhs.d);
+  }
+
+  typedef etl::flat_multiset<D1, SIZE> Data1;
+  typedef etl::flat_multiset<D2, SIZE> Data2;
+  typedef etl::flat_multiset<D3, SIZE> Data3;
+  typedef etl::flat_multiset<D4, SIZE> Data4;
+
+  typedef std::multiset<D1> Compare1;
+  typedef std::multiset<D2> Compare2;
+  typedef std::multiset<D3> Compare3;
+  typedef std::multiset<D4> Compare4;
+
 
   //*************************************************************************
   std::ostream& operator <<(std::ostream& os, DataNDC::iterator itr)
@@ -101,6 +206,8 @@ namespace
     std::vector<NDC> different_data;
     std::vector<NDC> multi_data;
 
+    std::vector<int> int_data;
+
     //*************************************************************************
     struct SetupFixture
     {
@@ -126,10 +233,16 @@ namespace
           N0, N0, N1, N2, N3, N1, N3, N3, N4, N2
         };
 
+        int n5[] =
+        {
+          10, 11, 12, 13, 14, 15, 16, 17, 18, 19
+        };
+
         initial_data.assign(std::begin(n), std::end(n));
         excess_data.assign(std::begin(n2), std::end(n2));
         different_data.assign(std::begin(n3), std::end(n3));
         multi_data.assign(std::begin(n4), std::end(n4));
+        int_data.assign(std::begin(n5), std::end(n5));
       }
     };
 
@@ -142,6 +255,20 @@ namespace
       CHECK(data.empty());
       CHECK_EQUAL(data.capacity(), SIZE);
       CHECK_EQUAL(data.max_size(), SIZE);
+      CHECK(data.begin() == data.end());
+    }
+
+    //*************************************************************************
+    TEST(test_destruct_via_iflat_multiset)
+    {
+      int current_count = NDC::get_instance_count();
+
+      DataNDC* pdata = new DataNDC(initial_data.begin(), initial_data.end());
+      CHECK_EQUAL(int(current_count + initial_data.size()), NDC::get_instance_count());
+
+      IDataNDC* pidata = pdata;
+      delete pidata;
+      CHECK_EQUAL(current_count, NDC::get_instance_count());
     }
 
     //*************************************************************************
@@ -153,6 +280,22 @@ namespace
 
       CHECK(data.size() == SIZE);
       CHECK(!data.empty());
+    }
+
+    //*************************************************************************
+    TEST_FIXTURE(SetupFixture, test_constructor_initializer_list)
+    {
+      Compare_DataNDC compare_data = { N0, N0, N1, N2, N3, N1, N3, N3, N4, N2 };
+
+      DataNDC data = { N0, N0, N1, N2, N3, N1, N3, N3, N4, N2 };
+
+      CHECK_EQUAL(compare_data.size(), data.size());
+      CHECK(!data.empty());
+
+      bool isEqual = std::equal(data.begin(),
+                                data.end(),
+                                compare_data.begin());
+      CHECK(isEqual);
     }
 
     //*************************************************************************
@@ -371,6 +514,142 @@ namespace
     }
 
     //*************************************************************************
+    TEST_FIXTURE(SetupFixture, test_emplace_value1)
+    {
+      Compare1 compare;
+      Data1 data;
+
+      data.emplace("0");
+      compare.emplace("0");
+
+      data.emplace("1");
+      compare.emplace("1");
+
+      data.emplace("2");
+      compare.emplace("2");
+
+      // Do it again.
+      data.emplace("0");
+      compare.emplace("0");
+
+      data.emplace("1");
+      compare.emplace("1");
+
+      data.emplace("2");
+      compare.emplace("2");
+
+      CHECK_EQUAL(compare.size(), data.size());
+
+      bool isEqual = std::equal(data.begin(),
+                                data.end(),
+                                compare.begin());
+
+      CHECK(isEqual);
+    }
+
+    //*************************************************************************
+    TEST_FIXTURE(SetupFixture, test_emplace_value2)
+    {
+      Compare2 compare;
+      Data2 data;
+
+      data.emplace("0", "1");
+      compare.emplace("0", "1");
+
+      data.emplace("1", "2");
+      compare.emplace("1", "2");
+
+      data.emplace("2", "3");
+      compare.emplace("2", "3");
+
+      // Do it again.
+      data.emplace("0", "1");
+      compare.emplace("0", "1");
+
+      data.emplace("1", "2");
+      compare.emplace("1", "2");
+
+      data.emplace("2", "3");
+      compare.emplace("2", "3");
+
+      CHECK_EQUAL(compare.size(), data.size());
+
+      bool isEqual = std::equal(data.begin(),
+                                data.end(),
+                                compare.begin());
+
+      CHECK(isEqual);
+    }
+
+    //*************************************************************************
+    TEST_FIXTURE(SetupFixture, test_emplace_value3)
+    {
+      Compare3 compare;
+      Data3 data;
+
+      data.emplace("0", "1", "2");
+      compare.emplace("0", "1", "2");
+
+      data.emplace("1", "2", "3");
+      compare.emplace("1", "2", "3");
+
+      data.emplace("2", "3", "4");
+      compare.emplace("2", "3", "4");
+
+      // Do it again.
+      data.emplace("0", "1", "2");
+      compare.emplace("0", "1", "2");
+
+      data.emplace("1", "2", "3");
+      compare.emplace("1", "2", "3");
+
+      data.emplace("2", "3", "4");
+      compare.emplace("2", "3", "4");
+
+      CHECK_EQUAL(compare.size(), data.size());
+
+      bool isEqual = std::equal(data.begin(),
+                                data.end(),
+                                compare.begin());
+
+      CHECK(isEqual);
+    }
+
+    //*************************************************************************
+    TEST_FIXTURE(SetupFixture, test_emplace_value4)
+    {
+      Compare4 compare;
+      Data4 data;
+
+      data.emplace("0", "1", "2", "3");
+      compare.emplace("0", "1", "2", "3");
+
+      data.emplace("1", "2", "3", "4");
+      compare.emplace("1", "2", "3", "4");
+
+      data.emplace("2", "3", "4", "5");
+      compare.emplace("2", "3", "4", "5");
+
+      // Do it again.
+      data.emplace("0", "1", "2", "3");
+      compare.emplace("0", "1", "2", "3");
+
+      data.emplace("1", "2", "3", "4");
+      compare.emplace("1", "2", "3", "4");
+
+      data.emplace("2", "3", "4", "5");
+      compare.emplace("2", "3", "4", "5");
+
+      CHECK_EQUAL(compare.size(), data.size());
+
+      bool isEqual = std::equal(data.begin(),
+                                data.end(),
+                                compare.begin());
+
+      CHECK(isEqual);
+    }
+
+    //*************************************************************************
     TEST_FIXTURE(SetupFixture, test_erase_key)
     {
       Compare_DataNDC compare_data(initial_data.begin(), initial_data.end());
@@ -432,8 +711,8 @@ namespace
       data.erase(i_data, i_data_end);
 
       bool isEqual = std::equal(data.begin(),
-                                 data.end(),
-                                 compare_data.begin());
+                                data.end(),
+                                compare_data.begin());
 
       CHECK(isEqual);
     }
@@ -445,7 +724,27 @@ namespace
 
       DataNDC data(compare_data.begin(), compare_data.end());
       data.clear();
+      CHECK_EQUAL(data.size(), size_t(0));
 
+      // Do it again to check that clear() didn't screw up the internals.
+      data.assign(compare_data.begin(), compare_data.end());
+      CHECK_EQUAL(data.size(), compare_data.size());
+      data.clear();
+      CHECK_EQUAL(data.size(), size_t(0));
+    }
+
+    //*************************************************************************
+    TEST_FIXTURE(SetupFixture, test_clear_pod)
+    {
+      DataInt data(int_data.begin(), int_data.end());
+
+      data.clear();
+      CHECK_EQUAL(data.size(), size_t(0));
+
+      // Do it again to check that clear() didn't screw up the internals.
+      data.assign(int_data.begin(), int_data.end());
+      CHECK_EQUAL(data.size(), int_data.size());
+      data.clear();
       CHECK_EQUAL(data.size(), size_t(0));
     }
 

@@ -38,7 +38,7 @@ SOFTWARE.
 
 #include "data.h"
 
-#include "reference_flat_multimap.h"
+#include "etl/reference_flat_multimap.h"
 
 namespace
 {
@@ -57,22 +57,6 @@ namespace
 
   typedef std::multimap<int, DC>  Compare_DataDC;
   typedef std::multimap<int, NDC> Compare_DataNDC;
-
-  //*************************************************************************
-  //  std::ostream& operator <<(std::ostream& os, const DataDC::iterator& itr)
-  //  {
-  //    os << itr->first
-  //
-  //    return os;
-  //  }
-
-  //*************************************************************************
-  //  std::ostream& operator <<(std::ostream& os, const DataDC::const_iterator& itr)
-  //  {
-  //    os << itr->first;
-  //
-  //    return os;
-  //  }
 
   //*************************************************************************
   std::ostream& operator <<(std::ostream& os, const DataNDC::iterator& itr)
@@ -183,6 +167,19 @@ namespace
 
       CHECK(data.size() == SIZE);
       CHECK(!data.empty());
+    }
+
+    //*************************************************************************
+    TEST(test_destruct_via_ireference_flat_multimap)
+    {
+      int current_count = NDC::get_instance_count();
+
+      DataNDC* pdata = new DataNDC(initial_data.begin(), initial_data.end());
+
+      IDataNDC* pidata = pdata;
+      delete pidata;
+
+      CHECK_EQUAL(current_count, NDC::get_instance_count());
     }
 
     //*************************************************************************

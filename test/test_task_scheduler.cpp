@@ -32,9 +32,9 @@ SOFTWARE.
 #include <string>
 #include <vector>
 
-#include "task.h"
-#include "scheduler.h"
-#include "container.h"
+#include "etl/task.h"
+#include "etl/scheduler.h"
+#include "etl/container.h"
 
 typedef std::vector<std::string> WorkList_t;
 
@@ -80,10 +80,10 @@ class Task : public etl::task
 public:
 
   //*********************************************
-  Task(etl::task_priority_t priority, WorkList_t& work, Common& common)
-    : task(priority),
-      work(work),
-      common(common),
+  Task(etl::task_priority_t priority_, WorkList_t& work_, Common& common_)
+    : task(priority_),
+      work(work_),
+      common(common_),
       workIndex(0),
       addAtIndex(0),
       workToAdd(""),

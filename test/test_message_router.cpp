@@ -29,10 +29,10 @@ SOFTWARE.
 #include "UnitTest++.h"
 #include "ExtraCheckMacros.h"
 
-#include "message_router.h"
-#include "queue.h"
-#include "largest.h"
-#include "packet.h"
+#include "etl/message_router.h"
+#include "etl/queue.h"
+#include "etl/largest.h"
+#include "etl/packet.h"
 
 //***************************************************************************
 // The set of messages.
@@ -100,36 +100,36 @@ namespace
 
     }
 
-    void on_receive(etl::imessage_router& sender, const Message1& msg)
+    void on_receive(etl::imessage_router& sender, const Message1&)
     {
       ++message1_count;
       etl::send_message(sender, message5);
     }
 
-    void on_receive(etl::imessage_router& sender, const Message2& msg)
+    void on_receive(etl::imessage_router& sender, const Message2&)
     {
       ++message2_count;
       etl::send_message(sender, message5);
     }
 
-    void on_receive(etl::imessage_router& sender, const Message3& msg)
+    void on_receive(etl::imessage_router& sender, const Message3&)
     {
       ++message3_count;
       etl::send_message(sender, message5);
     }
 
-    void on_receive(etl::imessage_router& sender, const Message4& msg)
+    void on_receive(etl::imessage_router& sender, const Message4&)
     {
       ++message4_count;
       etl::send_message(sender, message5);
     }
 
-    void on_receive(etl::imessage_router& sender, const Message5& msg)
+    void on_receive(etl::imessage_router&, const Message5&)
     {
       ++callback_count;
     }
 
-    void on_receive_unknown(etl::imessage_router& sender, const etl::imessage& msg)
+    void on_receive_unknown(etl::imessage_router&, const etl::imessage&)
     {
       ++message_unknown_count;
     }
@@ -160,30 +160,30 @@ namespace
 
     }
 
-    void on_receive(etl::imessage_router& sender, const Message1& msg)
+    void on_receive(etl::imessage_router& sender, const Message1&)
     {
       ++message1_count;
       etl::send_message(sender, message5);
     }
 
-    void on_receive(etl::imessage_router& sender, const Message2& msg)
+    void on_receive(etl::imessage_router& sender, const Message2&)
     {
       ++message2_count;
       etl::send_message(sender, message5);
     }
 
-    void on_receive(etl::imessage_router& sender, const Message4& msg)
+    void on_receive(etl::imessage_router& sender, const Message4&)
     {
       ++message4_count;
       etl::send_message(sender, message5);
     }
 
-    void on_receive(etl::imessage_router& sender, const Message5& msg)
+    void on_receive(etl::imessage_router&, const Message5&)
     {
       ++callback_count;
     }
 
-    void on_receive_unknown(etl::imessage_router& sender, const etl::imessage& msg)
+    void on_receive_unknown(etl::imessage_router& sender, const etl::imessage&)
     {
       ++message_unknown_count;
       etl::send_message(sender, message5);
@@ -416,6 +416,63 @@ namespace
       CHECK_EQUAL(0, r2.message_unknown_count);
       CHECK_EQUAL(4, r1.callback_count);
       queue.pop();
+    }
+
+    //=========================================================================
+    TEST(message_router_successor)
+    {
+      Router1 r1;
+      Router2 r2;
+
+      r2.set_successor(r1);
+
+      etl::send_message(r2, message1);
+      CHECK_EQUAL(1, r2.message1_count);
+      CHECK_EQUAL(0, r2.message2_count);
+      CHECK_EQUAL(0, r2.message4_count);
+      CHECK_EQUAL(0, r2.message_unknown_count);
+
+      CHECK_EQUAL(0, r1.message1_count);
+      CHECK_EQUAL(0, r1.message2_count);
+      CHECK_EQUAL(0, r1.message3_count);
+      CHECK_EQUAL(0, r1.message4_count);
+      CHECK_EQUAL(0, r1.message_unknown_count);
+
+      etl::send_message(r2, message2);
+      CHECK_EQUAL(1, r2.message1_count);
+      CHECK_EQUAL(1, r2.message2_count);
+      CHECK_EQUAL(0, r2.message4_count);
+      CHECK_EQUAL(0, r2.message_unknown_count);
+
+      CHECK_EQUAL(0, r1.message1_count);
+      CHECK_EQUAL(0, r1.message2_count);
+      CHECK_EQUAL(0, r1.message3_count);
+      CHECK_EQUAL(0, r1.message4_count);
+      CHECK_EQUAL(0, r1.message_unknown_count);
+
+      etl::send_message(r2, message3);
+      CHECK_EQUAL(1, r2.message1_count);
+      CHECK_EQUAL(1, r2.message2_count);
+      CHECK_EQUAL(0, r2.message4_count);
+      CHECK_EQUAL(0, r2.message_unknown_count);
+
+      CHECK_EQUAL(0, r1.message1_count);
+      CHECK_EQUAL(0, r1.message2_count);
+      CHECK_EQUAL(1, r1.message3_count);
+      CHECK_EQUAL(0, r1.message4_count);
+      CHECK_EQUAL(0, r1.message_unknown_count);
+
+      etl::send_message(r2, message4);
+      CHECK_EQUAL(1, r2.message1_count);
+      CHECK_EQUAL(1, r2.message2_count);
+      CHECK_EQUAL(1, r2.message4_count);
+      CHECK_EQUAL(0, r2.message_unknown_count);
+
+      CHECK_EQUAL(0, r1.message1_count);
+      CHECK_EQUAL(0, r1.message2_count);
+      CHECK_EQUAL(1, r1.message3_count);
+      CHECK_EQUAL(0, r1.message4_count);
+      CHECK_EQUAL(0, r1.message_unknown_count);
     }
   };
 }

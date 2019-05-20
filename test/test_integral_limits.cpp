@@ -32,10 +32,7 @@ SOFTWARE.
 #include <type_traits>
 #include <bitset>
 
-#include "integral_limits.h"
-
-#undef min
-#undef max
+#include "etl/integral_limits.h"
 
 namespace
 {

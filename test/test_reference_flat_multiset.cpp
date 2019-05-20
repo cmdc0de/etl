@@ -38,7 +38,7 @@ SOFTWARE.
 
 #include "data.h"
 
-#include "reference_flat_multiset.h"
+#include "etl/reference_flat_multiset.h"
 
 namespace
 {
@@ -82,22 +82,6 @@ namespace
   std::vector<NDC> excess_data;
   std::vector<NDC> different_data;
   std::vector<NDC> multi_data;
-
-  //*************************************************************************
-//  std::ostream& operator <<(std::ostream& os, const DataDC::iterator& itr)
-//  {
-//    os << itr->value;
-//
-//    return os;
-//  }
-
-  //*************************************************************************
-//  std::ostream& operator <<(std::ostream& os, const DataDC::const_iterator& itr)
-//  {
-//    os << itr->value;
-//
-//    return os;
-//  }
 
   //*************************************************************************
   std::ostream& operator <<(std::ostream& os, const DataNDC::iterator& itr)
@@ -169,6 +153,19 @@ namespace
 
       CHECK(data.size() == SIZE);
       CHECK(!data.empty());
+    }
+
+    //*************************************************************************
+    TEST(test_destruct_via_ireference_flat_multiset)
+    {
+      int current_count = NDC::get_instance_count();
+
+      DataNDC* pdata = new DataNDC(initial_data.begin(), initial_data.end());
+
+      IDataNDC* pidata = pdata;
+      delete pidata;
+
+      CHECK_EQUAL(current_count, NDC::get_instance_count());
     }
 
     //*************************************************************************

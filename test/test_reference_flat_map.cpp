@@ -40,7 +40,7 @@ SOFTWARE.
 
 #include "data.h"
 
-#include "reference_flat_map.h"
+#include "etl/reference_flat_map.h"
 
 namespace
 {
@@ -77,22 +77,6 @@ namespace
 
     return true;
   }
-
-  //*************************************************************************
-//  std::ostream& operator <<(std::ostream& os, const DataDC::iterator& itr)
-//  {
-//    os << itr->first;
-
-//    return os;
-//  }
-
-  //*************************************************************************
-//  std::ostream& operator <<(std::ostream& os, const DataDC::const_iterator& itr)
-//  {
-//    os << itr->first;
-
-//    return os;
-//  }
 
   //*************************************************************************
   std::ostream& operator <<(std::ostream& os, const DataNDC::iterator& itr)
@@ -225,6 +209,19 @@ namespace
 
       CHECK(data.size() == SIZE);
       CHECK(!data.empty());
+    }
+
+    //*************************************************************************
+    TEST(test_destruct_via_ireference_flat_map)
+    {
+      int current_count = NDC::get_instance_count();
+
+      DataNDC* pdata = new DataNDC(initial_data.begin(), initial_data.end());
+
+      IDataNDC* pidata = pdata;
+      delete pidata;
+
+      CHECK_EQUAL(current_count, NDC::get_instance_count());
     }
 
     //*************************************************************************
@@ -497,6 +494,8 @@ namespace
       bool isEqual = Check_Equal(data.begin(),
                                  data.end(),
                                  compare_data.begin());
+
+      CHECK(isEqual);
     }
 
     //*************************************************************************
