@@ -26,7 +26,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ******************************************************************************/
 
-#include "UnitTest++.h"
+#include "UnitTest++/UnitTest++.h"
 
 #include "etl/array_view.h"
 #include "etl/array.h"
@@ -47,7 +47,7 @@ namespace
     typedef std::vector<int> StlVData;
 
     typedef etl::array_view<int> View;
-    typedef etl::const_array_view<int> CView;
+    typedef etl::array_view<const int> CView;
 
     EtlData etldata = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
     StlData stldata = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
@@ -356,8 +356,8 @@ namespace
     //*************************************************************************
     TEST(test_begin_end)
     {
-      View  view(etldata.begin(), etldata.begin());
-      CView cview(etldata.begin(), etldata.begin());
+      View  view(etldata.begin(), etldata.end());
+      CView cview(etldata.begin(), etldata.end());
 
       CHECK_EQUAL(view.begin(),  view.cbegin());
       CHECK_EQUAL(cview.begin(), cview.cbegin());

@@ -5,7 +5,7 @@ The MIT License(MIT)
 
 Embedded Template Library.
 https://github.com/ETLCPP/etl
-http://www.etlcpp.com
+https://www.etlcpp.com
 
 Copyright(c) 2016 jwellbelove
 
@@ -33,6 +33,7 @@ SOFTWARE.
 
 #include "platform.h"
 #include "basic_string.h"
+#include "string_view.h"
 #include "hash.h"
 
 #if ETL_CPP11_SUPPORTED && !defined(ETL_STLPORT) && !defined(ETL_NO_STL)
@@ -57,7 +58,7 @@ namespace etl
 
     typedef iwstring base_type;
     typedef iwstring interface_type;
-    
+
     typedef iwstring::value_type value_type;
 
     static const size_t MAX_SIZE = MAX_SIZE_;
@@ -108,6 +109,10 @@ namespace etl
       if (other.truncated())
       {
         this->is_truncated = true;
+
+#if defined(ETL_STRING_TRUNCATION_IS_ERROR)
+        ETL_ALWAYS_ASSERT(ETL_ERROR(string_truncation));
+#endif
       }
     }
 
@@ -115,7 +120,7 @@ namespace etl
     /// Constructor, from null terminated text.
     ///\param text The initial text of the wstring.
     //*************************************************************************
-    wstring(const value_type* text)
+    ETL_EXPLICIT_STRING_FROM_CHAR wstring(const value_type* text)
       : iwstring(reinterpret_cast<value_type*>(&buffer), MAX_SIZE)
     {
       this->assign(text, text + etl::char_traits<value_type>::length(text));
@@ -169,6 +174,16 @@ namespace etl
 #endif
 
     //*************************************************************************
+    /// From string_view.
+    ///\param view The string_view.
+    //*************************************************************************
+    explicit wstring(const etl::wstring_view& view)
+      : iwstring(reinterpret_cast<value_type*>(&buffer), MAX_SIZE)
+    {
+      this->assign(view.begin(), view.end());
+    }
+
+    //*************************************************************************
     /// Returns a sub-string.
     ///\param position The position of the first character. Default = 0.
     ///\param length   The number of characters. Default = npos.
@@ -181,7 +196,7 @@ namespace etl
       {
         ETL_ASSERT(position < size(), ETL_ERROR(string_out_of_bounds));
 
-        length_ = std::min(length_, size() - position);
+        length_ = etl::min(length_, size() - position);
 
         new_string.assign(buffer + position, buffer + position + length_);
       }
@@ -252,6 +267,24 @@ namespace etl
     }
   };
 #endif
+
+  //***************************************************************************
+  /// Make wstring from wide string literal or wchar_t array
+  //***************************************************************************
+  template<const size_t MAX_SIZE>
+  etl::wstring<MAX_SIZE - 1> make_string(const wchar_t (&text) [MAX_SIZE])
+  {
+    return etl::wstring<MAX_SIZE - 1>(text, MAX_SIZE - 1);
+  }
+
+  //***************************************************************************
+  /// Make string with max capacity from string literal or char array
+  //***************************************************************************
+  template<const size_t MAX_SIZE, const size_t SIZE>
+  etl::wstring<MAX_SIZE> make_string_with_capacity(const wchar_t(&text)[SIZE])
+  {
+    return etl::wstring<MAX_SIZE>(text, SIZE - 1);
+  }
 }
 
 #include "private/minmax_pop.h"

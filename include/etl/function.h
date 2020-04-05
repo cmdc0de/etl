@@ -5,7 +5,7 @@ The MIT License(MIT)
 
 Embedded Template Library.
 https://github.com/ETLCPP/etl
-http://www.etlcpp.com
+https://www.etlcpp.com
 
 Copyright(c) 2014 jwellbelove
 
@@ -56,6 +56,8 @@ namespace etl
 
     typedef TParameter parameter_type; ///< The type of parameter sent to the function.
 
+    virtual ~ifunction() {}
+  
     //*************************************************************************
     /// The function operator that will be overridden.
     //*************************************************************************
@@ -73,6 +75,8 @@ namespace etl
 
     typedef void parameter_type; ///< The type of parameter sent to the function.
 
+    virtual ~ifunction() {}
+  
     //*************************************************************************
     /// The function operator that will be overridden.
     //*************************************************************************

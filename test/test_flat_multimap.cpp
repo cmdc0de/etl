@@ -26,7 +26,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ******************************************************************************/
 
-#include "UnitTest++.h"
+#include "UnitTest++/UnitTest++.h"
 
 #include <map>
 #include <array>
@@ -46,11 +46,12 @@ namespace
 
   typedef TestDataDC<std::string>  DC;
   typedef TestDataNDC<std::string> NDC;
+  typedef TestDataM<std::string>   MC;
 
-  typedef std::pair<int, DC>  ElementDC;
-  typedef std::pair<int, NDC> ElementNDC;
+  typedef ETL_OR_STD::pair<int, DC>  ElementDC;
+  typedef ETL_OR_STD::pair<int, NDC> ElementNDC;
 
-  typedef std::pair<int, int>  ElementInt;
+  typedef ETL_OR_STD::pair<int, int>  ElementInt;
 
   typedef etl::flat_multimap<int, DC, SIZE>  DataDC;
   typedef etl::flat_multimap<int, NDC, SIZE> DataNDC;
@@ -58,6 +59,9 @@ namespace
   typedef etl::iflat_multimap<int, NDC>      IDataNDC;
 
   typedef etl::flat_multimap<int, int, SIZE>  DataInt;
+
+  typedef etl::flat_multimap<int, MC, SIZE> DataM;
+  typedef etl::iflat_multimap<int, MC>      IDataM;
 
   typedef std::multimap<int, DC>  Compare_DataDC;
   typedef std::multimap<int, NDC> Compare_DataNDC;
@@ -182,10 +186,10 @@ namespace
     return !(lhs == rhs);
   }
 
-  typedef std::pair<const int, D1> Element1;
-  typedef std::pair<const int, D2> Element2;
-  typedef std::pair<const int, D3> Element3;
-  typedef std::pair<const int, D4> Element4;
+  typedef ETL_OR_STD::pair<const int, D1> Element1;
+  typedef ETL_OR_STD::pair<const int, D2> Element2;
+  typedef ETL_OR_STD::pair<const int, D3> Element3;
+  typedef ETL_OR_STD::pair<const int, D4> Element4;
 
   typedef etl::flat_multimap<int, D1, SIZE> Data1;
   typedef etl::flat_multimap<int, D2, SIZE> Data2;
@@ -319,6 +323,7 @@ namespace
       CHECK(isEqual);
     }
 
+#if !defined(ETL_NO_STL)
     //*************************************************************************
     TEST_FIXTURE(SetupFixture, test_constructor_initializer_list)
     {
@@ -333,6 +338,45 @@ namespace
                                 data.end(),
                                 compare_data.begin());
       CHECK(isEqual);
+    }
+#endif
+
+    //*************************************************************************
+    TEST(test_move_constructor)
+    {
+      using Item = ETL_OR_STD::pair<int, MC>;
+
+      Item p1(1, MC("1"));
+      Item p2a(2, "2a");
+      Item p2b(2, "2b");
+      Item p3(3, "3");
+      Item p4(4, MC("4"));
+
+      DataM data1;
+      data1.insert(std::move(p1));
+      data1.insert(std::move(p2a));
+      data1.insert(std::move(p3));
+      data1.insert(std::move(p4));
+      data1.insert(std::move(p2b));
+
+      CHECK(!bool(p1.second));
+      CHECK(!bool(p2a.second));
+      CHECK(!bool(p2b.second));
+      CHECK(!bool(p3.second));
+      CHECK(!bool(p4.second));
+
+      DataM data2(std::move(data1));
+
+      CHECK_EQUAL(5U, data1.size()); // Move does not clear the source.
+      CHECK_EQUAL(5U, data2.size());
+
+      DataM::const_iterator itr = data2.begin();
+
+      CHECK_EQUAL("1", (*itr++).second.value);
+      CHECK_EQUAL("2a", (*itr++).second.value);
+      CHECK_EQUAL("2b", (*itr++).second.value);
+      CHECK_EQUAL("3", (*itr++).second.value);
+      CHECK_EQUAL("4", (*itr++).second.value);
     }
 
     //*************************************************************************
@@ -447,7 +491,7 @@ namespace
       DataNDC data;
 
       data.insert(DataNDC::value_type(0, N0));
-      compare_data.insert(std::make_pair(0, N0));
+      compare_data.insert(ETL_OR_STD::make_pair(0, N0));
 
       bool isEqual = Check_Equal(data.begin(),
                                  data.end(),
@@ -455,8 +499,8 @@ namespace
 
       CHECK(isEqual);
 
-      data.insert(std::make_pair(2, N2));
-      compare_data.insert(std::make_pair(2, N2));
+      data.insert(ETL_OR_STD::make_pair(2, N2));
+      compare_data.insert(ETL_OR_STD::make_pair(2, N2));
 
       isEqual = Check_Equal(data.begin(),
                             data.end(),
@@ -464,8 +508,8 @@ namespace
 
       CHECK(isEqual);
 
-      data.insert(std::make_pair(1, N1));
-      compare_data.insert(std::make_pair(1, N1));
+      data.insert(ETL_OR_STD::make_pair(1, N1));
+      compare_data.insert(ETL_OR_STD::make_pair(1, N1));
 
       isEqual = Check_Equal(data.begin(),
                             data.end(),
@@ -482,24 +526,24 @@ namespace
       Compare_DataNDC compare_data;
       DataNDC data;
 
-      data.insert(std::make_pair(0, N0));
-      compare_data.insert(std::make_pair(0, N0));
+      data.insert(ETL_OR_STD::make_pair(0, N0));
+      compare_data.insert(ETL_OR_STD::make_pair(0, N0));
 
-      data.insert(std::make_pair(1, N1));
-      compare_data.insert(std::make_pair(1, N1));
+      data.insert(ETL_OR_STD::make_pair(1, N1));
+      compare_data.insert(ETL_OR_STD::make_pair(1, N1));
 
-      data.insert(std::make_pair(2, N2));
-      compare_data.insert(std::make_pair(2, N2));
+      data.insert(ETL_OR_STD::make_pair(2, N2));
+      compare_data.insert(ETL_OR_STD::make_pair(2, N2));
 
       // Do it again.
-      data.insert(std::make_pair(0, N0));
-      compare_data.insert(std::make_pair(0, N0));
+      data.insert(ETL_OR_STD::make_pair(0, N0));
+      compare_data.insert(ETL_OR_STD::make_pair(0, N0));
 
-      data.insert(std::make_pair(1, N1));
-      compare_data.insert(std::make_pair(1, N1));
+      data.insert(ETL_OR_STD::make_pair(1, N1));
+      compare_data.insert(ETL_OR_STD::make_pair(1, N1));
 
-      data.insert(std::make_pair(2, N2));
-      compare_data.insert(std::make_pair(2, N2));
+      data.insert(ETL_OR_STD::make_pair(2, N2));
+      compare_data.insert(ETL_OR_STD::make_pair(2, N2));
 
       CHECK_EQUAL(compare_data.size(), data.size());
 
@@ -517,7 +561,7 @@ namespace
     {
       DataNDC data(initial_data.begin(), initial_data.end());
 
-      CHECK_THROW(data.insert(std::make_pair(10, N10)), etl::flat_multimap_full);
+      CHECK_THROW(data.insert(ETL_OR_STD::make_pair(10, N10)), etl::flat_multimap_full);
 
       CHECK(std::is_sorted(data.begin(), data.end()));
     }
@@ -562,8 +606,8 @@ namespace
       data.emplace(1, D1("1"));
       compare.emplace(1, D1("1"));
 
-      data.emplace(std::make_pair(2, D1("2")));
-      compare.emplace(std::make_pair(2, D1("2")));
+      data.emplace(ETL_OR_STD::make_pair(2, D1("2")));
+      compare.emplace(ETL_OR_STD::make_pair(2, D1("2")));
 
       // Do it again.
       data.emplace(0, "0");
@@ -572,8 +616,8 @@ namespace
       data.emplace(1, D1("1"));
       compare.emplace(1, D1("1"));
 
-      data.emplace(std::make_pair(2, D1("2")));
-      compare.emplace(std::make_pair(2, D1("2")));
+      data.emplace(ETL_OR_STD::make_pair(2, D1("2")));
+      compare.emplace(ETL_OR_STD::make_pair(2, D1("2")));
 
       CHECK_EQUAL(compare.size(), data.size());
 
@@ -596,8 +640,8 @@ namespace
       data.emplace(1, D2("1", "2"));
       compare.emplace(1, D2("1", "2"));
 
-      data.emplace(std::make_pair(2, D2("2", "3")));
-      compare.emplace(std::make_pair(2, D2("2", "3")));
+      data.emplace(ETL_OR_STD::make_pair(2, D2("2", "3")));
+      compare.emplace(ETL_OR_STD::make_pair(2, D2("2", "3")));
 
       // Do it again.
       data.emplace(0, "0", "1");
@@ -606,8 +650,8 @@ namespace
       data.emplace(1, D2("1", "2"));
       compare.emplace(1, D2("1", "2"));
 
-      data.emplace(std::make_pair(2, D2("2", "3")));
-      compare.emplace(std::make_pair(2, D2("2", "3")));
+      data.emplace(ETL_OR_STD::make_pair(2, D2("2", "3")));
+      compare.emplace(ETL_OR_STD::make_pair(2, D2("2", "3")));
 
       CHECK_EQUAL(compare.size(), data.size());
 
@@ -630,8 +674,8 @@ namespace
       data.emplace(1, D3("1", "2", "3"));
       compare.emplace(1, D3("1", "2", "3"));
 
-      data.emplace(std::make_pair(2, D3("2", "3", "4")));
-      compare.emplace(std::make_pair(2, D3("2", "3", "4")));
+      data.emplace(ETL_OR_STD::make_pair(2, D3("2", "3", "4")));
+      compare.emplace(ETL_OR_STD::make_pair(2, D3("2", "3", "4")));
 
       // Do it again.
       data.emplace(0, "0", "1", "2");
@@ -640,8 +684,8 @@ namespace
       data.emplace(1, D3("1", "2", "3"));
       compare.emplace(1, D3("1", "2", "3"));
 
-      data.emplace(std::make_pair(2, D3("2", "3", "4")));
-      compare.emplace(std::make_pair(2, D3("2", "3", "4")));
+      data.emplace(ETL_OR_STD::make_pair(2, D3("2", "3", "4")));
+      compare.emplace(ETL_OR_STD::make_pair(2, D3("2", "3", "4")));
 
       CHECK_EQUAL(compare.size(), data.size());
 
@@ -664,8 +708,8 @@ namespace
       data.emplace(1, D4("1", "2", "3", "4"));
       compare.emplace(1, D4("1", "2", "3", "4"));
 
-      data.emplace(std::make_pair(2, D4("2", "3", "4", "5")));
-      compare.emplace(std::make_pair(2, D4("2", "3", "4", "5")));
+      data.emplace(ETL_OR_STD::make_pair(2, D4("2", "3", "4", "5")));
+      compare.emplace(ETL_OR_STD::make_pair(2, D4("2", "3", "4", "5")));
 
       // Do it again.
       data.emplace(0, "0", "1", "2", "3");
@@ -674,8 +718,8 @@ namespace
       data.emplace(1, D4("1", "2", "3", "4"));
       compare.emplace(1, D4("1", "2", "3", "4"));
 
-      data.emplace(std::make_pair(2, D4("2", "3", "4", "5")));
-      compare.emplace(std::make_pair(2, D4("2", "3", "4", "5")));
+      data.emplace(ETL_OR_STD::make_pair(2, D4("2", "3", "4", "5")));
+      compare.emplace(ETL_OR_STD::make_pair(2, D4("2", "3", "4", "5")));
 
       CHECK_EQUAL(compare.size(), data.size());
 
@@ -919,8 +963,8 @@ namespace
       Compare_DataNDC compare_data(initial_data.begin(), initial_data.end());
       DataNDC data(initial_data.begin(), initial_data.end());
 
-      std::pair<Compare_DataNDC::iterator, Compare_DataNDC::iterator> i_compare = compare_data.equal_range(5);
-      std::pair<DataNDC::iterator, DataNDC::iterator> i_data = data.equal_range(5);
+      ETL_OR_STD::pair<Compare_DataNDC::iterator, Compare_DataNDC::iterator> i_compare = compare_data.equal_range(5);
+      ETL_OR_STD::pair<DataNDC::iterator, DataNDC::iterator> i_data = data.equal_range(5);
 
       CHECK_EQUAL(std::distance(compare_data.begin(), i_compare.first),  std::distance(data.begin(), i_data.first));
       CHECK_EQUAL(std::distance(compare_data.begin(), i_compare.second), std::distance(data.begin(), i_data.second));
@@ -931,7 +975,7 @@ namespace
     {
       DataNDC data(initial_data.begin(), initial_data.end());
 
-      std::pair<DataNDC::iterator, DataNDC::iterator> i_data;
+      ETL_OR_STD::pair<DataNDC::iterator, DataNDC::iterator> i_data;
 
       i_data = data.equal_range(-1);
       CHECK_EQUAL(data.begin(), i_data.first);
@@ -974,8 +1018,8 @@ namespace
       Compare_DataNDC compare_data(multi_data.begin(), multi_data.end());
       DataNDC data(multi_data.begin(), multi_data.end());
 
-      std::pair<Compare_DataNDC::iterator, Compare_DataNDC::iterator> compare_range;
-      std::pair<DataNDC::iterator, DataNDC::iterator> test_range;
+      ETL_OR_STD::pair<Compare_DataNDC::iterator, Compare_DataNDC::iterator> compare_range;
+      ETL_OR_STD::pair<DataNDC::iterator, DataNDC::iterator> test_range;
 
       compare_range = compare_data.equal_range(0);
       test_range    = data.equal_range(0);

@@ -102,21 +102,12 @@ namespace etl
 
         if (ok)
         {
-          if (router.is_bus())
-          {
-            // Message busses get added to the end.
-            router_list.push_back(&router);
-          }
-          else
-          {
-            // Routers get added in id order.
-            router_list_t::iterator irouter = std::upper_bound(router_list.begin(),
-                                                               router_list.end(),
-                                                               router.get_message_router_id(),
-                                                               compare_router_id());
+          router_list_t::iterator irouter = etl::upper_bound(router_list.begin(),
+                                                                router_list.end(),
+                                                                router.get_message_router_id(),
+                                                                compare_router_id());
 
-            router_list.insert(irouter, &router);
-          }
+          router_list.insert(irouter, &router);
         }
       }
 
@@ -134,10 +125,10 @@ namespace etl
       }
       else
       {
-        std::pair<router_list_t::iterator, router_list_t::iterator> range = std::equal_range(router_list.begin(),
-                                                                                             router_list.end(),
-                                                                                             id,
-                                                                                             compare_router_id());
+        ETL_OR_STD::pair<router_list_t::iterator, router_list_t::iterator> range = etl::equal_range(router_list.begin(),
+                                                                                               router_list.end(),
+                                                                                               id,
+                                                                                               compare_router_id());
 
         router_list.erase(range.first, range.second);
       }
@@ -146,9 +137,9 @@ namespace etl
     //*******************************************
     void unsubscribe(etl::imessage_router& router)
     {
-      router_list_t::iterator irouter = std::find(router_list.begin(),
-                                                  router_list.end(),
-                                                  &router);
+      router_list_t::iterator irouter = etl::find(router_list.begin(),
+                                                     router_list.end(),
+                                                     &router);
 
       if (irouter != router_list.end())
       {
@@ -203,17 +194,9 @@ namespace etl
           {
             etl::imessage_router& router = **irouter;
 
-            if (router.is_bus())
+            if (router.accepts(message.message_id))
             {
-              // The router is actually a bus.
-              etl::imessage_bus& bus = static_cast<etl::imessage_bus&>(router);
-
-              // So pass it on.
-              bus.receive(source, destination_router_id, message);
-            }
-            else if (router.accepts(message.message_id))
-            {
-              router.receive(source, message);
+              router.receive(source, destination_router_id, message);
             }
 
             ++irouter;
@@ -229,10 +212,10 @@ namespace etl
           router_list_t::iterator irouter = router_list.begin();
 
           // Find routers with the id.
-          std::pair<router_list_t::iterator, router_list_t::iterator> range = std::equal_range(router_list.begin(),
-                                                                                               router_list.end(),
-                                                                                               destination_router_id,
-                                                                                               compare_router_id());
+          ETL_OR_STD::pair<router_list_t::iterator, router_list_t::iterator> range = etl::equal_range(router_list.begin(),
+                                                                                                 router_list.end(),
+                                                                                                 destination_router_id,
+                                                                                                 compare_router_id());
 
           // Call all of them.
           while (range.first != range.second)
@@ -247,18 +230,15 @@ namespace etl
 
           // Do any message buses.
           // These are always at the end of the list.
-          irouter = std::lower_bound(router_list.begin(),
-                                     router_list.end(),
-                                     etl::imessage_bus::MESSAGE_BUS,
-                                     compare_router_id());
+          irouter = etl::lower_bound(router_list.begin(),
+                                        router_list.end(),
+                                        etl::imessage_bus::MESSAGE_BUS,
+                                        compare_router_id());
 
           while (irouter != router_list.end())
           {
-            // The router is actually a bus.
-            etl::imessage_bus& bus = static_cast<etl::imessage_bus&>(**irouter);
-
             // So pass it on.
-            bus.receive(source, destination_router_id, message);
+            (*irouter)->receive(source, destination_router_id, message);
 
             ++irouter;
           }
@@ -289,6 +269,12 @@ namespace etl
     void clear()
     {
       return router_list.clear();
+    }
+
+    //********************************************
+    bool is_null_router() const
+    {
+      return false;
     }
 
   protected:

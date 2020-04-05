@@ -5,7 +5,7 @@ The MIT License(MIT)
 
 Embedded Template Library.
 https://github.com/ETLCPP/etl
-http://www.etlcpp.com
+https://www.etlcpp.com
 
 Copyright(c) 2014 jwellbelove
 
@@ -43,9 +43,9 @@ namespace etl
   struct parameter_type
   {
     /// By default fundamental and pointer types are passed by value.
-    typedef typename etl::conditional<is_fundamental<T>::value || is_pointer<T>::value,
-                                      T,
-                                      const T&>::type type;
+    typedef typename etl::conditional<etl::is_fundamental<T>::value || etl::is_pointer<T>::value,
+                                         T,
+                                         const T&>::type type;
   };
 }
 

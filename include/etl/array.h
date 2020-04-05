@@ -35,16 +35,14 @@ SOFTWARE.
 
 #include "platform.h"
 
-#include "stl/algorithm.h"
-#include "stl/iterator.h"
-#include "stl/functional.h"
-
+#include "algorithm.h"
+#include "iterator.h"
+#include "functional.h"
 #include "exception.h"
 #include "type_traits.h"
 #include "parameter_type.h"
 #include "static_assert.h"
 #include "error_handler.h"
-#include "algorithm.h"
 
 ///\defgroup array array
 /// A replacement for std::array if you haven't got C++0x11.
@@ -107,8 +105,8 @@ namespace etl
     typedef const T*                              const_pointer;
     typedef T*                                    iterator;
     typedef const T*                              const_iterator;
-    typedef std::reverse_iterator<iterator>       reverse_iterator;
-    typedef std::reverse_iterator<const_iterator> const_reverse_iterator;
+    typedef ETL_OR_STD::reverse_iterator<iterator>       reverse_iterator;
+    typedef ETL_OR_STD::reverse_iterator<const_iterator> const_reverse_iterator;
 
     //*************************************************************************
     // Element access
@@ -342,7 +340,7 @@ namespace etl
     //*************************************************************************
     void fill(parameter_t value)
     {
-      std::fill(begin(), end(), value);
+      etl::fill(begin(), end(), value);
     }
 
     //*************************************************************************
@@ -351,15 +349,16 @@ namespace etl
     //*************************************************************************
     void swap(array& other)
     {
+      using ETL_OR_STD::swap; // Allow ADL
+
       for (size_t i = 0; i < SIZE; ++i)
       {
-        std::swap(_buffer[i], other._buffer[i]);
+        swap(_buffer[i], other._buffer[i]);
       }
     }
 
     //*************************************************************************
     /// Fills the array from the range.
-    /// If the range is larger than the array then the extra data is ignored.
     /// If the range is smaller than the array then the unused array elements are left unmodified.
     ///\param first The iterator to the first item in the ramge.
     ///\param last  The iterator to one past the final item in the range.
@@ -367,12 +366,11 @@ namespace etl
     template <typename TIterator>
     void assign(TIterator first, const TIterator last)
     {
-      etl::copy(first, last, begin(), end());
+      etl::copy_s(first, last, begin(), end());
     }
 
     //*************************************************************************
     /// Fills the array from the range.
-    /// If the range is larger than the array then the extra data is ignored.
     /// If the range is smaller than the array then the unused array elements are initialised with the supplied value.
     ///\param first The iterator to the first item in the ramge.
     ///\param last  The iterator to one past the final item in the range.
@@ -381,10 +379,10 @@ namespace etl
     void assign(TIterator first, const TIterator last, parameter_t value)
     {
       // Copy from the range.
-      iterator p = etl::copy(first, last, begin(), end());
+      iterator p = etl::copy(first, last, begin());
 
-      // Default initialise any that are left.
-      std::fill(p, end(), value);
+      // Initialise any that are left.
+      etl::fill(p, end(), value);
     }
 
     //*************************************************************************
@@ -406,7 +404,7 @@ namespace etl
     {
       iterator p = const_cast<iterator>(position);
 
-      std::copy_backward(p, end() - 1, end());
+      etl::move_backward(p, end() - 1, end());
       *p = value;
 
       return p;
@@ -436,18 +434,18 @@ namespace etl
       iterator p = const_cast<iterator>(position);
       iterator result(p);
 
-      size_t source_size       = std::distance(first, last);
-      size_t destination_space = std::distance(position, cend());
+      size_t source_size       = etl::distance(first, last);
+      size_t destination_space = etl::distance(position, cend());
 
       // Do we need to move anything?
       if (source_size < destination_space)
       {
-        size_t length = SIZE - (std::distance(begin(), p) + source_size);
-        std::copy_backward(p, p + length, end());
+        size_t length = SIZE - (etl::distance(begin(), p) + source_size);
+        etl::move_backward(p, p + length, end());
       }
 
       // Copy from the range.
-      etl::copy(first, last, p, end());
+      etl::copy_s(first, last, p, end());
 
       return result;
     }
@@ -470,7 +468,7 @@ namespace etl
     iterator erase(const_iterator position)
     {
       iterator p = const_cast<iterator>(position);
-      std::copy(p + 1, end(), p);
+      etl::move(p + 1, end(), p);
 
       return p;
     }
@@ -495,7 +493,7 @@ namespace etl
     iterator erase(const_iterator first, const_iterator last)
     {
       iterator p = const_cast<iterator>(first);
-      std::copy(last, cend(), p);
+      etl::move(last, cend(), p);
       return p;
     }
 
@@ -518,7 +516,7 @@ namespace etl
     {
       iterator p = const_cast<iterator>(position);
 
-      std::copy(p + 1, end(), p);
+      etl::move(p + 1, end(), p);
       back() = value;
 
       return p;
@@ -544,8 +542,8 @@ namespace etl
     {
       iterator p = const_cast<iterator>(first);
 
-      p = std::copy(last, cend(), p);
-      std::fill(p, end(), value);
+      p = etl::move(last, cend(), p);
+      etl::fill(p, end(), value);
 
       return const_cast<iterator>(first);
     }
@@ -574,7 +572,7 @@ namespace etl
   template <typename T, size_t SIZE>
   bool operator ==(const etl::array<T, SIZE>& lhs, const etl::array<T, SIZE>& rhs)
   {
-    return std::equal(lhs.cbegin(), lhs.cend(), rhs.cbegin());
+    return etl::equal(lhs.cbegin(), lhs.cend(), rhs.cbegin());
   }
 
   //*************************************************************************
@@ -598,7 +596,7 @@ namespace etl
   template <typename T, size_t SIZE>
   bool operator <(const etl::array<T, SIZE>& lhs, const etl::array<T, SIZE>& rhs)
   {
-    return std::lexicographical_compare(lhs.cbegin(),
+    return etl::lexicographical_compare(lhs.cbegin(),
                                         lhs.cend(),
                                         rhs.cbegin(),
                                         rhs.cend());

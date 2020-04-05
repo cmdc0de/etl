@@ -28,78 +28,89 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ******************************************************************************/
 
-#include <stdint.h>
-#include <limits.h>
-
 #ifndef ETL_PLATFORM_INCLUDED
 #define ETL_PLATFORM_INCLUDED
+
+#include <stdint.h>
+#include <limits.h>
 
 // Some targets do not support 8bit types.
 #define ETL_8BIT_SUPPORT (CHAR_BIT == 8)
 
 // Define a debug macro
-#if defined(_DEBUG) || defined(DEBUG)
-#define ETL_DEBUG
+#if !defined(ETL_DEBUG)
+  #if defined(_DEBUG) || defined(DEBUG)
+    #define ETL_DEBUG
+  #endif
 #endif
-
-// Undefine all of the macros.
-#undef ETL_PLATFORM_16BIT 
-#undef ETL_PLATFORM_32BIT
-#undef ETL_PLATFORM_64BIT
-#undef ETL_CPP11_SUPPORTED
-#undef ETL_CPP14_SUPPORTED
-#undef ETL_CPP17_SUPPORTED
-#undef ETL_NO_NULLPTR_SUPPORT
-#undef ETL_NO_LARGE_CHAR_SUPPORT
-#undef ETL_CPP11_TYPE_TRAITS_IS_TRIVIAL_SUPPORTED
-#undef ETL_STD_ATOMIC_SUPPORTED
 
 // Determine the bit width of the platform.
 #define ETL_PLATFORM_16BIT (UINT16_MAX == UINTPTR_MAX)
 #define ETL_PLATFORM_32BIT (UINT32_MAX == UINTPTR_MAX)
 #define ETL_PLATFORM_64BIT (UINT64_MAX == UINTPTR_MAX)
 
+// Include the user's profile definition.
 #include "etl_profile.h"
 
+#if defined(ETL_AUTO_DETERMINE_COMPILER_INFO)
+  // Figure out things about the compiler.
+  #include "profiles/determine_compiler.h"
+  #include "profiles/determine_compiler_version.h"
+  #include "profiles/determine_compiler_language_support.h"
+#endif
+
+#if defined(ETL_FORCE_EXPLICIT_STRING_CONVERSION_FROM_CHAR)
+#define ETL_EXPLICIT_STRING_FROM_CHAR explicit
+#else
+#define ETL_EXPLICIT_STRING_FROM_CHAR
+#endif
+
 // The macros below are dependent on the profile.
-
-#if defined(ETL_COMPILER_MICROSOFT)
-  // Disable warning of deprecated std::iterator.
-  #pragma warning(disable : 4996)
-#endif
-
-#if defined(ETL_COMPILER_GCC)
-  #define ETL_COMPILER_VERSION      __GNUC__
-  #define ETL_COMPILER_FULL_VERSION ((__GNUC__ * 10000) + (__GNUC_MINOR__ * 100) + __GNUC_PATCHLEVEL__)
-#elif defined ETL_COMPILER_MICROSOFT
-  #define ETL_COMPILER_VERSION      _MSC_VER
-  #define ETL_COMPILER_FULL_VERSION _MSC_FULL_VER
-#endif
-
-#if ETL_CPP11_SUPPORTED
+// C++11
+#if ETL_CPP11_SUPPORTED && !defined(ETL_FORCE_NO_ADVANCED_CPP)
   #define ETL_CONSTEXPR constexpr
+  #define ETL_CONST_OR_CONSTEXPR constexpr
+  #define ETL_DELETE    = delete
+  #define ETL_EXPLICIT explicit
+  #define ETL_OVERRIDE override
+  #define ETL_FINAL final
+  #if defined(ETL_EXCEPTIONS_DISABLED)
+    #define ETL_NOEXCEPT
+    #define ETL_NOEXCEPT_EXPR(expression)
+  #else
+    #define ETL_NOEXCEPT  noexcept
+    #define ETL_NOEXCEPT_EXPR(expression) noexcept(expression)
+  #endif
 #else
   #define ETL_CONSTEXPR
-#endif
-
-#if ETL_CPP17_SUPPORTED
-  #define ETL_IF_CONSTEXPR constexpr
-#else
-  #define ETL_IF_CONSTEXPR
-#endif
-
-#if ETL_CPP11_SUPPORTED
-  #define ETL_DELETE = delete
-#else
+  #define ETL_CONST_OR_CONSTEXPR const
   #define ETL_DELETE
-#endif
-
-#if ETL_CPP11_SUPPORTED
-  #define ETL_NOEXCEPT noexcept
-  #define ETL_NOEXCEPT_EXPR(expression) noexcept(expression)
-#else
+  #define ETL_EXPLICIT
+  #define ETL_OVERRIDE
+  #define ETL_FINAL
   #define ETL_NOEXCEPT
   #define ETL_NOEXCEPT_EXPR(expression)
 #endif
+
+// C++14
+#if ETL_CPP14_SUPPORTED && !defined(ETL_FORCE_NO_ADVANCED_CPP)
+  #define ETL_CONSTEXPR14 constexpr
+#else
+  #define ETL_CONSTEXPR14
+#endif
+
+// C++17
+#if ETL_CPP17_SUPPORTED && !defined(ETL_FORCE_NO_ADVANCED_CPP)
+  #define ETL_CONSTEXPR17 constexpr
+  #define ETL_IF_CONSTEXPR constexpr
+  #define ETL_NODISCARD [[nodiscard]]
+#else
+  #define ETL_CONSTEXPR17
+  #define ETL_IF_CONSTEXPR
+  #define ETL_NODISCARD
+#endif
+
+// Sort out namespaces for STL/No STL options.
+#include "private/choose_namespace.h"
 
 #endif

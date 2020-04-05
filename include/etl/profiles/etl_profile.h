@@ -37,6 +37,8 @@ SOFTWARE.
   #include "gcc_linux_x86.h"
 #elif defined(PROFILE_GCC_WINDOWS_X86)
   #include "gcc_windows_x86.h"
+#elif defined(PROFILE_CLANG_GENERIC)
+  #include "clang_generic.h"
 #elif defined(PROFILE_ARM_V5_GENERIC)
   #include "armv5.h"
 #elif defined(PROFILE_ARM_V6_GENERIC)
@@ -56,7 +58,7 @@ SOFTWARE.
 #elif defined(PROFILE_CUSTOM)
   #include "custom_profile.h"
 #else
-  #error Must provide a profile header file when buiding ETL. See https://www.etlcpp.com/setup.html
+  #include "auto.h"
 #endif
 
 #endif // __ETL_PROFILE_H_

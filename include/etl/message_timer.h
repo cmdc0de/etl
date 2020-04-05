@@ -45,28 +45,37 @@ SOFTWARE.
 #undef ETL_FILE
 #define ETL_FILE "44"
 
-#if !defined(ETL_MESSAGE_TIMER_USE_ATOMIC_LOCK) && !defined(ETL_MESSAGE_TIMER_USE_INTERRUPT_LOCK)
-  #error ETL_MESSAGE_TIMER_USE_ATOMIC_LOCK or ETL_MESSAGE_TIMER_USE_INTERRUPT_LOCK not defined
-#endif
-
-#if defined(ETL_MESSAGE_TIMER_USE_ATOMIC_LOCK) && defined(ETL_MESSAGE_TIMER_USE_INTERRUPT_LOCK)
-  #error Only define one of ETL_MESSAGE_TIMER_USE_ATOMIC_LOCK or ETL_MESSAGE_TIMER_USE_INTERRUPT_LOCK
-#endif
-
-#if defined(ETL_MESSAGE_TIMER_USE_ATOMIC_LOCK)
-  #define ETL_DISABLE_TIMER_UPDATES (++process_semaphore)
-  #define ETL_ENABLE_TIMER_UPDATES  (--process_semaphore)
-  #define ETL_TIMER_UPDATES_ENABLED (process_semaphore.load() == 0)
-#endif
-
-#if defined(ETL_MESSAGE_TIMER_USE_INTERRUPT_LOCK)
-  #if !defined(ETL_MESSAGE_TIMER_DISABLE_INTERRUPTS) || !defined(ETL_MESSAGE_TIMER_ENABLE_INTERRUPTS)
-    #error ETL_MESSAGE_TIMER_DISABLE_INTERRUPTS and/or ETL_MESSAGE_TIMER_ENABLE_INTERRUPTS not defined
-  #endif
-  
-  #define ETL_DISABLE_TIMER_UPDATES (ETL_MESSAGE_TIMER_DISABLE_INTERRUPTS)
-  #define ETL_ENABLE_TIMER_UPDATES  (ETL_MESSAGE_TIMER_ENABLE_INTERRUPTS)
+#if defined(ETL_IN_UNIT_TEST) && defined(ETL_NO_STL)
+  #define ETL_DISABLE_TIMER_UPDATES
+  #define ETL_ENABLE_TIMER_UPDATES
   #define ETL_TIMER_UPDATES_ENABLED true
+
+  #undef ETL_MESSAGE_TIMER_USE_ATOMIC_LOCK
+  #undef ETL_MESSAGE_TIMER_USE_INTERRUPT_LOCK
+#else
+  #if !defined(ETL_MESSAGE_TIMER_USE_ATOMIC_LOCK) && !defined(ETL_MESSAGE_TIMER_USE_INTERRUPT_LOCK)
+    #error ETL_MESSAGE_TIMER_USE_ATOMIC_LOCK or ETL_MESSAGE_TIMER_USE_INTERRUPT_LOCK not defined
+  #endif
+
+  #if defined(ETL_MESSAGE_TIMER_USE_ATOMIC_LOCK) && defined(ETL_MESSAGE_TIMER_USE_INTERRUPT_LOCK)
+    #error Only define one of ETL_MESSAGE_TIMER_USE_ATOMIC_LOCK or ETL_MESSAGE_TIMER_USE_INTERRUPT_LOCK
+  #endif
+
+  #if defined(ETL_MESSAGE_TIMER_USE_ATOMIC_LOCK)
+    #define ETL_DISABLE_TIMER_UPDATES (++process_semaphore)
+    #define ETL_ENABLE_TIMER_UPDATES  (--process_semaphore)
+    #define ETL_TIMER_UPDATES_ENABLED (process_semaphore.load() == 0)
+  #endif
+
+  #if defined(ETL_MESSAGE_TIMER_USE_INTERRUPT_LOCK)
+    #if !defined(ETL_MESSAGE_TIMER_DISABLE_INTERRUPTS) || !defined(ETL_MESSAGE_TIMER_ENABLE_INTERRUPTS)
+      #error ETL_MESSAGE_TIMER_DISABLE_INTERRUPTS and/or ETL_MESSAGE_TIMER_ENABLE_INTERRUPTS not defined
+    #endif
+
+    #define ETL_DISABLE_TIMER_UPDATES (ETL_MESSAGE_TIMER_DISABLE_INTERRUPTS)
+    #define ETL_ENABLE_TIMER_UPDATES  (ETL_MESSAGE_TIMER_ENABLE_INTERRUPTS)
+    #define ETL_TIMER_UPDATES_ENABLED true
+  #endif
 #endif
 
 namespace etl
@@ -77,8 +86,8 @@ namespace etl
   {
     //*******************************************
     message_timer_data()
-      : p_message(nullptr),
-        p_router(nullptr),
+      : p_message(ETL_NULLPTR),
+        p_router(ETL_NULLPTR),
         period(0),
         delta(etl::timer::state::INACTIVE),
         destination_router_id(etl::imessage_bus::ALL_MESSAGE_ROUTERS),
@@ -95,24 +104,17 @@ namespace etl
                        etl::imessage_router&    irouter_,
                        uint32_t                 period_,
                        bool                     repeating_,
-                       etl::message_router_id_t destination_router_id_)
+                       etl::message_router_id_t destination_router_id_ = etl::imessage_bus::ALL_MESSAGE_ROUTERS)
       : p_message(&message_),
         p_router(&irouter_),
         period(period_),
         delta(etl::timer::state::INACTIVE),
+        destination_router_id(destination_router_id_),
         id(id_),
         previous(etl::timer::id::NO_TIMER),
         next(etl::timer::id::NO_TIMER),
         repeating(repeating_)
     {
-      if (irouter_.is_bus())
-      {
-        destination_router_id = destination_router_id_;
-      }
-      else
-      {
-        destination_router_id = etl::imessage_bus::ALL_MESSAGE_ROUTERS;
-      }
     }
 
     //*******************************************
@@ -448,7 +450,7 @@ namespace etl
     {
       if (enabled)
       {
-        if ETL_IF_CONSTEXPR(ETL_TIMER_UPDATES_ENABLED)
+        if (ETL_TIMER_UPDATES_ENABLED)
         {
           // We have something to do?
           bool has_active = !active_list.empty();
@@ -469,19 +471,10 @@ namespace etl
                 active_list.insert(timer.id);
               }
 
-              if (timer.p_router != nullptr)
+              if (timer.p_router != ETL_NULLPTR)
               {
-                if (timer.p_router->is_bus())
-                {
-                  // Send to a message bus.
-                  etl::imessage_bus& bus = static_cast<etl::imessage_bus&>(*(timer.p_router));
-                  bus.receive(timer.destination_router_id, *(timer.p_message));
-                }
-                else
-                {
-                  // Send to a router.
-                  timer.p_router->receive(*(timer.p_message));
-                }
+                static etl::null_message_router nmr;
+                timer.p_router->receive(nmr, timer.destination_router_id, *(timer.p_message));
               }
 
               has_active = !active_list.empty();
@@ -576,7 +569,7 @@ namespace etl
         timer_array[id_].period = period_;
         return true;
       }
-      
+
       return false;
     }
 
@@ -627,7 +620,7 @@ namespace etl
     private_message_timer::list active_list;
 
     volatile bool enabled;
-    
+
 #if defined(ETL_MESSAGE_TIMER_USE_ATOMIC_LOCK)
     volatile etl::timer_semaphore_t process_semaphore;
 #endif

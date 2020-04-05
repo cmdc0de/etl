@@ -26,7 +26,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ******************************************************************************/
 
-#include "UnitTest++.h"
+#include "UnitTest++/UnitTest++.h"
 
 #include <string>
 #include <array>
@@ -81,7 +81,6 @@ namespace
     {
       SetupFixture()
       {
-        initial_text   = STR("Hello World");
         initial_text   = STR("Hello World");
         insert_text    = STR("Insert");
         less_text      = STR("Hello Vorld");
@@ -254,6 +253,29 @@ namespace
     }
 
     //*************************************************************************
+    TEST_FIXTURE(SetupFixture, test_constructor_from_literal)
+    {
+      Text text(STR("Hello World"));
+
+      bool is_equal = Equal(initial_text, text);
+      CHECK(is_equal);
+      CHECK(text.size() == SIZE);
+      CHECK(!text.empty());
+    }
+
+    //*************************************************************************
+    TEST_FIXTURE(SetupFixture, test_constructor_from_string_view)
+    {
+      etl::string_view view(initial_text.data(), initial_text.size());
+      Text text(view);
+
+      bool is_equal = Equal(initial_text, text);
+      CHECK(is_equal);
+      CHECK(text.size() == SIZE);
+      CHECK(!text.empty());
+    }
+
+    //*************************************************************************
     TEST_FIXTURE(SetupFixture, test_copy_constructor)
     {
       Text text(initial_text.c_str());
@@ -318,6 +340,7 @@ namespace
       CHECK(text2.truncated());
     }
 
+#if !defined(ETL_NO_STL)
     //*************************************************************************
     TEST_FIXTURE(SetupFixture, test_construct_initializer_list)
     {
@@ -342,6 +365,7 @@ namespace
       CHECK(is_equal);
       CHECK(text.truncated());
     }
+#endif
 
     //*************************************************************************
     TEST_FIXTURE(SetupFixture, test_assignment)
@@ -828,6 +852,34 @@ namespace
 
       Text text;
       text.assign(longer_text.c_str());
+
+      bool is_equal = Equal(compare_text, text);
+      CHECK(is_equal);
+      CHECK(text.truncated());
+    }
+
+    //*************************************************************************
+    TEST_FIXTURE(SetupFixture, test_assign_pointer_length)
+    {
+      Compare_Text compare_text(initial_text.c_str());
+
+      Text text;
+      text.assign(initial_text.c_str(), initial_text.size());
+
+      bool is_equal = Equal(compare_text, text);
+      CHECK(is_equal);
+      CHECK(!text.truncated());
+    }
+
+    //*************************************************************************
+    TEST_FIXTURE(SetupFixture, test_assign_pointer_length_excess)
+    {
+      Compare_Text compare_text(longer_text.c_str());
+
+      Text text;
+      text.assign(longer_text.c_str(), longer_text.size());
+
+      compare_text.resize(text.max_size());
 
       bool is_equal = Equal(compare_text, text);
       CHECK(is_equal);
@@ -3543,7 +3595,7 @@ namespace
 
       char buffer[sizeof(Text)];
 
-      memcpy(&buffer, &text, sizeof(text));
+      memcpy(&buffer, (const void*)&text, sizeof(text));
 
       Text& rtext(*reinterpret_cast<Text*>(buffer));
       rtext.repair();
@@ -3568,7 +3620,7 @@ namespace
 
       char buffer[sizeof(Text)];
 
-      memcpy(&buffer, &text, sizeof(text));
+      memcpy(&buffer, (const void*)&text, sizeof(text));
 
       IText& itext(*reinterpret_cast<IText*>(buffer));
       itext.repair();
@@ -3681,7 +3733,6 @@ namespace
       text.set_secure();
       text.assign(STR("ABCDEF"));
 
-      Text::pointer pb = text.begin();
       Text::pointer pe = text.end();
 
       text.assign(STR("ABC"));

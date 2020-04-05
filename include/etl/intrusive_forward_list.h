@@ -33,9 +33,9 @@ SOFTWARE.
 
 #include "platform.h"
 
-#include "stl/algorithm.h"
-#include "stl/iterator.h"
-#include "stl/functional.h"
+#include "algorithm.h"
+#include "iterator.h"
+#include "functional.h"
 
 #include "private/minmax_push.h"
 
@@ -48,6 +48,7 @@ SOFTWARE.
 #include "error_handler.h"
 #include "intrusive_links.h"
 #include "algorithm.h"
+#include "iterator.h"
 
 #undef ETL_FILE
 #define ETL_FILE "20"
@@ -152,7 +153,7 @@ namespace etl
     void assign(TIterator first, TIterator last)
     {
 #if defined(ETL_DEBUG)
-      intmax_t d = std::distance(first, last);
+      intmax_t d = etl::distance(first, last);
       ETL_ASSERT(d >= 0, ETL_ERROR(intrusive_forward_list_iterator_exception));
 #endif
 
@@ -199,7 +200,7 @@ namespace etl
         return;
       }
 
-      link_type* first = nullptr;             // To keep first link
+      link_type* first = ETL_NULLPTR;             // To keep first link
       link_type* second = start_link.etl_next; // To keep second link
       link_type* track = start_link.etl_next; // Track the list
 
@@ -219,7 +220,7 @@ namespace etl
     //*************************************************************************
     bool empty() const
     {
-      return start_link.etl_next == nullptr;
+      return start_link.etl_next == ETL_NULLPTR;
     }
 
     //*************************************************************************
@@ -248,7 +249,7 @@ namespace etl
     //*************************************************************************
     bool is_trivial_list() const
     {
-      return (start_link.link_type::etl_next == nullptr) || (start_link.link_type::etl_next->etl_next == nullptr);
+      return (start_link.link_type::etl_next == ETL_NULLPTR) || (start_link.link_type::etl_next->etl_next == ETL_NULLPTR);
     }
 
     //*************************************************************************
@@ -268,7 +269,7 @@ namespace etl
     {
       link_type* p_next = link.etl_next;
 
-      if (p_next != nullptr)
+      if (p_next != ETL_NULLPTR)
       {
         etl::unlink_after<link_type>(link);
         --current_size;
@@ -296,7 +297,7 @@ namespace etl
     //*************************************************************************
     void initialise()
     {
-      start_link.etl_next = nullptr;
+      start_link.etl_next = ETL_NULLPTR;
       current_size = 0;
     }
   };
@@ -327,14 +328,15 @@ namespace etl
     //*************************************************************************
     /// iterator.
     //*************************************************************************
-    class iterator : public std::iterator<std::forward_iterator_tag, value_type>
+    class iterator : public etl::iterator<ETL_OR_STD::forward_iterator_tag, value_type>
     {
     public:
 
       friend class intrusive_forward_list;
+      friend class const_iterator;
 
       iterator()
-        : p_value(nullptr)
+        : p_value(ETL_NULLPTR)
       {
       }
 
@@ -417,14 +419,14 @@ namespace etl
     //*************************************************************************
     /// const_iterator
     //*************************************************************************
-    class const_iterator : public std::iterator<std::forward_iterator_tag, const value_type>
+    class const_iterator : public etl::iterator<ETL_OR_STD::forward_iterator_tag, const value_type>
     {
     public:
 
       friend class intrusive_forward_list;
 
       const_iterator()
-        : p_value(nullptr)
+        : p_value(ETL_NULLPTR)
       {
       }
 
@@ -494,7 +496,7 @@ namespace etl
       const value_type* p_value;
     };
 
-    typedef typename std::iterator_traits<iterator>::difference_type difference_type;
+    typedef typename etl::iterator_traits<iterator>::difference_type difference_type;
 
     //*************************************************************************
     /// Constructor.
@@ -650,7 +652,7 @@ namespace etl
     {
       if (first != end() && (first != last))
       {
-        this->current_size -= std::distance(first, last) - 1;
+        this->current_size -= etl::distance(first, last) - 1;
 
         link_type* p_first = first.p_value;
         link_type* p_last = last.p_value;
@@ -659,7 +661,7 @@ namespace etl
         // Join the ends.
         etl::link<link_type>(p_first, p_last);
 
-        if (p_next == nullptr)
+        if (p_next == ETL_NULLPTR)
         {
           return end();
         }
@@ -689,7 +691,7 @@ namespace etl
       link_type* last    = this->get_head();
       link_type* current = last->etl_next;
 
-      while (current != nullptr)
+      while (current != ETL_NULLPTR)
       {
         // Is this value the same as the last?
         if (isEqual(*static_cast<value_type*>(current), *static_cast<value_type*>(last)))
@@ -711,13 +713,33 @@ namespace etl
     //*************************************************************************
     void sort()
     {
-      sort(std::less<value_type>());
+      sort(etl::less<value_type>());
     }
 
     //*************************************************************************
-    /// Sort using in-place merge sort algorithm.
-    /// Uses a supplied predicate function or functor.
-    /// This is not my algorithm. I got it off the web somewhere.
+    /// Stable sort using in-place merge sort algorithm.
+    /// Copyright 2001 Simon Tatham.
+    ///
+    /// Permission is hereby granted, free of charge, to any person
+    /// obtaining a copy of this software and associated documentation
+    /// files (the "Software"), to deal in the Software without
+    /// restriction, including without limitation the rights to use,
+    /// copy, modify, merge, publish, distribute, sublicense, and/or
+    /// sell copies of the Software, and to permit persons to whom the
+    /// Software is furnished to do so, subject to the following
+    /// conditions:
+    ///
+    /// The above copyright notice and this permission notice shall be
+    /// included in all copies or substantial portions of the Software.
+    ///
+    /// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+    /// EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
+    /// OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+    /// NONINFRINGEMENT.  IN NO EVENT SHALL SIMON TATHAM BE LIABLE FOR
+    /// ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF
+    /// CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+    /// CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+    /// SOFTWARE.
     //*************************************************************************
     template <typename TCompare>
     void sort(TCompare compare)
@@ -813,7 +835,7 @@ namespace etl
               i_tail = i_link;
             }
 
-            i_tail.p_value->link_type::etl_next = nullptr;
+            i_tail.p_value->link_type::etl_next = ETL_NULLPTR;
           }
 
           // Now left has stepped `list_size' places along, and right has too.
@@ -899,7 +921,7 @@ namespace etl
           etl::link<link_type>(before, first);
 
           link_type* last = &before;
-          while (last->link_type::etl_next != nullptr)
+          while (last->link_type::etl_next != ETL_NULLPTR)
           {
             last = last->link_type::etl_next;
           }
@@ -914,7 +936,7 @@ namespace etl
     //*************************************************************************
     /// Splice an element from another list into this one.
     //*************************************************************************
-    void splice(iterator position, etl::intrusive_forward_list<TValue, TLink>& other, iterator isource)
+    void splice_after(iterator position, etl::intrusive_forward_list<TValue, TLink>& other, iterator isource)
     {
       link_type& before = *position.p_value;
 
@@ -937,7 +959,7 @@ namespace etl
       {
         if (&other != this)
         {
-          size_t n = std::distance(begin_, end_) - 1;
+          size_t n = etl::distance(begin_, end_) - 1;
           this->current_size += n;
           other.current_size -= n;
         }
@@ -966,7 +988,7 @@ namespace etl
     //*************************************************************************
     void merge(list_type& other)
     {
-      merge(other, std::less<value_type>());
+      merge(other, etl::less<value_type>());
     }
 
     //*************************************************************************
@@ -983,11 +1005,11 @@ namespace etl
 #endif
 
         value_type* other_begin    = static_cast<value_type*>(other.get_head());
-        value_type* other_terminal = nullptr;
+        value_type* other_terminal = ETL_NULLPTR;
 
         value_type* before      = static_cast<value_type*>(&this->start_link);
         value_type* before_next = get_next(before);
-        value_type* terminal    = nullptr;
+        value_type* terminal    = ETL_NULLPTR;
 
         while ((before->link_type::etl_next != terminal) && (other_begin != other_terminal))
         {

@@ -5,7 +5,7 @@ The MIT License(MIT)
 
 Embedded Template Library.
 https://github.com/ETLCPP/etl
-http://www.etlcpp.com
+https://www.etlcpp.com
 
 Copyright(c) 2017 jwellbelove
 
@@ -38,6 +38,7 @@ SOFTWARE.
 
 namespace etl
 {
+#if defined(ETL_POLYMORPHIC_RANDOM)
   //***************************************************************************
   /// The base for all 32 bit random number generators.
   //***************************************************************************
@@ -53,6 +54,23 @@ namespace etl
     virtual uint32_t operator()() = 0;
     virtual uint32_t range(uint32_t low, uint32_t high) = 0;
   };
+#else
+  //***************************************************************************
+  /// The base for all 32 bit random number generators.
+  /// Empty, non-virtual.
+  //***************************************************************************
+  class random
+  {
+  protected:
+    random()
+    {
+    }
+
+    ~random()
+    {
+    }
+  };
+#endif
 
   //***************************************************************************
   /// A 32 bit random number generator.
@@ -432,6 +450,7 @@ namespace etl
     uint32_t value2;
   };
 
+#if !defined(ETL_NO_64BIT_TYPES)
   //***************************************************************************
   /// A 32 bit random number generator.
   /// Uses a permuted congruential generator calculation.
@@ -500,6 +519,7 @@ namespace etl
 
     uint64_t value;
   };
+#endif
 
 #if ETL_8BIT_SUPPORT
   //***************************************************************************

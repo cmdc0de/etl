@@ -3,7 +3,7 @@ The MIT License(MIT)
 
 Embedded Template Library.
 https://github.com/ETLCPP/etl
-http://www.etlcpp.com
+https://www.etlcpp.com
 
 Copyright(c) 2017 jwellbelove
 
@@ -285,10 +285,10 @@ namespace etl
 
       if (!task_list.full())
       {
-        typename task_list_t::iterator itask = std::upper_bound(task_list.begin(),
-                                                                task_list.end(),
-                                                                task.get_task_priority(),
-                                                                compare_priority());
+        typename task_list_t::iterator itask = etl::upper_bound(task_list.begin(),
+                                                                   task_list.end(),
+                                                                   task.get_task_priority(),
+                                                                   compare_priority());
 
         task_list.insert(itask, &task);
       }
@@ -304,7 +304,7 @@ namespace etl
     {
       for (TSize i = 0; i < size; ++i)
       {
-        ETL_ASSERT((p_tasks[i] != nullptr), ETL_ERROR(etl::scheduler_null_task_exception));
+        ETL_ASSERT((p_tasks[i] != ETL_NULLPTR), ETL_ERROR(etl::scheduler_null_task_exception));
         add_task(*(p_tasks[i]));
       }
     }
@@ -317,8 +317,8 @@ namespace etl
     ischeduler(etl::ivector<etl::task*>& task_list_)
       : scheduler_running(false),
         scheduler_exit(false),
-        p_idle_callback(nullptr),
-        p_watchdog_callback(nullptr),
+        p_idle_callback(ETL_NULLPTR),
+        p_watchdog_callback(ETL_NULLPTR),
         task_list(task_list_)
     {
     }
@@ -335,11 +335,6 @@ namespace etl
     //*******************************************
     struct compare_priority
     {
-      bool operator()(etl::task* ptask, etl::task_priority_t priority) const
-      {
-        return ptask->get_task_priority() > priority;
-      }
-
       bool operator()(etl::task_priority_t priority, etl::task* ptask) const
       {
         return priority > ptask->get_task_priority();
@@ -369,8 +364,7 @@ namespace etl
     }
 
     //*******************************************
-    /// Start the scheduler. SEQUENCIAL_SINGLE
-    /// Only calls the task to process work once, if it has work to do.
+    /// Start the scheduler.
     //*******************************************
     void start()
     {

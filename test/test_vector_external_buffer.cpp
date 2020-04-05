@@ -26,7 +26,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ******************************************************************************/
 
-#include "UnitTest++.h"
+#include "UnitTest++/UnitTest++.h"
 
 #include <vector>
 #include <array>
@@ -154,6 +154,7 @@ namespace
       CHECK(!data.empty());
     }
 
+#if !defined(ETL_NO_STL)
     //*************************************************************************
     TEST(test_constructor_initializer_list)
     {
@@ -164,6 +165,7 @@ namespace
       CHECK_EQUAL(compare_data.size(), data.size());
       CHECK(std::equal(compare_data.begin(), compare_data.end(), data.begin()));
     }
+#endif
 
     //*************************************************************************
     TEST_FIXTURE(SetupFixture, test_copy_constructor)
@@ -1014,7 +1016,7 @@ namespace
 
       char buffer[sizeof(Data)];
 
-      memcpy(&buffer, &data, sizeof(data));
+      memcpy(&buffer, (const void*)&data, sizeof(data));
 
       Data& rdata(*reinterpret_cast<Data*>(buffer));
       rdata.repair();
@@ -1038,7 +1040,7 @@ namespace
 
       char buffer[sizeof(Data)];
 
-      memcpy(&buffer, &data, sizeof(data));
+      memcpy(&buffer, (const void*)&data, sizeof(data));
 
       IData& idata(*reinterpret_cast<Data*>(buffer));
       idata.repair();

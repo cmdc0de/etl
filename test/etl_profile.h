@@ -43,6 +43,8 @@ SOFTWARE.
 #define ETL_MESSAGE_TIMER_USE_ATOMIC_LOCK
 #define ETL_CALLBACK_TIMER_USE_ATOMIC_LOCK
 
+#define ETL_POLYMORPHIC_RANDOM
+
 #define ETL_POLYMORPHIC_BITSET
 #define ETL_POLYMORPHIC_DEQUE
 #define ETL_POLYMORPHIC_FLAT_MAP
@@ -68,6 +70,7 @@ SOFTWARE.
 #define ETL_POLYMORPHIC_STRINGS
 #define ETL_POLYMORPHIC_POOL
 #define ETL_POLYMORPHIC_VECTOR
+#define ETL_POLYMORPHIC_INDIRECT_VECTOR
 
 //#define ETL_POLYMORPHIC_CONTAINERS
 
@@ -86,11 +89,20 @@ SOFTWARE.
 //#define ETL_QUEUE_ISR_FORCE_CPP03
 //#define ETL_QUEUE_LOCKED_FORCE_CPP03
 //#define ETL_OPTIONAL_FORCE_CPP03
+//#define ETL_LARGEST_TYPE_FORCE_CPP03
 
-#ifdef _MSC_VER
-  #include "etl/profiles/msvc_x86.h"
-#else
-  #include "etl/profiles/gcc_windows_x86.h"
+#if defined(ETL_NO_STL)
+  #define ETL_TIMER_SEMAPHORE_TYPE uint32_t
 #endif
+
+#if defined(WIN32) || defined(WIN64) || defined(_WIN32) || defined(_WIN64)
+  #define ETL_TARGET_OS_WINDOWS
+#endif
+
+#if defined(linux)
+  #define ETL_TARGET_OS_LINUX
+#endif
+
+#include "etl/profiles/auto.h"
 
 #endif

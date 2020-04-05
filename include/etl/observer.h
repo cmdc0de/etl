@@ -5,7 +5,7 @@ The MIT License(MIT)
 
 Embedded Template Library.
 https://github.com/ETLCPP/etl
-http://www.etlcpp.com
+https://www.etlcpp.com
 
 Copyright(c) 2014 jwellbelove
 
@@ -115,9 +115,9 @@ namespace etl
     void add_observer(TObserver& observer)
     {
 		  // See if we already have it in our list.
-      typename Observer_List::const_iterator i_observer = std::find(observer_list.begin(),
-                                                                    observer_list.end(),
-                                                                    &observer);
+      typename Observer_List::const_iterator i_observer = etl::find(observer_list.begin(),
+                                                                       observer_list.end(),
+                                                                       &observer);
 
 		  // Not there?
       if (i_observer == observer_list.end())
@@ -138,9 +138,9 @@ namespace etl
     bool remove_observer(TObserver& observer)
     {
       // See if we have it in our list.
-      typename Observer_List::iterator i_observer = std::find(observer_list.begin(),
-                                                              observer_list.end(),
-                                                              &observer);
+      typename Observer_List::iterator i_observer = etl::find(observer_list.begin(),
+                                                                 observer_list.end(),
+                                                                 &observer);
 
       // Found it?
       if (i_observer != observer_list.end())
@@ -176,6 +176,16 @@ namespace etl
     ///\tparam TNotification the notification type.
     ///\param n The notification.
     //*****************************************************************
+#if ETL_CPP11_SUPPORTED && !defined(ETL_OBSERVER_FORCE_CPP03)
+    template <typename... TNotification>
+    void notify_observers(TNotification... n)
+    {
+      for (auto observer : observer_list)
+      {
+        observer->notification(n...);
+      }
+    }
+#else
     template <typename TNotification>
     void notify_observers(TNotification n)
     {
@@ -184,6 +194,8 @@ namespace etl
         observer_list[i]->notification(n);
       }
     }
+#endif
+
 
   protected:
 

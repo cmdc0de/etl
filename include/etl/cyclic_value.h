@@ -5,7 +5,7 @@ The MIT License(MIT)
 
 Embedded Template Library.
 https://github.com/ETLCPP/etl
-http://www.etlcpp.com
+https://www.etlcpp.com
 
 Copyright(c) 2014 jwellbelove
 
@@ -43,7 +43,7 @@ SOFTWARE.
 #include "static_assert.h"
 #include "type_traits.h"
 
-#include "stl/algorithm.h"
+#include "algorithm.h"
 
 namespace etl
 {
@@ -257,7 +257,9 @@ namespace etl
     //*************************************************************************
     void swap(cyclic_value<T, FIRST, LAST>& other)
     {
-      std::swap(value, other.value);
+      using ETL_OR_STD::swap; // Allow ADL
+
+      swap(value, other.value);
     }
 
     //*************************************************************************
@@ -531,9 +533,11 @@ namespace etl
     //*************************************************************************
     void swap(cyclic_value<T, FIRST, LAST>& other)
     {
-      std::swap(first_value, other.first_value);
-      std::swap(last_value, other.last_value);
-      std::swap(value, other.value);
+      using ETL_OR_STD::swap; // Allow ADL
+
+      swap(first_value, other.first_value);
+      swap(last_value, other.last_value);
+      swap(value, other.value);
     }
 
     //*************************************************************************

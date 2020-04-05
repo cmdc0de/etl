@@ -5,7 +5,7 @@ The MIT License(MIT)
 
 Embedded Template Library.
 https://github.com/ETLCPP/etl
-http://www.etlcpp.com
+https://www.etlcpp.com
 
 Copyright(c) 2015 jwellbelove
 
@@ -35,7 +35,7 @@ SOFTWARE.
 
 #include "platform.h"
 
-#include "stl/utility.h"
+#include "utility.h"
 
 #include "exception.h"
 #include "error_handler.h"

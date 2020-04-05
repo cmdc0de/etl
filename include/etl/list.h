@@ -33,11 +33,13 @@ SOFTWARE.
 
 #include <stddef.h>
 
+#include <new>
+
 #include "platform.h"
 
-#include "stl/algorithm.h"
-#include "stl/iterator.h"
-#include "stl/functional.h"
+#include "algorithm.h"
+#include "iterator.h"
+#include "functional.h"
 
 #include "container.h"
 #include "pool.h"
@@ -48,6 +50,7 @@ SOFTWARE.
 #include "type_traits.h"
 #include "algorithm.h"
 #include "memory.h"
+#include "iterator.h"
 
 #if ETL_CPP11_SUPPORTED && !defined(ETL_STLPORT) && !defined(ETL_NO_STL)
   #include <initializer_list>
@@ -169,8 +172,8 @@ namespace etl
       /// Constructor
       //***********************************************************************
       node_t()
-        : previous(nullptr),
-          next(nullptr)
+        : previous(ETL_NULLPTR),
+          next(ETL_NULLPTR)
       {
       }
 
@@ -179,7 +182,9 @@ namespace etl
       //***********************************************************************
       inline void reverse()
       {
-        std::swap(previous, next);
+        using ETL_OR_STD::swap; // Allow ADL
+
+        swap(previous, next);
       }
 
       node_t* previous;
@@ -250,7 +255,7 @@ namespace etl
       }
       else
       {
-        ETL_ASSERT(p_node_pool != nullptr, ETL_ERROR(list_no_pool));
+        ETL_ASSERT(p_node_pool != ETL_NULLPTR, ETL_ERROR(list_no_pool));
         return p_node_pool->size();
       }
     }
@@ -266,7 +271,7 @@ namespace etl
       }
       else
       {
-        ETL_ASSERT(p_node_pool != nullptr, ETL_ERROR(list_no_pool));
+        ETL_ASSERT(p_node_pool != ETL_NULLPTR, ETL_ERROR(list_no_pool));
         return p_node_pool->empty();
       }
     }
@@ -276,7 +281,7 @@ namespace etl
     //*************************************************************************
     bool full() const
     {
-      ETL_ASSERT(p_node_pool != nullptr, ETL_ERROR(list_no_pool));
+      ETL_ASSERT(p_node_pool != ETL_NULLPTR, ETL_ERROR(list_no_pool));
       return p_node_pool->size() == MAX_SIZE;
     }
 
@@ -286,9 +291,11 @@ namespace etl
     //*************************************************************************
     size_t available() const
     {
-      ETL_ASSERT(p_node_pool != nullptr, ETL_ERROR(list_no_pool));
+      ETL_ASSERT(p_node_pool != ETL_NULLPTR, ETL_ERROR(list_no_pool));
       return max_size() - p_node_pool->size();
     }
+
+  protected:
 
     //*************************************************************************
     /// Is the list a trivial length?
@@ -297,8 +304,6 @@ namespace etl
     {
       return (size() < 2);
     }
-
-  protected:
 
     //*************************************************************************
     /// Get the head node.
@@ -355,7 +360,7 @@ namespace etl
     /// The constructor that is called from derived classes.
     //*************************************************************************
     explicit list_base(bool pool_is_shared_)
-      : p_node_pool(nullptr),
+      : p_node_pool(ETL_NULLPTR),
         MAX_SIZE(0),
         pool_is_shared(pool_is_shared_)
     {
@@ -479,14 +484,15 @@ namespace etl
     //*************************************************************************
     /// iterator.
     //*************************************************************************
-    class iterator : public std::iterator<std::bidirectional_iterator_tag, T>
+    class iterator : public etl::iterator<ETL_OR_STD::bidirectional_iterator_tag, T>
     {
     public:
 
       friend class ilist;
+      friend class const_iterator;
 
       iterator()
-        : p_node(nullptr)
+        : p_node(ETL_NULLPTR)
       {
       }
 
@@ -580,14 +586,14 @@ namespace etl
     //*************************************************************************
     /// const_iterator
     //*************************************************************************
-    class const_iterator : public std::iterator<std::bidirectional_iterator_tag, const T>
+    class const_iterator : public etl::iterator<ETL_OR_STD::bidirectional_iterator_tag, const T>
     {
     public:
 
       friend class ilist;
 
       const_iterator()
-        : p_node(nullptr)
+        : p_node(ETL_NULLPTR)
       {
       }
 
@@ -673,10 +679,10 @@ namespace etl
       const node_t* p_node;
     };
 
-    typedef typename std::iterator_traits<iterator>::difference_type difference_type;
+    typedef typename etl::iterator_traits<iterator>::difference_type difference_type;
 
-    typedef std::reverse_iterator<iterator>       reverse_iterator;
-    typedef std::reverse_iterator<const_iterator> const_reverse_iterator;
+    typedef ETL_OR_STD::reverse_iterator<iterator>       reverse_iterator;
+    typedef ETL_OR_STD::reverse_iterator<const_iterator> const_reverse_iterator;
 
     //*************************************************************************
     /// Gets the beginning of the list.
@@ -807,7 +813,7 @@ namespace etl
     void assign(TIterator first, TIterator last)
     {
 #if defined(ETL_DEBUG)
-      difference_type d = std::distance(first, last);
+      difference_type d = etl::distance(first, last);
       ETL_ASSERT(d >= 0, ETL_ERROR(list_iterator));
       ETL_ASSERT(size_t(d) <= MAX_SIZE, ETL_ERROR(list_full));
 #endif
@@ -863,7 +869,7 @@ namespace etl
 #if defined(ETL_CHECK_PUSH_POP)
       ETL_ASSERT(!full(), ETL_ERROR(list_full));
 #endif
-      insert_node(get_head(), allocate_data_node(std::move(value)));
+      insert_node(get_head(), allocate_data_node(etl::move(value)));
     }
 #endif
 
@@ -877,10 +883,10 @@ namespace etl
 #if defined(ETL_CHECK_PUSH_POP)
       ETL_ASSERT(!full(), ETL_ERROR(list_full));
 #endif
-      ETL_ASSERT(p_node_pool != nullptr, ETL_ERROR(list_no_pool));
+      ETL_ASSERT(p_node_pool != ETL_NULLPTR, ETL_ERROR(list_no_pool));
 
-      data_node_t* p_data_node = p_node_pool->allocate<data_node_t>();
-      ::new (&(p_data_node->value)) T(std::forward<Args>(args)...);
+      data_node_t* p_data_node = create_data_node();
+      ::new (&(p_data_node->value)) T(etl::forward<Args>(args)...);
       ETL_INCREMENT_DEBUG_COUNT
       insert_node(get_head(), *p_data_node);
     }
@@ -894,9 +900,9 @@ namespace etl
 #if defined(ETL_CHECK_PUSH_POP)
       ETL_ASSERT(!full(), ETL_ERROR(list_full));
 #endif
-      ETL_ASSERT(p_node_pool != nullptr, ETL_ERROR(list_no_pool));
+      ETL_ASSERT(p_node_pool != ETL_NULLPTR, ETL_ERROR(list_no_pool));
 
-      data_node_t* p_data_node = p_node_pool->allocate<data_node_t>();
+      data_node_t* p_data_node = create_data_node();
       ::new (&(p_data_node->value)) T(value1);
       ETL_INCREMENT_DEBUG_COUNT
       insert_node(get_head(), *p_data_node);
@@ -911,9 +917,9 @@ namespace etl
 #if defined(ETL_CHECK_PUSH_POP)
       ETL_ASSERT(!full(), ETL_ERROR(list_full));
 #endif
-      ETL_ASSERT(p_node_pool != nullptr, ETL_ERROR(list_no_pool));
+      ETL_ASSERT(p_node_pool != ETL_NULLPTR, ETL_ERROR(list_no_pool));
 
-      data_node_t* p_data_node = p_node_pool->allocate<data_node_t>();
+      data_node_t* p_data_node = create_data_node();
       ::new (&(p_data_node->value)) T(value1, value2);
       ETL_INCREMENT_DEBUG_COUNT
       insert_node(get_head(), *p_data_node);
@@ -928,9 +934,9 @@ namespace etl
 #if defined(ETL_CHECK_PUSH_POP)
       ETL_ASSERT(!full(), ETL_ERROR(list_full));
 #endif
-      ETL_ASSERT(p_node_pool != nullptr, ETL_ERROR(list_no_pool));
+      ETL_ASSERT(p_node_pool != ETL_NULLPTR, ETL_ERROR(list_no_pool));
 
-      data_node_t* p_data_node = p_node_pool->allocate<data_node_t>();
+      data_node_t* p_data_node = create_data_node();
       ::new (&(p_data_node->value)) T(value1, value2, value3);
       ETL_INCREMENT_DEBUG_COUNT
       insert_node(get_head(), *p_data_node);
@@ -945,9 +951,9 @@ namespace etl
 #if defined(ETL_CHECK_PUSH_POP)
       ETL_ASSERT(!full(), ETL_ERROR(list_full));
 #endif
-      ETL_ASSERT(p_node_pool != nullptr, ETL_ERROR(list_no_pool));
+      ETL_ASSERT(p_node_pool != ETL_NULLPTR, ETL_ERROR(list_no_pool));
 
-      data_node_t* p_data_node = p_node_pool->allocate<data_node_t>();
+      data_node_t* p_data_node = create_data_node();
       ::new (&(p_data_node->value)) T(value1, value2, value3, value4);
       ETL_INCREMENT_DEBUG_COUNT
       insert_node(get_head(), *p_data_node);
@@ -986,7 +992,7 @@ namespace etl
 #if defined(ETL_CHECK_PUSH_POP)
       ETL_ASSERT(!full(), ETL_ERROR(list_full));
 #endif
-      insert_node(terminal_node, allocate_data_node(std::move(value)));
+      insert_node(terminal_node, allocate_data_node(etl::move(value)));
     }
 #endif
 
@@ -1000,10 +1006,10 @@ namespace etl
 #if defined(ETL_CHECK_PUSH_POP)
       ETL_ASSERT(!full(), ETL_ERROR(list_full));
 #endif
-      ETL_ASSERT(p_node_pool != nullptr, ETL_ERROR(list_no_pool));
+      ETL_ASSERT(p_node_pool != ETL_NULLPTR, ETL_ERROR(list_no_pool));
 
-      data_node_t* p_data_node = p_node_pool->allocate<data_node_t>();
-      ::new (&(p_data_node->value)) T(std::forward<Args>(args)...);
+      data_node_t* p_data_node = create_data_node();
+      ::new (&(p_data_node->value)) T(etl::forward<Args>(args)...);
       ETL_INCREMENT_DEBUG_COUNT
       insert_node(terminal_node, *p_data_node);
     }
@@ -1014,9 +1020,9 @@ namespace etl
 #if defined(ETL_CHECK_PUSH_POP)
       ETL_ASSERT(!full(), ETL_ERROR(list_full));
 #endif
-      ETL_ASSERT(p_node_pool != nullptr, ETL_ERROR(list_no_pool));
+      ETL_ASSERT(p_node_pool != ETL_NULLPTR, ETL_ERROR(list_no_pool));
 
-      data_node_t* p_data_node = p_node_pool->allocate<data_node_t>();
+      data_node_t* p_data_node = create_data_node();
       ::new (&(p_data_node->value)) T(value1);
       ETL_INCREMENT_DEBUG_COUNT
       insert_node(terminal_node, *p_data_node);
@@ -1028,9 +1034,9 @@ namespace etl
 #if defined(ETL_CHECK_PUSH_POP)
       ETL_ASSERT(!full(), ETL_ERROR(list_full));
 #endif
-      ETL_ASSERT(p_node_pool != nullptr, ETL_ERROR(list_no_pool));
+      ETL_ASSERT(p_node_pool != ETL_NULLPTR, ETL_ERROR(list_no_pool));
 
-      data_node_t* p_data_node = p_node_pool->allocate<data_node_t>();
+      data_node_t* p_data_node = create_data_node();
       ::new (&(p_data_node->value)) T(value1, value2);
       ETL_INCREMENT_DEBUG_COUNT
       insert_node(terminal_node, *p_data_node);
@@ -1042,9 +1048,9 @@ namespace etl
 #if defined(ETL_CHECK_PUSH_POP)
       ETL_ASSERT(!full(), ETL_ERROR(list_full));
 #endif
-      ETL_ASSERT(p_node_pool != nullptr, ETL_ERROR(list_no_pool));
+      ETL_ASSERT(p_node_pool != ETL_NULLPTR, ETL_ERROR(list_no_pool));
 
-      data_node_t* p_data_node = p_node_pool->allocate<data_node_t>();
+      data_node_t* p_data_node = create_data_node();
       ::new (&(p_data_node->value)) T(value1, value2, value3);
       ETL_INCREMENT_DEBUG_COUNT
       insert_node(terminal_node, *p_data_node);
@@ -1056,9 +1062,9 @@ namespace etl
 #if defined(ETL_CHECK_PUSH_POP)
       ETL_ASSERT(!full(), ETL_ERROR(list_full));
 #endif
-      ETL_ASSERT(p_node_pool != nullptr, ETL_ERROR(list_no_pool));
+      ETL_ASSERT(p_node_pool != ETL_NULLPTR, ETL_ERROR(list_no_pool));
 
-      data_node_t* p_data_node = p_node_pool->allocate<data_node_t>();
+      data_node_t* p_data_node = create_data_node();
       ::new (&(p_data_node->value)) T(value1, value2, value3, value4);
       ETL_INCREMENT_DEBUG_COUNT
       insert_node(terminal_node, *p_data_node);
@@ -1098,7 +1104,7 @@ namespace etl
     {
       ETL_ASSERT(!full(), ETL_ERROR(list_full));
 
-      data_node_t& data_node = allocate_data_node(std::move(value));
+      data_node_t& data_node = allocate_data_node(etl::move(value));
       insert_node(*position.p_node, data_node);
 
       return iterator(data_node);
@@ -1113,10 +1119,10 @@ namespace etl
     iterator emplace(iterator position, Args && ... args)
     {
       ETL_ASSERT(!full(), ETL_ERROR(list_full));
-      ETL_ASSERT(p_node_pool != nullptr, ETL_ERROR(list_no_pool));
+      ETL_ASSERT(p_node_pool != ETL_NULLPTR, ETL_ERROR(list_no_pool));
 
-      data_node_t* p_data_node = p_node_pool->allocate<data_node_t>();
-      ::new (&(p_data_node->value)) T(std::forward<Args>(args)...);
+      data_node_t* p_data_node = create_data_node();
+      ::new (&(p_data_node->value)) T(etl::forward<Args>(args)...);
       ETL_INCREMENT_DEBUG_COUNT
       insert_node(*position.p_node, *p_data_node);
 
@@ -1127,9 +1133,9 @@ namespace etl
     iterator emplace(iterator position, const T1& value1)
     {
       ETL_ASSERT(!full(), ETL_ERROR(list_full));
-      ETL_ASSERT(p_node_pool != nullptr, ETL_ERROR(list_no_pool));
+      ETL_ASSERT(p_node_pool != ETL_NULLPTR, ETL_ERROR(list_no_pool));
 
-      data_node_t* p_data_node = p_node_pool->allocate<data_node_t>();
+      data_node_t* p_data_node = create_data_node();
       ::new (&(p_data_node->value)) T(value1);
       ETL_INCREMENT_DEBUG_COUNT
       insert_node(*position.p_node, *p_data_node);
@@ -1141,9 +1147,9 @@ namespace etl
     iterator emplace(iterator position, const T1& value1, const T2& value2)
     {
       ETL_ASSERT(!full(), ETL_ERROR(list_full));
-      ETL_ASSERT(p_node_pool != nullptr, ETL_ERROR(list_no_pool));
+      ETL_ASSERT(p_node_pool != ETL_NULLPTR, ETL_ERROR(list_no_pool));
 
-      data_node_t* p_data_node = p_node_pool->allocate<data_node_t>();
+      data_node_t* p_data_node = create_data_node();
       ::new (&(p_data_node->value)) T(value1, value2);
       ETL_INCREMENT_DEBUG_COUNT
       insert_node(*position.p_node, *p_data_node);
@@ -1155,9 +1161,9 @@ namespace etl
     iterator emplace(iterator position, const T1& value1, const T2& value2, const T3& value3)
     {
       ETL_ASSERT(!full(), ETL_ERROR(list_full));
-      ETL_ASSERT(p_node_pool != nullptr, ETL_ERROR(list_no_pool));
+      ETL_ASSERT(p_node_pool != ETL_NULLPTR, ETL_ERROR(list_no_pool));
 
-      data_node_t* p_data_node = p_node_pool->allocate<data_node_t>();
+      data_node_t* p_data_node = create_data_node();
       ::new (&(p_data_node->value)) T(value1, value2, value3);
       ETL_INCREMENT_DEBUG_COUNT
       insert_node(*position.p_node, *p_data_node);
@@ -1169,9 +1175,9 @@ namespace etl
     iterator emplace(iterator position, const T1& value1, const T2& value2, const T3& value3, const T4& value4)
     {
       ETL_ASSERT(!full(), ETL_ERROR(list_full));
-      ETL_ASSERT(p_node_pool != nullptr, ETL_ERROR(list_no_pool));
+      ETL_ASSERT(p_node_pool != ETL_NULLPTR, ETL_ERROR(list_no_pool));
 
-      data_node_t* p_data_node = p_node_pool->allocate<data_node_t>();
+      data_node_t* p_data_node = create_data_node();
       ::new (&(p_data_node->value)) T(value1, value2, value3, value4);
       ETL_INCREMENT_DEBUG_COUNT
       insert_node(*position.p_node, *p_data_node);
@@ -1257,11 +1263,16 @@ namespace etl
     {
       ETL_ASSERT(n <= MAX_SIZE, ETL_ERROR(list_full));
 
+      // Zero?
+      if (n == 0U)
+      {
+        clear();
+      }
       // Smaller?
-      if (n < size())
+      else if (n < size())
       {
         iterator i_start = end();
-        std::advance(i_start, -difference_type(size() - n));
+        etl::advance(i_start, -difference_type(size() - n));
         erase(i_start, end());
       }
       // Larger?
@@ -1326,7 +1337,7 @@ namespace etl
     //*************************************************************************
     void unique()
     {
-      unique(std::equal_to<T>());
+      unique(etl::equal_to<T>());
     }
 
     //*************************************************************************
@@ -1379,10 +1390,10 @@ namespace etl
     {
       if (&other != this)
       {
-        ilist::iterator itr = other.begin();
+        typename ilist<T>::iterator itr = other.begin();
         while (itr != other.end())
         {
-          to = insert(to, std::move(*itr++));
+          to = insert(to, etl::move(*itr++));
         }
 
         other.erase(other.begin(), other.end());
@@ -1422,7 +1433,7 @@ namespace etl
       else
       {
         // From another list.
-        insert(to, std::move(*from));
+        insert(to, etl::move(*from));
         other.erase(from);
       }
     }
@@ -1463,7 +1474,7 @@ namespace etl
         ilist::iterator itr = first;
         while (itr != last)
         {
-          to = insert(to, std::move(*itr++));
+          to = insert(to, etl::move(*itr++));
           ++to;
         }
 
@@ -1477,7 +1488,7 @@ namespace etl
     //*************************************************************************
     void merge(ilist& other)
     {
-      merge(other, std::less<value_type>());
+      merge(other, etl::less<value_type>());
     }
 
     //*************************************************************************
@@ -1534,7 +1545,7 @@ namespace etl
     //*************************************************************************
     void merge(ilist&& other)
     {
-      merge(std::move(other), std::less<value_type>());
+      merge(etl::move(other), etl::less<value_type>());
     }
 
     //*************************************************************************
@@ -1569,7 +1580,7 @@ namespace etl
           {
             while ((other_begin != other_end) && (compare(*other_begin, *this_begin)))
             {
-              insert(this_begin, std::move(*other_begin));
+              insert(this_begin, etl::move(*other_begin));
               ++other_begin;
             }
           }
@@ -1580,7 +1591,7 @@ namespace etl
         {
           while (other_begin != other_end)
           {
-            insert(this_end, std::move(*other_begin++));
+            insert(this_end, etl::move(*other_begin++));
             }
         }
 
@@ -1595,13 +1606,33 @@ namespace etl
     //*************************************************************************
     void sort()
     {
-      sort(std::less<T>());
+      sort(etl::less<T>());
     }
 
     //*************************************************************************
-    /// Sort using in-place merge sort algorithm.
-    /// Uses a supplied predicate function or functor.
-    /// This is not my algorithm. I got it off the web somewhere.
+    /// Stable sort using in-place merge sort algorithm.
+    /// Copyright 2001 Simon Tatham.
+    ///
+    /// Permission is hereby granted, free of charge, to any person
+    /// obtaining a copy of this software and associated documentation
+    /// files (the "Software"), to deal in the Software without
+    /// restriction, including without limitation the rights to use,
+    /// copy, modify, merge, publish, distribute, sublicense, and/or
+    /// sell copies of the Software, and to permit persons to whom the
+    /// Software is furnished to do so, subject to the following
+    /// conditions:
+    ///
+    /// The above copyright notice and this permission notice shall be
+    /// included in all copies or substantial portions of the Software.
+    ///
+    /// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+    /// EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
+    /// OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+    /// NONINFRINGEMENT.  IN NO EVENT SHALL SIMON TATHAM BE LIABLE FOR
+    /// ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF
+    /// CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+    /// CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+    /// SOFTWARE.
     //*************************************************************************
     template <typename TCompare>
     void sort(TCompare compare)
@@ -1737,7 +1768,7 @@ namespace etl
         iterator itr = rhs.begin();
         while (itr != rhs.end())
         {
-          push_back(std::move(*itr));
+          push_back(etl::move(*itr));
           ++itr;
         }
 
@@ -1771,13 +1802,13 @@ namespace etl
     //*************************************************************************
     void initialise()
     {
-      if (this->p_node_pool != nullptr)
+      if (this->p_node_pool != ETL_NULLPTR)
       {
         if (!empty())
         {
           if (etl::is_trivially_destructible<T>::value && !has_shared_pool())
           {
-            ETL_ASSERT(p_node_pool != nullptr, ETL_ERROR(list_no_pool));
+            ETL_ASSERT(p_node_pool != ETL_NULLPTR, ETL_ERROR(list_no_pool));
             p_node_pool->release_all();
             ETL_RESET_DEBUG_COUNT;
           }
@@ -1871,9 +1902,9 @@ namespace etl
     //*************************************************************************
     data_node_t& allocate_data_node(const_reference value)
     {
-      ETL_ASSERT(p_node_pool != nullptr, ETL_ERROR(list_no_pool));
+      ETL_ASSERT(p_node_pool != ETL_NULLPTR, ETL_ERROR(list_no_pool));
 
-      data_node_t* p_data_node = p_node_pool->allocate<data_node_t>();
+      data_node_t* p_data_node = create_data_node();
       ::new (&(p_data_node->value)) T(value);
       ETL_INCREMENT_DEBUG_COUNT
 
@@ -1886,10 +1917,10 @@ namespace etl
     //*************************************************************************
     data_node_t& allocate_data_node(rvalue_reference value)
     {
-      ETL_ASSERT(p_node_pool != nullptr, ETL_ERROR(list_no_pool));
+      ETL_ASSERT(p_node_pool != ETL_NULLPTR, ETL_ERROR(list_no_pool));
 
-      data_node_t* p_data_node = p_node_pool->allocate<data_node_t>();
-      ::new (&(p_data_node->value)) T(std::move(value));
+      data_node_t* p_data_node = create_data_node();
+      ::new (&(p_data_node->value)) T(etl::move(value));
       ETL_INCREMENT_DEBUG_COUNT
 
         return *p_data_node;
@@ -1897,11 +1928,20 @@ namespace etl
 #endif
 
     //*************************************************************************
+    /// Create a data_node_t.
+    //*************************************************************************
+    data_node_t* create_data_node()
+    {
+      data_node_t* (etl::ipool::*func)() = &etl::ipool::allocate<data_node_t>;
+      return (p_node_pool->*func)();
+    }
+
+    //*************************************************************************
     /// Destroy a data_node_t.
     //*************************************************************************
     void destroy_data_node(data_node_t& node)
     {
-      ETL_ASSERT(p_node_pool != nullptr, ETL_ERROR(list_no_pool));
+      ETL_ASSERT(p_node_pool != ETL_NULLPTR, ETL_ERROR(list_no_pool));
       node.value.~T();
       p_node_pool->release(&node);
       ETL_DECREMENT_DEBUG_COUNT
@@ -2005,7 +2045,7 @@ namespace etl
         typename etl::ilist<T>::iterator itr = other.begin();
         while (itr != other.end())
         {
-          this->push_back(std::move(*itr));
+          this->push_back(etl::move(*itr));
           ++itr;
         }
 
@@ -2061,7 +2101,7 @@ namespace etl
         typename etl::ilist<T>::iterator itr = rhs.begin();
         while (itr != rhs.end())
         {
-          this->push_back(std::move(*itr));
+          this->push_back(etl::move(*itr));
           ++itr;
         }
 
@@ -2163,7 +2203,7 @@ namespace etl
         typename etl::ilist<T>::iterator itr = other.begin();
         while (itr != other.end())
         {
-          this->push_back(std::move(*itr));
+          this->push_back(etl::move(*itr));
           ++itr;
         }
 
@@ -2219,7 +2259,7 @@ namespace etl
         typename etl::ilist<T>::iterator itr = rhs.begin();
         while (itr != rhs.end())
         {
-          this->push_back(std::move(*itr));
+          this->push_back(etl::move(*itr));
           ++itr;
         }
 
@@ -2236,7 +2276,7 @@ namespace etl
     void set_pool(etl::ipool& pool)
     {
       // Clear the list of any current elements.
-      if (this->get_node_pool() != nullptr)
+      if (this->get_node_pool() != ETL_NULLPTR)
       {
         this->clear();
       }
@@ -2244,85 +2284,82 @@ namespace etl
       this->set_node_pool(pool);
     }
   };
-}
 
-//*************************************************************************
-/// Equal operator.
-///\param lhs Reference to the first list.
-///\param rhs Reference to the second list.
-///\return <b>true</b> if the arrays are equal, otherwise <b>false</b>.
-//*************************************************************************
-template <typename T>
-bool operator ==(const etl::ilist<T>& lhs, const etl::ilist<T>& rhs)
-{
-  return (lhs.size() == rhs.size()) && std::equal(lhs.begin(), lhs.end(), rhs.begin());
-}
+  //*************************************************************************
+  /// Equal operator.
+  ///\param lhs Reference to the first list.
+  ///\param rhs Reference to the second list.
+  ///\return <b>true</b> if the arrays are equal, otherwise <b>false</b>.
+  //*************************************************************************
+  template <typename T>
+  bool operator ==(const etl::ilist<T>& lhs, const etl::ilist<T>& rhs)
+  {
+    return (lhs.size() == rhs.size()) && etl::equal(lhs.begin(), lhs.end(), rhs.begin());
+  }
 
-//*************************************************************************
-/// Not equal operator.
-///\param lhs Reference to the first list.
-///\param rhs Reference to the second list.
-///\return <b>true</b> if the arrays are not equal, otherwise <b>false</b>.
-//*************************************************************************
-template <typename T>
-bool operator !=(const etl::ilist<T>& lhs, const etl::ilist<T>& rhs)
-{
-  return !(lhs == rhs);
-}
+  //*************************************************************************
+  /// Not equal operator.
+  ///\param lhs Reference to the first list.
+  ///\param rhs Reference to the second list.
+  ///\return <b>true</b> if the arrays are not equal, otherwise <b>false</b>.
+  //*************************************************************************
+  template <typename T>
+  bool operator !=(const etl::ilist<T>& lhs, const etl::ilist<T>& rhs)
+  {
+    return !(lhs == rhs);
+  }
 
-//*************************************************************************
-/// Less than operator.
-///\param lhs Reference to the first list.
-///\param rhs Reference to the second list.
-///\return <b>true</b> if the first list is lexicographically less than the
-/// second, otherwise <b>false</b>.
-//*************************************************************************
-template <typename T>
-bool operator <(const etl::ilist<T>& lhs, const etl::ilist<T>& rhs)
-{
-  return std::lexicographical_compare(lhs.begin(),
-    lhs.end(),
-    rhs.begin(),
-    rhs.end());
-}
+  //*************************************************************************
+  /// Less than operator.
+  ///\param lhs Reference to the first list.
+  ///\param rhs Reference to the second list.
+  ///\return <b>true</b> if the first list is lexicographically less than the
+  /// second, otherwise <b>false</b>.
+  //*************************************************************************
+  template <typename T>
+  bool operator <(const etl::ilist<T>& lhs, const etl::ilist<T>& rhs)
+  {
+    return etl::lexicographical_compare(lhs.begin(), lhs.end(), rhs.begin(), rhs.end());
+  }
 
-//*************************************************************************
-/// Greater than operator.
-///\param lhs Reference to the first list.
-///\param rhs Reference to the second list.
-///\return <b>true</b> if the first list is lexicographically greater than the
-/// second, otherwise <b>false</b>.
-//*************************************************************************
-template <typename T>
-bool operator >(const etl::ilist<T>& lhs, const etl::ilist<T>& rhs)
-{
-  return (rhs < lhs);
-}
+  //*************************************************************************
+  /// Greater than operator.
+  ///\param lhs Reference to the first list.
+  ///\param rhs Reference to the second list.
+  ///\return <b>true</b> if the first list is lexicographically greater than the
+  /// second, otherwise <b>false</b>.
+  //*************************************************************************
+  template <typename T>
+  bool operator >(const etl::ilist<T>& lhs, const etl::ilist<T>& rhs)
+  {
+    return (rhs < lhs);
+  }
 
-//*************************************************************************
-/// Less than or equal operator.
-///\param lhs Reference to the first list.
-///\param rhs Reference to the second list.
-///\return <b>true</b> if the first list is lexicographically less than or equal
-/// to the second, otherwise <b>false</b>.
-//*************************************************************************
-template <typename T>
-bool operator <=(const etl::ilist<T>& lhs, const etl::ilist<T>& rhs)
-{
-  return !(lhs > rhs);
-}
+  //*************************************************************************
+  /// Less than or equal operator.
+  ///\param lhs Reference to the first list.
+  ///\param rhs Reference to the second list.
+  ///\return <b>true</b> if the first list is lexicographically less than or equal
+  /// to the second, otherwise <b>false</b>.
+  //*************************************************************************
+  template <typename T>
+  bool operator <=(const etl::ilist<T>& lhs, const etl::ilist<T>& rhs)
+  {
+    return !(lhs > rhs);
+  }
 
-//*************************************************************************
-/// Greater than or equal operator.
-///\param lhs Reference to the first list.
-///\param rhs Reference to the second list.
-///\return <b>true</b> if the first list is lexicographically greater than or
-/// equal to the second, otherwise <b>false</b>.
-//*************************************************************************
-template <typename T>
-bool operator >=(const etl::ilist<T>& lhs, const etl::ilist<T>& rhs)
-{
-  return !(lhs < rhs);
+  //*************************************************************************
+  /// Greater than or equal operator.
+  ///\param lhs Reference to the first list.
+  ///\param rhs Reference to the second list.
+  ///\return <b>true</b> if the first list is lexicographically greater than or
+  /// equal to the second, otherwise <b>false</b>.
+  //*************************************************************************
+  template <typename T>
+  bool operator >=(const etl::ilist<T>& lhs, const etl::ilist<T>& rhs)
+  {
+    return !(lhs < rhs);
+  }
 }
 
 #include "private/minmax_pop.h"

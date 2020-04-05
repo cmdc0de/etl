@@ -26,7 +26,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ******************************************************************************/
 
-#include "UnitTest++.h"
+#include "UnitTest++/UnitTest++.h"
 #include "ExtraCheckMacros.h"
 
 #include "data.h"
@@ -39,6 +39,7 @@ SOFTWARE.
 #include <vector>
 #include <string>
 #include <list>
+#include <functional>
 
 namespace
 {
@@ -139,6 +140,7 @@ namespace
       CHECK(are_equal);
     }
 
+#if !defined(ETL_NO_STL)
     //*************************************************************************
     TEST_FIXTURE(SetupFixture, test_constructor_initializer_list)
     {
@@ -150,6 +152,7 @@ namespace
       are_equal = std::equal(data.begin(), data.end(), compare.begin());
       CHECK(are_equal);
     }
+#endif
 
     //*************************************************************************
     TEST(test_destruct_via_iforward_list)
@@ -366,6 +369,25 @@ namespace
 
       CompareDataNDC compare_data(INITIAL_SIZE, VALUE);
       compare_data.resize(NEW_SIZE, VALUE);
+
+      CHECK_EQUAL(size_t(std::distance(compare_data.begin(), compare_data.end())), data.size());
+
+      are_equal = std::equal(data.begin(), data.end(), compare_data.begin());
+      CHECK(are_equal);
+    }
+
+    //*************************************************************************
+    TEST_FIXTURE(SetupFixture, test_resize_zero)
+    {
+      const size_t INITIAL_SIZE = 4;
+      const size_t NEW_SIZE = 0;
+      const ItemDC VALUE("1");
+
+      DataDC data(INITIAL_SIZE, VALUE);
+      data.resize(NEW_SIZE);
+
+      CompareDataDC compare_data(INITIAL_SIZE, VALUE);
+      compare_data.resize(NEW_SIZE);
 
       CHECK_EQUAL(size_t(std::distance(compare_data.begin(), compare_data.end())), data.size());
 
@@ -989,8 +1011,8 @@ namespace
       CompareDataNDC compare_data(sorted_data.begin(), sorted_data.end());
       DataNDC data(sorted_data.begin(), sorted_data.end());
 
-      compare_data.remove_if(std::bind2nd(std::equal_to<ItemNDC>(), ItemNDC("7")));
-      data.remove_if(std::bind2nd(std::equal_to<ItemNDC>(), ItemNDC("7")));
+      compare_data.remove_if(std::bind(std::equal_to<ItemNDC>(), std::placeholders::_1, ItemNDC("7")));
+      data.remove_if(std::bind(std::equal_to<ItemNDC>(), std::placeholders::_1, ItemNDC("7")));
 
       CHECK_EQUAL(size_t(std::distance(compare_data.begin(), compare_data.end())), data.size());
 

@@ -5,7 +5,7 @@ The MIT License(MIT)
 
 Embedded Template Library.
 https://github.com/ETLCPP/etl
-http://www.etlcpp.com
+https://www.etlcpp.com
 
 Copyright(c) 2014 jwellbelove
 
@@ -41,7 +41,7 @@ SOFTWARE.
 
 
 #if defined(ETL_COMPILER_KEIL)
-#pragma diag_suppress 1300 
+#pragma diag_suppress 1300
 #endif
 
 ///\defgroup fnv_1 FNV-1 & FNV-1a 32 & 64 bit hash calculations
@@ -49,6 +49,7 @@ SOFTWARE.
 
 namespace etl
 {
+#if !defined(ETL_NO_64BIT_TYPES)
   //***************************************************************************
   /// fnv_1 policy.
   /// Calculates FNV1.
@@ -77,7 +78,7 @@ namespace etl
     static const uint64_t OFFSET_BASIS = 0xCBF29CE484222325ull;
     static const uint64_t PRIME        = 0x00000100000001b3ull;
   };
-  
+
   //***************************************************************************
   /// Calculates the fnv_1_64 hash.
   ///\ingroup fnv_1_64
@@ -164,6 +165,7 @@ namespace etl
       this->add(begin, end);
     }
   };
+#endif
 
   //***************************************************************************
   /// fnv_1 policy.
@@ -172,7 +174,7 @@ namespace etl
   struct fnv_1_policy_32
     {
     typedef uint32_t value_type;
-      
+
     inline uint32_t initial() const
       {
       return OFFSET_BASIS;

@@ -39,8 +39,7 @@ SOFTWARE.
 #include "nullptr.h"
 #include "hash.h"
 #include "algorithm.h"
-
-#include "stl/algorithm.h"
+#include "memory.h"
 
 ///\defgroup array array
 /// A wrapper for arrays
@@ -100,23 +99,23 @@ namespace etl
   {
   public:
 
-    typedef T                                     value_type;
-    typedef size_t                           size_type;
-    typedef T&                                    reference;
-    typedef const T&                              const_reference;
-    typedef T*                                    pointer;
-    typedef const T*                              const_pointer;
-    typedef T*                                    iterator;
-    typedef const T*                              const_iterator;
-    typedef std::reverse_iterator<iterator>       reverse_iterator;
-    typedef std::reverse_iterator<const_iterator> const_reverse_iterator;
+    typedef T        value_type;
+    typedef size_t   size_type;
+    typedef T&       reference;
+    typedef const T& const_reference;
+    typedef T*       pointer;
+    typedef const T* const_pointer;
+    typedef T*       iterator;
+    typedef const T* const_iterator;
+    typedef ETL_OR_STD::reverse_iterator<iterator>       reverse_iterator;
+    typedef ETL_OR_STD::reverse_iterator<const_iterator> const_reverse_iterator;
 
     //*************************************************************************
     /// Default constructor.
     //*************************************************************************
     ETL_CONSTEXPR array_view()
-      : mbegin(nullptr),
-        mend(nullptr)
+      : mbegin(ETL_NULLPTR),
+        mend(ETL_NULLPTR)
     {
     }
 
@@ -135,23 +134,23 @@ namespace etl
     /// Construct from iterators
     //*************************************************************************
     template <typename TIterator>
-    ETL_CONSTEXPR array_view(TIterator begin_, TIterator end_)
+    ETL_CONSTEXPR array_view(const TIterator begin_, const TIterator end_)
       : mbegin(etl::addressof(*begin_)),
-        mend(etl::addressof(*begin_) + std::distance(begin_, end_))
+        mend(etl::addressof(*begin_) + etl::distance(begin_, end_))
     {
     }
 
     //*************************************************************************
     /// Construct from C array
     //*************************************************************************
-    template <typename TIterator, 
+    template <typename TIterator,
               typename TSize>
-    ETL_CONSTEXPR array_view(TIterator begin_, TSize size_)
+    ETL_CONSTEXPR array_view(const TIterator begin_, const TSize size_)
       : mbegin(etl::addressof(*begin_)),
         mend(etl::addressof(*begin_) + size_)
     {
     }
-    
+
     //*************************************************************************
     /// Construct from C array
     //*************************************************************************
@@ -353,10 +352,10 @@ namespace etl
     /// Assign from iterators
     //*************************************************************************
     template <typename TIterator>
-    void assign(TIterator begin_, TIterator end_)
+    void assign(const TIterator begin_, const TIterator end_)
     {
       mbegin = etl::addressof(*begin_);
-      mend   = etl::addressof(*begin_) + std::distance(begin_, end_);
+      mend   = etl::addressof(*begin_) + etl::distance(begin_, end_);
     }
 
     //*************************************************************************
@@ -364,7 +363,7 @@ namespace etl
     //*************************************************************************
     template <typename TIterator,
               typename TSize>
-    void assign(TIterator begin_, TSize size_)
+    void assign(const TIterator begin_, const TSize size_)
     {
       mbegin = etl::addressof(*begin_);
       mend   = etl::addressof(*begin_) + size_;
@@ -373,7 +372,7 @@ namespace etl
     //*************************************************************************
     /// Returns a reference to the indexed value.
     //*************************************************************************
-    reference operator[](size_t i)
+    reference operator[](const size_t i)
     {
       return mbegin[i];
     }
@@ -381,7 +380,7 @@ namespace etl
     //*************************************************************************
     /// Returns a const reference to the indexed value.
     //*************************************************************************
-    const_reference operator[](size_t i) const
+    const_reference operator[](const size_t i) const
     {
       return mbegin[i];
     }
@@ -389,9 +388,9 @@ namespace etl
     //*************************************************************************
     /// Returns a reference to the indexed value.
     //*************************************************************************
-    reference at(size_t i)
+    reference at(const size_t i)
     {
-      ETL_ASSERT((mbegin != nullptr && mend != nullptr), ETL_ERROR(array_view_uninitialised));
+      ETL_ASSERT((mbegin != ETL_NULLPTR && mend != ETL_NULLPTR), ETL_ERROR(array_view_uninitialised));
       ETL_ASSERT(i < size(), ETL_ERROR(array_view_bounds));
       return mbegin[i];
     }
@@ -399,9 +398,9 @@ namespace etl
     //*************************************************************************
     /// Returns a const reference to the indexed value.
     //*************************************************************************
-    const_reference at(size_t i) const
+    const_reference at(const size_t i) const
     {
-      ETL_ASSERT((mbegin != nullptr && mend != nullptr), ETL_ERROR(array_view_uninitialised));
+      ETL_ASSERT((mbegin != ETL_NULLPTR && mend != ETL_NULLPTR), ETL_ERROR(array_view_uninitialised));
       ETL_ASSERT(i < size(), ETL_ERROR(array_view_bounds));
       return mbegin[i];
     }
@@ -411,22 +410,24 @@ namespace etl
     //*************************************************************************
     void swap(array_view& other)
     {
-      std::swap(mbegin, other.mbegin);
-      std::swap(mend, other.mend);
+      using ETL_OR_STD::swap; // Allow ADL
+
+      swap(mbegin, other.mbegin);
+      swap(mend, other.mend);
     }
 
-    //*************************************************************************          
+    //*************************************************************************
     /// Shrinks the view by moving its start forward.
-    //*************************************************************************          
-    void remove_prefix(size_type n)
+    //*************************************************************************
+    void remove_prefix(const size_type n)
     {
       mbegin += n;
     }
 
-    //*************************************************************************          
+    //*************************************************************************
     /// Shrinks the view by moving its end backward.
-    //*************************************************************************          
-    void remove_suffix(size_type n)
+    //*************************************************************************
+    void remove_suffix(const size_type n)
     {
       mend -= n;
     }
@@ -437,7 +438,7 @@ namespace etl
     friend bool operator == (const array_view<T>& lhs, const array_view<T>& rhs)
     {
       return (lhs.size() == rhs.size()) &&
-             std::equal(lhs.begin(), lhs.end(), rhs.begin());
+             etl::equal(lhs.begin(), lhs.end(), rhs.begin());
     }
 
     //*************************************************************************
@@ -453,7 +454,7 @@ namespace etl
     //*************************************************************************
     friend bool operator < (const array_view<T>& lhs, const array_view<T>& rhs)
     {
-      return std::lexicographical_compare(lhs.begin(), lhs.end(), rhs.begin(), rhs.end());
+      return etl::lexicographical_compare(lhs.begin(), lhs.end(), rhs.begin(), rhs.end());
     }
 
     //*************************************************************************
@@ -486,335 +487,6 @@ namespace etl
     T* mend;
   };
 
-  //***************************************************************************
-  /// Constant array view.
-  //***************************************************************************
-  template <typename T>
-  class const_array_view
-  {
-  public:
-
-    typedef T                                     value_type;
-    typedef size_t                           size_type;
-    typedef const T&                              const_reference;
-    typedef const T*                              const_pointer;
-    typedef const T*                              const_iterator;
-    typedef std::reverse_iterator<const_iterator> const_reverse_iterator;
-
-    //*************************************************************************
-    /// Default constructor.
-    //*************************************************************************
-    ETL_CONSTEXPR const_array_view()
-      : mbegin(nullptr),
-        mend(nullptr)
-    {
-    }
-
-    //*************************************************************************
-    /// Construct from std::array or etl::array or other type that supports
-    /// data() and size() member functions.
-    //*************************************************************************
-    template <typename TArray>
-    ETL_CONSTEXPR explicit const_array_view(TArray& a)
-      : mbegin(a.data()),
-        mend(a.data() + a.size())
-    {
-    }
-
-    //*************************************************************************
-    /// Construct from iterators
-    //*************************************************************************
-    template <typename TIterator>
-    ETL_CONSTEXPR const_array_view(TIterator begin_, TIterator end_)
-      : mbegin(etl::addressof(*begin_)),
-        mend(etl::addressof(*begin_) + std::distance(begin_, end_))
-    {
-    }
-
-    //*************************************************************************
-    /// Construct from C array
-    //*************************************************************************
-    template <typename TIterator, 
-              typename TSize>
-    ETL_CONSTEXPR const_array_view(TIterator begin_, TSize size_)
-      : mbegin(etl::addressof(*begin_)),
-        mend(etl::addressof(*begin_) + size_)
-    {
-    }
-
-    //*************************************************************************
-    /// Construct from C array
-    //*************************************************************************
-    template<const size_t ARRAY_SIZE>
-    ETL_CONSTEXPR explicit const_array_view(const T(&begin_)[ARRAY_SIZE])
-      : mbegin(begin_),
-        mend(begin_ + ARRAY_SIZE)
-    {
-    }
-
-    //************0*************************************************************
-    /// Copy constructor
-    //*************************************************************************
-    ETL_CONSTEXPR const_array_view(const array_view<T>& other)
-      : mbegin(other.begin()),
-        mend(other.end())
-    {
-    }
-
-    //*************************************************************************
-    /// Copy constructor
-    //*************************************************************************
-    ETL_CONSTEXPR const_array_view(const const_array_view& other)
-      : mbegin(other.mbegin),
-        mend(other.mend)
-    {
-    }
-
-    //*************************************************************************
-    /// Returns a const reference to the first element.
-    //*************************************************************************
-    const_reference front() const
-    {
-      return *mbegin;
-    }
-
-    //*************************************************************************
-    /// Returns a const reference to the last element.
-    //*************************************************************************
-    const_reference back() const
-    {
-      return *(mend - 1);
-    }
-
-    //*************************************************************************
-    /// Returns a const pointer to the first element of the internal storage.
-    //*************************************************************************
-    const_pointer data() const
-    {
-      return mbegin;
-    }
-
-    //*************************************************************************
-    /// Returns a const iterator to the beginning of the array.
-    //*************************************************************************
-    const_iterator begin() const
-    {
-      return mbegin;
-    }
-
-    //*************************************************************************
-    /// Returns a const iterator to the beginning of the array.
-    //*************************************************************************
-    const_iterator cbegin() const
-    {
-      return mbegin;
-    }
-
-    //*************************************************************************
-    /// Returns a const iterator to the end of the array.
-    //*************************************************************************
-    const_iterator end() const
-    {
-      return mend;
-    }
-
-    //*************************************************************************
-    // Returns a const iterator to the end of the array.
-    //*************************************************************************
-    const_iterator cend() const
-    {
-      return mend;
-    }
-
-    //*************************************************************************
-    /// Returns a const reverse iterator to the reverse beginning of the array.
-    //*************************************************************************
-    const_reverse_iterator rbegin() const
-    {
-      return const_reverse_iterator(mend);
-    }
-
-    //*************************************************************************
-    /// Returns a const reverse iterator to the reverse beginning of the array.
-    //*************************************************************************
-    const_reverse_iterator crbegin() const
-    {
-      return const_reverse_iterator(mend);
-    }
-
-    //*************************************************************************
-    /// Returns a const reverse iterator to the end of the array.
-    //*************************************************************************
-    const_reverse_iterator rend() const
-    {
-      return const_reverse_iterator(mbegin);
-    }
-
-    //*************************************************************************
-    /// Returns a const reverse iterator to the end of the array.
-    //*************************************************************************
-    const_reverse_iterator crend() const
-    {
-      return const_reverse_iterator(mbegin);
-    }
-
-    //*************************************************************************
-    // Capacity
-    //*************************************************************************
-
-    //*************************************************************************
-    /// Returns <b>true</b> if the array size is zero.
-    //*************************************************************************
-    bool empty() const
-    {
-      return (mbegin == mend);
-    }
-
-    //*************************************************************************
-    /// Returns the size of the array.
-    //*************************************************************************
-    size_t size() const
-    {
-      return (mend - mbegin);
-    }
-
-    //*************************************************************************
-    /// Returns the maximum possible size of the array.
-    //*************************************************************************
-    size_t max_size() const
-    {
-      return size();
-    }
-
-    //*************************************************************************
-    /// Assign from a view.
-    //*************************************************************************
-    const_array_view<T>& operator=(const const_array_view<T>& other)
-    {
-      mbegin = other.mbegin;
-      mend   = other.mend;
-      return *this;
-    }
-
-    //*************************************************************************
-    /// Assign from iterators
-    //*************************************************************************
-    template <typename TIterator>
-    void assign(TIterator begin_, TIterator end_)
-    {
-      mbegin = etl::addressof(*begin_);
-      mend   = etl::addressof(*begin_) + std::distance(begin_, end_);
-    }
-
-    //*************************************************************************
-    /// Assign from iterator and size.
-    //*************************************************************************
-    template <typename TIterator,
-              typename TSize>
-    void assign(TIterator begin_, TSize size_)
-    {
-      mbegin = etl::addressof(*begin_);
-      mend   = etl::addressof(*begin_) + size_;
-    }
-
-    //*************************************************************************
-    /// Returns a const reference to the indexed value.
-    //*************************************************************************
-    const_reference operator[](size_t i) const
-    {
-      return mbegin[i];
-    }
-
-    //*************************************************************************
-    /// Returns a const reference to the indexed value.
-    //*************************************************************************
-    const_reference at(size_t i) const
-    {
-      ETL_ASSERT((mbegin != nullptr && mend != nullptr), ETL_ERROR(array_view_uninitialised));
-      ETL_ASSERT(i < size(), ETL_ERROR(array_view_bounds));
-      return mbegin[i];
-    }
-
-    //*************************************************************************
-    /// Swaps with another array_view.
-    //*************************************************************************
-    void swap(const_array_view& other)
-    {
-      std::swap(mbegin, other.mbegin);
-      std::swap(mend, other.mend);
-    }
-
-    //*************************************************************************          
-    /// Shrinks the view by moving its start forward.
-    //*************************************************************************          
-    void remove_prefix(size_type n)
-    {
-      mbegin += n;
-    }
-
-    //*************************************************************************          
-    /// Shrinks the view by moving its end backward.
-    //*************************************************************************          
-    void remove_suffix(size_type n)
-    {
-      mend -= n;
-    }
-
-    //*************************************************************************
-    /// Equality for array views.
-    //*************************************************************************
-    friend bool operator == (const const_array_view<T>& lhs, const const_array_view<T>& rhs)
-    {
-      return (lhs.size() == rhs.size()) &&
-        std::equal(lhs.begin(), lhs.end(), rhs.begin());
-    }
-
-    //*************************************************************************
-    /// Inequality for array views.
-    //*************************************************************************
-    friend bool operator != (const const_array_view<T>& lhs, const const_array_view<T>& rhs)
-    {
-      return !(lhs == rhs);
-    }
-
-    //*************************************************************************
-    /// Less-than for array views.
-    //*************************************************************************
-    friend bool operator < (const const_array_view<T>& lhs, const const_array_view<T>& rhs)
-    {
-      return std::lexicographical_compare(lhs.begin(), lhs.end(), rhs.begin(), rhs.end());
-    }
-
-    //*************************************************************************
-    /// Greater-than for array views.
-    //*************************************************************************
-    friend bool operator > (const const_array_view<T>& lhs, const const_array_view<T>& rhs)
-    {
-      return rhs < lhs;
-    }
-
-    //*************************************************************************
-    /// Less-than-equal for array views.
-    //*************************************************************************
-    friend bool operator <= (const const_array_view<T>& lhs, const const_array_view<T>& rhs)
-    {
-      return !(lhs > rhs);
-    }
-
-    //*************************************************************************
-    /// Greater-than-equal for array views.
-    //*************************************************************************
-    friend bool operator >= (const const_array_view<T>& lhs, const const_array_view<T>& rhs)
-    {
-      return !(lhs < rhs);
-    }
-
-  private:
-
-    const T* mbegin;
-    const T* mend;
-  };
-
   //*************************************************************************
   /// Hash function.
   //*************************************************************************
@@ -828,16 +500,6 @@ namespace etl
                                                      reinterpret_cast<const uint8_t*>(&view[view.size()]));
     }
   };
- 
-  template <typename T>
-  struct hash<etl::const_array_view<T> >
-  {
-    size_t operator()(const etl::const_array_view<T>& view) const
-    {
-      return etl::private_hash::generic_hash<size_t>(reinterpret_cast<const uint8_t*>(&view[0]),
-                                                     reinterpret_cast<const uint8_t*>(&view[view.size()]));
-    }
-  };
 #endif
 }
 
@@ -846,15 +508,6 @@ namespace etl
 //*************************************************************************
 template <typename T>
 void swap(etl::array_view<T>& lhs, etl::array_view<T>& rhs)
-{
-  lhs.swap(rhs);
-}
-
-//*************************************************************************
-/// Swaps the values.
-//*************************************************************************
-template <typename T>
-void swap(etl::const_array_view<T>& lhs, etl::const_array_view<T>& rhs)
 {
   lhs.swap(rhs);
 }

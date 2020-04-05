@@ -26,7 +26,8 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ******************************************************************************/
 
-#include "UnitTest++.h"
+#include "UnitTest++/UnitTest++.h"
+#include "ExtraCheckMacros.h"
 
 #include "etl/delegate.h"
 
@@ -45,8 +46,6 @@ namespace
   {
     int d;
   };
-
-  Data data;
 
   //*****************************************************************************
   // The free function taking no parameters.
@@ -169,6 +168,8 @@ namespace
 
       CHECK(!d.is_valid());
       CHECK(!d);
+
+      CHECK_THROW(d(), etl::delegate_uninitialised);
     }
 
     //*************************************************************************
@@ -178,6 +179,7 @@ namespace
 
       CHECK(d.is_valid());
       CHECK(d);
+      CHECK_NO_THROW(d());
     }
 
     //*************************************************************************
@@ -272,6 +274,28 @@ namespace
 
       CHECK(function_called);
     }
+
+#if !defined(ETL_COMPILER_GCC)
+    //*************************************************************************
+    TEST_FIXTURE(SetupFixture, test_member_operator_void_compile_time)
+    {
+      etl::delegate<void(void)> d = etl::delegate<void(void)>::create<Test, test_static>();
+
+      d();
+
+      CHECK(function_called);
+    }
+
+    //*************************************************************************
+    TEST_FIXTURE(SetupFixture, test_member_operator_void_compile_time_const)
+    {
+      etl::delegate<void(void)> d = etl::delegate<void(void)>::create<const Test, const_test_static>();
+
+      d();
+
+      CHECK(function_called);
+    }
+#endif
 
     //*************************************************************************
     TEST_FIXTURE(SetupFixture, test_assignment_member_operator_void)
@@ -381,6 +405,7 @@ namespace
       CHECK(parameter_correct);
     }
 
+#if !(defined(ETL_COMPILER_GCC) && (__GNUC__ <= 5))
     //*************************************************************************
     TEST_FIXTURE(SetupFixture, test_member_void_compile_time)
     {
@@ -450,6 +475,7 @@ namespace
       CHECK(function_called);
       CHECK(parameter_correct);
     }
+#endif
 
     //*************************************************************************
     TEST_FIXTURE(SetupFixture, test_copy_construct)

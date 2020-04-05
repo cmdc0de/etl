@@ -68,6 +68,7 @@ cog.outl("//********************************************************************
 
 #include "platform.h"
 #include "message.h"
+#include "message_packet.h"
 #include "message_types.h"
 #include "alignment.h"
 #include "error_handler.h"
@@ -114,7 +115,9 @@ namespace etl
     virtual ~imessage_router() {}
     virtual void receive(const etl::imessage& message) = 0;
     virtual void receive(imessage_router& source, const etl::imessage& message) = 0;
+    virtual void receive(imessage_router& source, etl::message_router_id_t destination_router_id, const etl::imessage& message) = 0;
     virtual bool accepts(etl::message_id_t id) const = 0;
+    virtual bool is_null_router() const = 0;
 
     //********************************************
     bool accepts(const etl::imessage& msg) const
@@ -126,18 +129,6 @@ namespace etl
     etl::message_router_id_t get_message_router_id() const
     {
       return message_router_id;
-    }
-
-    //********************************************
-    bool is_null_router() const
-    {
-      return (message_router_id == NULL_MESSAGE_ROUTER);
-    }
-
-    //********************************************
-    bool is_bus() const
-    {
-      return (message_router_id == MESSAGE_BUS);
     }
 
     //********************************************
@@ -155,7 +146,7 @@ namespace etl
     //********************************************
     bool has_successor() const
     {
-      return (successor != nullptr);
+      return (successor != ETL_NULLPTR);
     }
 
     enum
@@ -169,7 +160,7 @@ namespace etl
   protected:
 
     imessage_router(etl::message_router_id_t id_)
-      : successor(nullptr),
+      : successor(ETL_NULLPTR),
         message_router_id(id_)
     {
     }
@@ -216,9 +207,20 @@ namespace etl
     }
 
     //********************************************
+    void receive(imessage_router&, etl::message_router_id_t, const etl::imessage&)
+    {
+    }
+
+    //********************************************
     bool accepts(etl::message_id_t) const
     {
       return false;
+    }
+
+    //********************************************
+    bool is_null_router() const
+    {
+      return true;
     }
 
     //********************************************
@@ -271,89 +273,10 @@ namespace etl
       cog.outl("{")
       cog.outl("public:")
       cog.outl("")
-      cog.outl("  //**********************************************")
-      cog.outl("  class message_packet")
-      cog.outl("  {")
-      cog.outl("  public:")
-      cog.outl("")
-      cog.outl("    //********************************************")
-      cog.outl("    explicit message_packet(const etl::imessage& msg)")
-      cog.outl("    {")
-      cog.outl("      const size_t id = msg.message_id;")
-      cog.outl("")
-      cog.outl("      void* p = data;")
-      cog.outl("")
-      cog.outl("      switch (id)")
-      cog.outl("      {")
-      for n in range(1, int(Handlers) + 1):
-          cog.outl("        case T%s::ID: ::new (p) T%s(static_cast<const T%s&>(msg)); break;" % (n, n, n))
-      cog.outl("        default: ETL_ASSERT(false, ETL_ERROR(unhandled_message_exception)); break;")
-      cog.outl("      }")
-      cog.outl("    }")
-      cog.outl("")
-      cog.outl("    //********************************************")
-      cog.outl("    template <typename T>")
-      cog.outl("    explicit message_packet(const T& msg)")
-      cog.outl("    {")
-      cog.out("      ETL_STATIC_ASSERT((etl::is_one_of<T, ")
+      cog.out("  typedef etl::message_packet<")
       for n in range(1, int(Handlers)):
           cog.out("T%s, " % n)
-          if n % 16 == 0:
-              cog.outl("")
-              cog.out("                                       ")
-      cog.outl("""T%s>::value), "Unsupported type for this message packet");""" % int(Handlers))
-      cog.outl("")
-      cog.outl("      void* p = data;")
-      cog.outl("      ::new (p) T(static_cast<const T&>(msg));")
-      cog.outl("    }")
-      cog.outl("")
-      cog.outl("    //********************************************")
-      cog.outl("    ~message_packet()")
-      cog.outl("    {")
-      cog.outl("      etl::imessage* pmsg = static_cast<etl::imessage*>(data);")
-      cog.outl("")
-      cog.outl("#if defined(ETL_MESSAGES_ARE_VIRTUAL) || defined(ETL_POLYMORPHIC_MESSAGES)")
-      cog.outl("      pmsg->~imessage();")
-      cog.outl("#else")
-      cog.outl("      size_t id = pmsg->message_id;")
-      cog.outl("")
-      cog.outl("      switch (id)")
-      cog.outl("      {")
-      for n in range(1, int(Handlers) + 1):
-          cog.outl("        case T%s::ID: static_cast<T%s*>(pmsg)->~T%s(); break;" % (n, n, n))
-      cog.outl("        default: assert(false); break;")
-      cog.outl("      }")
-      cog.outl("#endif")
-      cog.outl("    }")
-      cog.outl("")
-      cog.outl("    //********************************************")
-      cog.outl("    etl::imessage& get()")
-      cog.outl("    {")
-      cog.outl("      return *static_cast<etl::imessage*>(data);")
-      cog.outl("    }")
-      cog.outl("")
-      cog.outl("    //********************************************")
-      cog.outl("    const etl::imessage& get() const")
-      cog.outl("    {")
-      cog.outl("      return *static_cast<const etl::imessage*>(data);")
-      cog.outl("    }")
-      cog.outl("")
-      cog.outl("    enum")
-      cog.outl("    {")
-      cog.out("      SIZE      = etl::largest<")
-      for n in range(1, int(Handlers)):
-          cog.out("T%s, " % n)
-      cog.outl("T%s>::size," % int(Handlers))
-      cog.out("      ALIGNMENT = etl::largest<")
-      for n in range(1, int(Handlers)):
-          cog.out("T%s, " % n)
-      cog.outl("T%s>::alignment" % int(Handlers))
-      cog.outl("    };")
-      cog.outl("")
-      cog.outl("  private:")
-      cog.outl("")
-      cog.outl("    typename etl::aligned_storage<SIZE, ALIGNMENT>::type data;")
-      cog.outl("  };")
+      cog.outl(" T%s> message_packet;" % int(Handlers))
       cog.outl("")
       cog.outl("  //**********************************************")
       cog.outl("  message_router(etl::message_router_id_t id_)")
@@ -373,6 +296,15 @@ namespace etl
       cog.outl("  void receive(const etl::imessage& msg)")
       cog.outl("  {")
       cog.outl("    receive(etl::null_message_router::instance(), msg);")
+      cog.outl("  }")
+      cog.outl("")
+      cog.outl("  //**********************************************")
+      cog.outl("  void receive(etl::imessage_router& source, etl::message_router_id_t destination_router_id, const etl::imessage& msg)")
+      cog.outl("  {")
+      cog.outl("    if ((destination_router_id == get_message_router_id()) || (destination_router_id == imessage_router::ALL_MESSAGE_ROUTERS))")
+      cog.outl("    {")
+      cog.outl("      receive(source, msg);")
+      cog.outl("    }")
       cog.outl("  }")
       cog.outl("")
       cog.outl("  //**********************************************")
@@ -419,6 +351,12 @@ namespace etl
       cog.outl("        return false; break;")
       cog.outl("    }")
       cog.outl("  }")
+      cog.outl("")
+      cog.outl("  //********************************************")
+      cog.outl("  bool is_null_router() const")
+      cog.outl("  {")
+      cog.outl("    return false;")
+      cog.outl("  }")
       cog.outl("};")
 
       ####################################
@@ -456,89 +394,10 @@ namespace etl
           cog.outl("{")
           cog.outl("public:")
           cog.outl("")
-          cog.outl("  //**********************************************")
-          cog.outl("  class message_packet")
-          cog.outl("  {")
-          cog.outl("  public:")
-          cog.outl("")
-          cog.outl("    //********************************************")
-          cog.outl("    explicit message_packet(const etl::imessage& msg)")
-          cog.outl("    {")
-          cog.outl("      const size_t id = msg.message_id;")
-          cog.outl("")
-          cog.outl("      void* p = data;")
-          cog.outl("")
-          cog.outl("      switch (id)")
-          cog.outl("      {")
-          for t in range(1, n + 1):
-              cog.outl("        case T%s::ID: ::new (p) T%s(static_cast<const T%s&>(msg)); break;" % (t, t, t))
-          cog.outl("        default: ETL_ASSERT(false, ETL_ERROR(unhandled_message_exception)); break;")
-          cog.outl("      }")
-          cog.outl("    }")
-          cog.outl("")
-          cog.outl("    //********************************************")
-          cog.outl("    template <typename T>")
-          cog.outl("    explicit message_packet(const T& msg)")
-          cog.outl("    {")
-          cog.out("      ETL_STATIC_ASSERT((etl::is_one_of<T, ")
+          cog.out("  typedef etl::message_packet<")
           for t in range(1, n):
               cog.out("T%s, " % t)
-              if t % 16 == 0:
-                  cog.outl("")
-                  cog.out("                                       ")
-          cog.outl("""T%s>::value), "Unsupported type for this message packet");""" % n)
-          cog.outl("")
-          cog.outl("      void* p = data;")
-          cog.outl("      ::new (p) T(static_cast<const T&>(msg));")
-          cog.outl("    }")
-          cog.outl("")
-          cog.outl("    //********************************************")
-          cog.outl("    ~message_packet()")
-          cog.outl("    {")
-          cog.outl("      etl::imessage* pmsg = static_cast<etl::imessage*>(data);")
-          cog.outl("")
-          cog.outl("#if defined(ETL_MESSAGES_ARE_VIRTUAL) || defined(ETL_POLYMORPHIC_MESSAGES)")
-          cog.outl("      pmsg->~imessage();")
-          cog.outl("#else")
-          cog.outl("      size_t id = pmsg->message_id;")
-          cog.outl("")
-          cog.outl("      switch (id)")
-          cog.outl("      {")
-          for t in range(1, n + 1):
-              cog.outl("        case T%s::ID: static_cast<T%s*>(pmsg)->~T%s(); break;" % (t, t, t))
-          cog.outl("        default: assert(false); break;")
-          cog.outl("      }")
-          cog.outl("#endif")
-          cog.outl("    }")
-          cog.outl("")
-          cog.outl("    //********************************************")
-          cog.outl("    etl::imessage& get()")
-          cog.outl("    {")
-          cog.outl("      return *static_cast<etl::imessage*>(data);")
-          cog.outl("    }")
-          cog.outl("")
-          cog.outl("    //********************************************")
-          cog.outl("    const etl::imessage& get() const")
-          cog.outl("    {")
-          cog.outl("      return *static_cast<const etl::imessage*>(data);")
-          cog.outl("    }")
-          cog.outl("")
-          cog.outl("    enum")
-          cog.outl("    {")
-          cog.out("      SIZE      = etl::largest<")
-          for t in range(1, n):
-              cog.out("T%s, " % t)
-          cog.outl("T%s>::size," % n)
-          cog.out("      ALIGNMENT = etl::largest<")
-          for t in range(1, n):
-              cog.out("T%s, " % t)
-          cog.outl("T%s>::alignment" % n)
-          cog.outl("    };")
-          cog.outl("")
-          cog.outl("  private:")
-          cog.outl("")
-          cog.outl("    typename etl::aligned_storage<SIZE, ALIGNMENT>::type data;")
-          cog.outl("  };")
+          cog.outl(" T%s> message_packet;" % n)
           cog.outl("")
           cog.outl("  //**********************************************")
           cog.outl("  message_router(etl::message_router_id_t id_)")
@@ -558,6 +417,15 @@ namespace etl
           cog.outl("  void receive(const etl::imessage& msg)")
           cog.outl("  {")
           cog.outl("    receive(etl::null_message_router::instance(), msg);")
+          cog.outl("  }")
+          cog.outl("")
+          cog.outl("  //**********************************************")
+          cog.outl("  void receive(etl::imessage_router& source, etl::message_router_id_t destination_router_id, const etl::imessage& msg)")
+          cog.outl("  {")
+          cog.outl("    if ((destination_router_id == get_message_router_id()) || (destination_router_id == imessage_router::ALL_MESSAGE_ROUTERS))")
+          cog.outl("    {")
+          cog.outl("      receive(source, msg);")
+          cog.outl("    }")
           cog.outl("  }")
           cog.outl("")
           cog.outl("  //**********************************************")
@@ -604,6 +472,12 @@ namespace etl
           cog.outl("      default:")
           cog.outl("        return false; break;")
           cog.outl("    }")
+          cog.outl("  }")
+          cog.outl("")
+          cog.outl("  //********************************************")
+          cog.outl("  bool is_null_router() const")
+          cog.outl("  {")
+          cog.outl("    return false;")
           cog.outl("  }")
           cog.outl("};")
   ]]]*/

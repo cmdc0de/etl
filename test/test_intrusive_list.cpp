@@ -26,7 +26,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ******************************************************************************/
 
-#include "UnitTest++.h"
+#include "UnitTest++/UnitTest++.h"
 #include "ExtraCheckMacros.h"
 
 #include "data.h"
@@ -38,6 +38,7 @@ SOFTWARE.
 #include <list>
 #include <vector>
 #include <string>
+#include <functional>
 
 typedef TestDataDC<std::string>  ItemDC;
 typedef TestDataNDC<std::string> ItemNDC;
@@ -738,7 +739,7 @@ namespace
 
       std::vector<ItemNDCNode>::iterator i_item = std::find(compare_data.begin(), compare_data.end(), ItemNDCNode("7"));
       compare_data.erase(i_item);
-      data0.remove_if(std::bind2nd(std::equal_to<ItemNDCNode>(), ItemNDCNode("7")));
+      data0.remove_if(std::bind(std::equal_to<ItemNDCNode>(), std::placeholders::_1, ItemNDCNode("7")));
 
       are_equal = std::equal(data0.begin(), data0.end(), compare_data.begin());
 

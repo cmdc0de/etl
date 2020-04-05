@@ -26,7 +26,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ******************************************************************************/
 
-#include "UnitTest++.h"
+#include "UnitTest++/UnitTest++.h"
 #include "ExtraCheckMacros.h"
 
 #include "data.h"
@@ -39,6 +39,7 @@ SOFTWARE.
 #include <vector>
 #include <string>
 #include <list>
+#include <functional>
 
 namespace
 {
@@ -172,6 +173,7 @@ namespace
       CHECK(are_equal);
     }
 
+#if !defined(ETL_NO_STL)
     //*************************************************************************
     TEST_FIXTURE(SetupFixture, test_constructor_initializer_list)
     {
@@ -189,6 +191,7 @@ namespace
       are_equal = std::equal(data2.begin(), data2.end(), compare.begin());
       CHECK(are_equal);
     }
+#endif
 
     //*************************************************************************
     TEST(test_destruct_via_iforward_list)
@@ -1281,9 +1284,9 @@ namespace
       DataNDC data1(sorted_data.begin(), sorted_data.end(), pool);
       DataNDC data2(sorted_data.begin(), sorted_data.end(), pool);
 
-      compare_data.remove_if(std::bind2nd(std::equal_to<ItemNDC>(), ItemNDC("7")));
-      data1.remove_if(std::bind2nd(std::equal_to<ItemNDC>(), ItemNDC("7")));
-      data2.remove_if(std::bind2nd(std::equal_to<ItemNDC>(), ItemNDC("7")));
+      compare_data.remove_if(std::bind(std::equal_to<ItemNDC>(), std::placeholders::_1, ItemNDC("7")));
+      data1.remove_if(std::bind(std::equal_to<ItemNDC>(), std::placeholders::_1, ItemNDC("7")));
+      data2.remove_if(std::bind(std::equal_to<ItemNDC>(), std::placeholders::_1, ItemNDC("7")));
 
       CHECK_EQUAL(size_t(std::distance(compare_data.begin(), compare_data.end())), data1.size());
       CHECK_EQUAL(size_t(std::distance(compare_data.begin(), compare_data.end())), data2.size());
@@ -1293,7 +1296,6 @@ namespace
 
       are_equal = std::equal(data2.begin(), data2.end(), compare_data.begin());
       CHECK(are_equal);
-
     }
 
     //*************************************************************************

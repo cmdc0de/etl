@@ -5,7 +5,7 @@ The MIT License(MIT)
 
 Embedded Template Library.
 https://github.com/ETLCPP/etl
-http://www.etlcpp.com
+https://www.etlcpp.com
 
 Copyright(c) 2014 jwellbelove
 
@@ -39,8 +39,9 @@ SOFTWARE.
 
 #include "platform.h"
 #include "nullptr.h"
+#include "iterator.h"
 
-#include "stl/iterator.h"
+#include "iterator.h"
 
 namespace etl
 {
@@ -48,7 +49,7 @@ namespace etl
   /// Read write port.
   //***************************************************************************
   template <typename T, uintptr_t ADDRESS = 0>
-  class io_port_rw : public std::iterator<std::forward_iterator_tag, T>
+  class io_port_rw : public etl::iterator<ETL_OR_STD::forward_iterator_tag, T>
   {
   public:
 
@@ -56,7 +57,7 @@ namespace etl
     typedef volatile const T* const_pointer;
     typedef volatile T&       reference;
     typedef volatile const T& const_reference;
-  
+
     /// Read.
     operator T() const
     {
@@ -105,7 +106,7 @@ namespace etl
     {
       return *this;
     }
-    
+
     /// Get the IO port address.
     pointer get_address()
     {
@@ -128,7 +129,7 @@ namespace etl
   /// Read only port.
   //***************************************************************************
   template <typename T, uintptr_t ADDRESS = 0>
-  class io_port_ro : public std::iterator<std::input_iterator_tag, T>
+  class io_port_ro : public etl::iterator<ETL_OR_STD::input_iterator_tag, T>
   {
   public:
 
@@ -192,7 +193,7 @@ namespace etl
   /// Write only port.
   //***************************************************************************
   template <typename T, uintptr_t ADDRESS = 0>
-  class io_port_wo : public std::iterator<std::output_iterator_tag, T>
+  class io_port_wo : public etl::iterator<ETL_OR_STD::output_iterator_tag, T>
   {
   public:
 
@@ -256,7 +257,7 @@ namespace etl
   /// Write only port with shadow register.
   //***************************************************************************
   template <typename T, uintptr_t ADDRESS = 0>
-  class io_port_wos : public std::iterator<std::forward_iterator_tag, T>
+  class io_port_wos : public etl::iterator<ETL_OR_STD::forward_iterator_tag, T>
   {
   public:
 
@@ -335,7 +336,7 @@ namespace etl
   /// Specialisation for dynamic addresses.
   //***************************************************************************
   template <typename T>
-  class io_port_rw<T, 0> : public std::iterator<std::forward_iterator_tag, T>
+  class io_port_rw<T, 0> : public etl::iterator<ETL_OR_STD::forward_iterator_tag, T>
   {
   public:
 
@@ -346,7 +347,7 @@ namespace etl
 
     /// Default constructor.
     io_port_rw()
-      : address(nullptr)
+      : address(ETL_NULLPTR)
     {
     }
 
@@ -446,7 +447,7 @@ namespace etl
   /// Specialisation for dynamic addresses.
   //***************************************************************************
   template <typename T>
-  class io_port_ro<T, 0> : public std::iterator<std::input_iterator_tag, T>
+  class io_port_ro<T, 0> : public etl::iterator<ETL_OR_STD::input_iterator_tag, T>
   {
   public:
 
@@ -457,7 +458,7 @@ namespace etl
 
     /// Default constructor.
     io_port_ro()
-      : address(nullptr)
+      : address(ETL_NULLPTR)
     {
     }
 
@@ -535,7 +536,7 @@ namespace etl
   /// Specialisation for dynamic addresses.
   //***************************************************************************
   template <typename T>
-  class io_port_wo<T, 0> : public std::iterator<std::output_iterator_tag, T>
+  class io_port_wo<T, 0> : public etl::iterator<ETL_OR_STD::output_iterator_tag, T>
   {
   public:
 
@@ -546,7 +547,7 @@ namespace etl
 
     /// Default constructor.
     io_port_wo()
-      : address(nullptr)
+      : address(ETL_NULLPTR)
     {
     }
 
@@ -616,7 +617,7 @@ namespace etl
     {
       return *this;
     }
-    
+
   private:
 
     /// Read disabled.
@@ -630,7 +631,7 @@ namespace etl
   /// Specialisation for dynamic addresses.
   //***************************************************************************
   template <typename T>
-  class io_port_wos<T, 0> : public std::iterator<std::forward_iterator_tag, T>
+  class io_port_wos<T, 0> : public etl::iterator<ETL_OR_STD::forward_iterator_tag, T>
   {
   public:
 
@@ -639,7 +640,7 @@ namespace etl
     typedef volatile T&       reference;
     typedef volatile const T& const_reference;
 
-    class iterator : public std::iterator<std::bidirectional_iterator_tag, T>
+    class iterator : public etl::iterator<ETL_OR_STD::bidirectional_iterator_tag, T>
     {
       typedef io_port_wos<T, 0> iop_t;
 
@@ -695,10 +696,10 @@ namespace etl
 
       iop_t* p_iop;
     };
-    
+
     /// Default constructor.
     io_port_wos()
-      : address(nullptr)
+      : address(ETL_NULLPTR)
     {
     }
 
@@ -797,7 +798,7 @@ namespace etl
     {
       return *this;
     }
-    
+
   private:
 
     T       shadow_value;

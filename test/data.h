@@ -30,6 +30,7 @@ SOFTWARE.
 #define ETL_TEST_DATA_INCLUDED
 
 #include <ostream>
+#include <utility>
 
 #include "etl/instance_count.h"
 
@@ -75,6 +76,11 @@ public:
   bool operator >= (const TestDataDC& other) const
   {
     return !(value < other.value);
+  }
+
+  static bool are_identical(const TestDataDC& lhs, const TestDataDC& rhs)
+  {
+    return (lhs.value == rhs.value) && (lhs.index == rhs.index);
   }
 
   T   value;
@@ -137,6 +143,11 @@ public:
     return !(value < other.value);
   }
 
+  static bool are_identical(const TestDataNDC& lhs, const TestDataNDC& rhs)
+  {
+    return (lhs.value == rhs.value) && (lhs.index == rhs.index);
+  }
+
   T value;
   int index;
 };
@@ -178,7 +189,7 @@ public:
     : value(other.value)
     , valid(true)
   {
-    other.value = T();
+    other.value = std::move(T());
     other.valid = false;
   }
 
@@ -188,11 +199,13 @@ public:
 
   TestDataM& operator =(TestDataM&& other)
   {
-    value = other.value;
+    value = std::move(other.value);
     valid = true;
 
     other.value = T();
     other.valid = false;
+
+    return *this;
   }
 
   bool operator < (const TestDataM& other) const
@@ -247,6 +260,5 @@ std::ostream& operator << (std::ostream& s, const TestDataM<T>& rhs)
   s << rhs.value;
   return s;
 }
-
 
 #endif

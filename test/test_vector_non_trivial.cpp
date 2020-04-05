@@ -26,7 +26,7 @@
 //SOFTWARE.
 //******************************************************************************/
 
-#include "UnitTest++.h"
+#include "UnitTest++/UnitTest++.h"
 
 #include <vector>
 #include <array>
@@ -168,6 +168,7 @@ namespace
       CHECK(!data.empty());
     }
 
+#if !defined(ETL_NO_STL)
     //*************************************************************************
     TEST(test_constructor_initializer_list)
     {
@@ -177,6 +178,7 @@ namespace
       CHECK_EQUAL(compare_data.size(), data.size());
       CHECK(std::equal(compare_data.begin(), compare_data.end(), data.begin()));
     }
+#endif
 
     //*************************************************************************
     TEST_FIXTURE(SetupFixture, test_copy_constructor)
@@ -754,7 +756,10 @@ namespace
         Data(std::string w, size_t x, double y, const char *z) : a(w), b(x), c(y), d(z){}
         bool operator == (const Data &other) const
         {
-          return (a == other.a) && (b == other.b) && (c == other.c) && (d == other.d);
+          return (a == other.a) &&
+                 (b == other.b) &&
+                 (c == other.c) &&
+                 (((d == nullptr) && (other.d == nullptr)) || (strcmp(d, other.d) == 0));
         }
       };
 

@@ -26,7 +26,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ******************************************************************************/
 
-#include "UnitTest++.h"
+#include "UnitTest++/UnitTest++.h"
 
 #include "etl/string_view.h"
 #include "etl/cstring.h"
@@ -44,8 +44,6 @@ SOFTWARE.
 namespace
 {
   typedef etl::string_view View;
-
-  static const size_t SIZE = 10;
 
   etl::string<11> etltext    = "Hello World";
   std::string text           = "Hello World";

@@ -33,8 +33,7 @@ SOFTWARE.
 
 #include "platform.h"
 #include "parameter_type.h"
-
-#include "stl/functional.h"
+#include "functional.h"
 
 //*****************************************************************************
 ///\defgroup compare compare
@@ -46,9 +45,9 @@ namespace etl
 {
   //***************************************************************************
   /// Defines <=, >, >= interms of <
-  /// Default 
+  /// Default
   //***************************************************************************
-  template <typename T, typename TLess = std::less<T> >
+  template <typename T, typename TLess = etl::less<T> >
   struct compare
   {
     typedef typename etl::parameter_type<T>::type first_argument_type;

@@ -26,7 +26,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ******************************************************************************/
 
-#include "UnitTest++.h"
+#include "UnitTest++/UnitTest++.h"
 
 #include <set>
 #include <array>
@@ -37,23 +37,43 @@ SOFTWARE.
 #include <vector>
 
 #include "etl/set.h"
+#include "etl/checksum.h"
+
+#include "data.h"
 
 static const size_t MAX_SIZE = 10;
 
 #define TEST_GREATER_THAN
 #ifdef TEST_GREATER_THAN
-typedef etl::set<int, MAX_SIZE, std::greater<int> >  Data;
-typedef etl::iset<int, std::greater<int> >       IData;
-typedef std::set<int, std::greater<int> >        Compare_Data;
+using Data = etl::set<int, MAX_SIZE, std::greater<int>>;
+using IData = etl::iset<int, std::greater<int>>;
+using Compare_Data = std::set<int, std::greater<int>>;
 #else
-typedef etl::set<int, MAX_SIZE, std::less<int> >  Data;
-typedef std::set<int, std::less<int> >        Compare_Data;
+using Data = etl::set<int, MAX_SIZE, std::less<int>>;
+using Compare_Data = std::set<int, std::less<int>>;
 #endif
 
-typedef Data::iterator Data_iterator;
-typedef Data::const_iterator Data_const_iterator;
-typedef Compare_Data::iterator Compare_Data_iterator;
-typedef Compare_Data::const_iterator Compare_Data_const_iterator;
+using ItemM = TestDataM<int>;
+
+struct simple_hash
+{
+  size_t operator ()(const ItemM& value) const
+  {
+    etl::checksum<size_t> sum;
+
+    sum.add(value.valid);
+    sum.add(value.value);
+
+    return sum.value();
+  }
+};
+
+using DataM = etl::set<ItemM, MAX_SIZE>;
+
+using Data_iterator               = Data::iterator;
+using Data_const_iterator         = Data::const_iterator;
+using Compare_Data_iterator       = Compare_Data::iterator;
+using Compare_Data_const_iterator = Compare_Data::const_iterator;
 
 //*************************************************************************
 static std::ostream& operator << (std::ostream& os, const Data_iterator& it)
@@ -108,6 +128,8 @@ namespace
       std::vector<int> excess_data;
       std::vector<int> different_data;
       std::vector<int> random_data;
+      std::vector<int> initial_data_even;
+      std::vector<int> test_data;
 
       SetupFixture()
       {
@@ -168,10 +190,50 @@ namespace
           4,
         };
 
+        int n_even[] =
+        {
+          0,
+          2,
+          4,
+          6,
+          8,
+          10,
+          12,
+          14,
+          16,
+          18,
+        };
+
+        int n5[] =
+        {
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15,
+          16,
+          17,
+          18,
+          19
+        } ;
+
         initial_data.assign(std::begin(n), std::end(n));
         excess_data.assign(std::begin(n2), std::end(n2));
         different_data.assign(std::begin(n3), std::end(n3));
         random_data.assign(std::begin(n4), std::end(n4));
+        initial_data_even.assign(std::begin(n_even), std::end(n_even));
+        test_data.assign(std::begin(n5), std::end(n5));
       }
     };
 
@@ -185,6 +247,53 @@ namespace
       CHECK_EQUAL(data.capacity(), MAX_SIZE);
       CHECK_EQUAL(data.max_size(), MAX_SIZE);
       CHECK(data.begin() == data.end());
+    }
+
+    //*************************************************************************
+    TEST_FIXTURE(SetupFixture, test_copy_constructor)
+    {
+      Compare_Data compare_data(initial_data.begin(), initial_data.end());
+      Data data1(compare_data.begin(), compare_data.end());
+      Data data2(data1);
+
+      CHECK_EQUAL(initial_data.size(), data1.size());
+      CHECK(data1.size() == data2.size());
+
+      bool isEqual = false;
+
+      isEqual = Check_Equal(data1.begin(),
+                            data1.end(),
+                            compare_data.begin());
+      CHECK(isEqual);
+
+      isEqual = Check_Equal(data2.begin(),
+                            data2.end(),
+                            compare_data.begin());
+      CHECK(isEqual);
+    }
+
+    //*************************************************************************
+    TEST_FIXTURE(SetupFixture, test_move_constructor)
+    {
+      DataM data1;
+
+      ItemM d1(1);
+      ItemM d2(2);
+      ItemM d3(3);
+
+      data1.insert(etl::move(d1));
+      data1.insert(etl::move(d2));
+      data1.insert(etl::move(d3));
+      data1.insert(ItemM(4));
+
+      DataM data2(std::move(data1));
+
+      CHECK(!data1.empty()); // Move does not clear the source.
+
+      CHECK_EQUAL(1, ItemM(1).value);
+      CHECK_EQUAL(2, ItemM(2).value);
+      CHECK_EQUAL(3, ItemM(3).value);
+      CHECK_EQUAL(4, ItemM(4).value);
     }
 
     //*************************************************************************
@@ -210,6 +319,7 @@ namespace
       CHECK(isEqual);
     }
 
+#if !defined(ETL_NO_STL)
     //*************************************************************************
     TEST_FIXTURE(SetupFixture, test_constructor_initializer_list)
     {
@@ -223,6 +333,7 @@ namespace
       bool isEqual = std::equal(data.begin(), data.end(), compare_data.begin());
       CHECK(isEqual);
     }
+#endif
 
     //*************************************************************************
     TEST_FIXTURE(SetupFixture, test_assignment)
@@ -270,6 +381,32 @@ namespace
                                  otherData.begin());
 
       CHECK(isEqual);
+    }
+
+    //*************************************************************************
+    TEST_FIXTURE(SetupFixture, test_move_assignment)
+    {
+      DataM data1;
+
+      ItemM d1(1);
+      ItemM d2(2);
+      ItemM d3(3);
+
+      data1.insert(etl::move(d1));
+      data1.insert(etl::move(d2));
+      data1.insert(etl::move(d3));
+      data1.insert(ItemM(4));
+
+      DataM data2;
+
+      data2 = std::move(data1);
+
+      CHECK(!data1.empty()); // Move does not clear the source.
+
+      CHECK_EQUAL(1, ItemM(1).value);
+      CHECK_EQUAL(2, ItemM(2).value);
+      CHECK_EQUAL(3, ItemM(3).value);
+      CHECK_EQUAL(4, ItemM(4).value);
     }
 
     //*************************************************************************
@@ -333,9 +470,9 @@ namespace
       Compare_Data compare_data;
       Data data;
 
-      std::pair<Data::iterator, bool> data_result =
+      ETL_OR_STD::pair<Data::iterator, bool> data_result =
         data.insert(0);
-      std::pair<Compare_Data::iterator, bool> compare_result =
+      ETL_OR_STD::pair<Compare_Data::iterator, bool> compare_result =
         compare_data.insert(0);
 
       // Check that both return successful return results
@@ -379,8 +516,8 @@ namespace
       Compare_Data compare_data;
       Data data;
 
-      std::pair<Data::iterator, bool> data_result = data.insert(2);
-      std::pair<Compare_Data::iterator, bool> compare_result = compare_data.insert(2);
+      ETL_OR_STD::pair<Data::iterator, bool> data_result = data.insert(2);
+      ETL_OR_STD::pair<Compare_Data::iterator, bool> compare_result = compare_data.insert(2);
 
       // Check that both return successful return results
       CHECK_EQUAL(*data_result.first, *compare_result.first);
@@ -407,9 +544,9 @@ namespace
       Compare_Data compare_data;
       Data data;
 
-      std::pair<Data::iterator, bool> data_result =
+      ETL_OR_STD::pair<Data::iterator, bool> data_result =
         data.insert(2);
-      std::pair<Compare_Data::iterator, bool> compare_result =
+      ETL_OR_STD::pair<Compare_Data::iterator, bool> compare_result =
         compare_data.insert(2);
 
       // Check that both return successful return results
@@ -480,13 +617,37 @@ namespace
     }
 
     //*************************************************************************
+    TEST_FIXTURE(SetupFixture, test_insert_moved_value)
+    {
+      DataM data;
+
+      ItemM d1(1);
+      ItemM d2(2);
+      ItemM d3(3);
+
+      data.insert(etl::move(d1));
+      data.insert(etl::move(d2));
+      data.insert(etl::move(d3));
+      data.insert(ItemM(4));
+
+      CHECK(!bool(d1));
+      CHECK(!bool(d2));
+      CHECK(!bool(d3));
+
+      CHECK_EQUAL(1, data.find(ItemM(1))->value);
+      CHECK_EQUAL(2, data.find(ItemM(2))->value);
+      CHECK_EQUAL(3, data.find(ItemM(3))->value);
+      CHECK_EQUAL(4, data.find(ItemM(4))->value);
+    }
+
+    //*************************************************************************
     TEST_FIXTURE(SetupFixture, test_emplace_value)
     {
       //Compare_Data compare_data;
       //Data data;
 
-      //std::pair<Data::iterator, bool> data_result = data.emplace(0);
-      //std::pair<Compare_Data::iterator, bool> compare_result = compare_data.emplace(0);
+      //ETL_OR_STD::pair<Data::iterator, bool> data_result = data.emplace(0);
+      //ETL_OR_STD::pair<Compare_Data::iterator, bool> compare_result = compare_data.emplace(0);
 
       //// Check that both return successful return results
       //CHECK_EQUAL(*data_result.first, *compare_result.first);
@@ -529,10 +690,10 @@ namespace
       Compare_Data compare_data(random_data.begin(), random_data.end());
       Data data(random_data.begin(), random_data.end());
 
-      std::pair<Data::iterator, Data::iterator> data_result =
+      ETL_OR_STD::pair<Data::iterator, Data::iterator> data_result =
         data.equal_range(2);
       Data::iterator data_lb = data.lower_bound(2);
-      std::pair<Compare_Data::iterator, Compare_Data::iterator> compare_result =
+      ETL_OR_STD::pair<Compare_Data::iterator, Compare_Data::iterator> compare_result =
         compare_data.equal_range(2);
       Compare_Data::iterator compare_data_lb = compare_data.lower_bound(2);
 
@@ -554,9 +715,9 @@ namespace
       const Compare_Data compare_data(initial_data.begin(), initial_data.end());
       const Data data(initial_data.begin(), initial_data.end());
 
-      std::pair<Data::const_iterator, Data::const_iterator> data_result =
+      ETL_OR_STD::pair<Data::const_iterator, Data::const_iterator> data_result =
         data.equal_range(2);
-      std::pair<Compare_Data::const_iterator, Compare_Data::const_iterator> compare_result =
+      ETL_OR_STD::pair<Compare_Data::const_iterator, Compare_Data::const_iterator> compare_result =
         compare_data.equal_range(2);
 
       // Check that both return the same return results
@@ -981,6 +1142,65 @@ namespace
       CHECK(compare(a, b));
       CHECK(!compare(b, a));
 #endif
+    }
+
+    //*************************************************************************
+    TEST_FIXTURE(SetupFixture, test_compare_lower_upper_bound)
+    {
+        Data data(initial_data_even.begin(), initial_data_even.end());
+        Compare_Data compare(initial_data_even.begin(), initial_data_even.end());
+
+        std::vector<int> tab(test_data.begin(), test_data.end());
+
+        //make sure both data and compare contain same elements
+        std::vector<int> data_elements(data.begin(), data.end());
+        std::vector<int> compare_data_elements(compare.begin(), compare.end());
+
+        CHECK(data_elements == compare_data_elements);
+        CHECK_EQUAL(data_elements.size(), MAX_SIZE);
+
+        for(std::vector<int>::iterator it = tab.begin() ; it != tab.end() ; ++it)
+        {
+            int i = *it;
+
+            //lower_bound
+            CHECK_EQUAL(compare.lower_bound(i) == compare.end(), data.lower_bound(i) == data.end());
+            //if both end, or none
+            if((compare.lower_bound(i) == compare.end()) == (data.lower_bound(i) == data.end()))
+            {
+                //if both are not end
+                if(compare.lower_bound(i) != compare.end())
+                {
+                    CHECK_EQUAL(*compare.lower_bound(i), *data.lower_bound(i));
+                }
+
+                ETL_OR_STD::pair<Compare_Data::const_iterator, Compare_Data::const_iterator> stlret = compare.equal_range(i);
+                ETL_OR_STD::pair<Data::const_iterator, Data::const_iterator> etlret = data.equal_range(i);
+
+                CHECK_EQUAL(stlret.first == compare.end(), etlret.first == data.end());
+                if((stlret.first != compare.end()) && (etlret.first != data.end()))
+                {
+                    CHECK_EQUAL(*stlret.first, *etlret.first);
+                }
+                CHECK_EQUAL(stlret.second == compare.end(), etlret.second == data.end());
+                if((stlret.second != compare.end()) && (etlret.second != data.end()))
+                {
+                    CHECK_EQUAL(*stlret.second, *etlret.second);
+                }
+            }
+
+            //upper_bound
+            CHECK_EQUAL(compare.upper_bound(i) == compare.end(), data.upper_bound(i) == data.end());
+            //if both end, or none
+            if((compare.upper_bound(i) == compare.end()) == (data.upper_bound(i) == data.end()))
+            {
+                //if both are not end
+                if(compare.upper_bound(i) != compare.end())
+                {
+                    CHECK_EQUAL(*compare.upper_bound(i), *data.upper_bound(i));
+                }
+            }
+        }
     }
   };
 }

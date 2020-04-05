@@ -5,7 +5,7 @@ The MIT License(MIT)
 
 Embedded Template Library.
 https://github.com/ETLCPP/etl
-http://www.etlcpp.com
+https://www.etlcpp.com
 
 Copyright(c) 2016 jwellbelove
 
@@ -56,10 +56,10 @@ namespace etl
     typedef const value_type*                     const_pointer;
     typedef value_type*                           iterator;
     typedef const value_type*                     const_iterator;
-    typedef std::reverse_iterator<iterator>       reverse_iterator;
-    typedef std::reverse_iterator<const_iterator> const_reverse_iterator;
+    typedef ETL_OR_STD::reverse_iterator<iterator>       reverse_iterator;
+    typedef ETL_OR_STD::reverse_iterator<const_iterator> const_reverse_iterator;
     typedef size_t                                size_type;
-    typedef typename std::iterator_traits<iterator>::difference_type difference_type;
+    typedef typename etl::iterator_traits<iterator>::difference_type difference_type;
 
   protected:
 
@@ -435,6 +435,24 @@ namespace etl
       : pvoidvector(reinterpret_cast<void**>(p_buffer_), MAX_SIZE_)
     {
     }
+
+    //*********************************************************************
+    /// Initialise the source vector after a move.
+    //*********************************************************************
+    void initialise_source_external_buffer_after_move()
+    {
+      ETL_SUBTRACT_DEBUG_COUNT(int32_t(etl::distance(p_buffer, p_end)))
+
+        p_end = p_buffer;
+    }
+
+    //*********************************************************************
+    /// Initialise the destination vector after a move.
+    //*********************************************************************
+    void initialise_destination_external_buffer_after_move()
+    {
+      ETL_ADD_DEBUG_COUNT(int32_t(etl::distance(p_buffer, p_end)))
+    }
   };
 
   template <typename T>
@@ -449,10 +467,10 @@ namespace etl
     typedef const value_type*                     const_pointer;
     typedef value_type*                           iterator;
     typedef const value_type*                     const_iterator;
-    typedef std::reverse_iterator<iterator>       reverse_iterator;
-    typedef std::reverse_iterator<const_iterator> const_reverse_iterator;
+    typedef ETL_OR_STD::reverse_iterator<iterator>       reverse_iterator;
+    typedef ETL_OR_STD::reverse_iterator<const_iterator> const_reverse_iterator;
     typedef size_t                                size_type;
-    typedef typename std::iterator_traits<iterator>::difference_type difference_type;
+    typedef typename etl::iterator_traits<iterator>::difference_type difference_type;
 
   protected:
 
@@ -827,6 +845,24 @@ namespace etl
     ivector(const T** p_buffer_, size_t MAX_SIZE_)
       : pvoidvector(reinterpret_cast<void**>(const_cast<T**>(p_buffer_)), MAX_SIZE_)
     {
+    }
+
+    //*********************************************************************
+    /// Initialise the source vector after a move.
+    //*********************************************************************
+    void initialise_source_external_buffer_after_move()
+    {
+      ETL_SUBTRACT_DEBUG_COUNT(int32_t(etl::distance(p_buffer, p_end)))
+
+        p_end = p_buffer;
+    }
+
+    //*********************************************************************
+    /// Initialise the destination vector after a move.
+    //*********************************************************************
+    void initialise_destination_external_buffer_after_move()
+    {
+      ETL_ADD_DEBUG_COUNT(int32_t(etl::distance(p_buffer, p_end)))
     }
   };
 

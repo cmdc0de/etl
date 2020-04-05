@@ -5,7 +5,7 @@ The MIT License(MIT)
 
 Embedded Template Library.
 https://github.com/ETLCPP/etl
-http://www.etlcpp.com
+https://www.etlcpp.com
 
 Copyright(c) 2014 jwellbelove
 
@@ -72,6 +72,7 @@ namespace etl
       return fnv_1a_32(begin, end);
     }
 
+#if !defined(ETL_NO_64BIT_TYPES)
     //*************************************************************************
     /// Hash to use when size_t is 64 bits.
     /// T is always expected to be size_t.
@@ -82,6 +83,7 @@ namespace etl
     {
       return fnv_1a_64(begin, end);
     }
+#endif
   }
 
   //***************************************************************************
@@ -362,7 +364,7 @@ namespace etl
         } u;
 
         u.v = v;
-        
+
         return u.s;
       }
       else

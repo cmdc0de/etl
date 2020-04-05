@@ -1,4 +1,389 @@
 ===============================================================================
+17.4.2
+Make etl::span::subspan functions compatible with C++11 constexpr
+
+===============================================================================
+17.4.1
+Removed double definition of default case in switch.
+
+===============================================================================
+17.4.0
+Added etl::span
+
+===============================================================================
+17.3.0
+Added move_iterator wrapper class.
+
+===============================================================================
+17.2.0
+Added move API to unordered map and set containers.
+
+===============================================================================
+17.1.2
+Created scheduler example project.
+
+===============================================================================
+17.1.1
+Created CMakeLists.txt files for QueuedFSM and QueuedMessageRouter example projects.
+
+===============================================================================
+17.1.0
+Removed ETL's implementation of nullptr for pre C++11 compilers and created the macro
+ETL_NULLPTR for internal use. Equates to NULL or nullptr, dependent on the compiler
+version and project profile.
+
+Added partial compile time versions of binary_fill and has_zero_byte.
+
+===============================================================================
+17.0.0
+Recoded binary_fill, has_zero_byte and has_byte_n as runtime functions to fix
+compiler compatibilty issues. All functions may be constexpr if the compiler supports it.
+Added tests for binary constextr functions.
+
+Added option to define ETL_NO_64BIT_TYPES macro if the compiler does not support 64bit types.
+Conditional compilation macros added to affected files.
+
+Added iterator copy constructors to etl::deque.
+
+Added code for ARM5 compiler compatibility in limits.h
+
+Simplified conditional compilation for nullptr definition.
+
+Changes to assign() in etl::string_view for compiler compatibility
+
+Changes to container iterators fo compiler compatibility.
+
+===============================================================================
+16.8.1
+Fixed C++03 compatibility issues nullptr.h, binary.h & string_view.h
+Fixed warning
+
+===============================================================================
+16.8.0
+Extracted message_packet from etl::message_router for use as an independent class.
+
+===============================================================================
+16.7.1
+Fix C++03 compatibility issues in memory.h and utility.h
+
+===============================================================================
+16.7.0
+Updates to make unique_ptr similar to std::unique_ptr
+Fixed unique_ptr swap() compilation issue
+Added mutex for FreeRTOS
+
+===============================================================================
+16.6.1
+etl::exchange modified for better C++03 compatibility
+
+===============================================================================
+16.6.0
+rvalue reference support for heap functions and etl::priority_queue
+
+===============================================================================
+16.5.3
+type_traits.h is_one_of fix for C++03
+
+===============================================================================
+16.5.2
+Modified nullptr.h for better cross compiler compatibility
+Removed redundant includes for etl::array
+
+===============================================================================
+16.5.1
+Removed redundant include
+Moved move_s definitions to avoid forward declaration
+
+===============================================================================
+16.5.0
+has_value() added to etl::optional
+
+===============================================================================
+16.4.4
+Added #if ETL_CPP11_SUPPORTED around etl::is_rvalue_reference
+
+===============================================================================
+16.4.3
+Rearranged where etl::swap is defined to fix issues with certain compilers
+Fixed most warnings for CLang
+
+===============================================================================
+16.4.2
+Fix etl::pair error and warning.
+
+===============================================================================
+16.4.1
+Moved icache.h to 'experimental' folder.
+Removed atomic.h from 'experimental' folder.
+
+===============================================================================
+16.4.0
+Added rvalue references and 'move' API to all containers, except etl::priority_queue
+and etl::variant
+
+===============================================================================
+16.3.0
+Added parity checksum to checksum.h.
+
+===============================================================================
+16.2.1
+Updated QueuedMessageHandler example
+
+===============================================================================
+16.2.0
+Added etl::heap_sort to algorithms.
+
+===============================================================================
+16.1.0
+Added compile time option to make string truncation an error.
+Define ETL_STRING_TRUNCATION_IS_ERROR to enable.
+
+===============================================================================
+16.0.0
+Refactored the ETL's relationship with the STL
+Many reverse engineered STL algorithms and traits are now available through the
+ETL namespace.
+When ETL_NO_STL is defined, the ETL implements its own versions of the STL code.
+When ETL_NO_STL is *not* defined, the ETL act as a wrapper around the STL implementations.
+
+===============================================================================
+15.5.0
+Added the ability to self determine the compiler type, version and language support
+by defining ETL_AUTO_DETERMINE_COMPILER_INFO or including the 'auto.h' profile.
+Added support for C++11's 'alignas' and 'alignof'
+Changed 'memcpy' to 'memmove' in alternate STL algorithms.
+
+===============================================================================
+15.4.2
+Fix visitor overridden test virtual visit function parameters
+Reduced warnings in unit tests for CLang
+Updated type_traits_generator
+Added explicit construction from string_view
+
+===============================================================================
+15.4.1
+Move ETL_NODISCARD definition to ETL_CPP17_SUPPORTED test
+
+===============================================================================
+15.4.0
+Refactored CRC classes for better code sharing and reduced resource requirements
+Added new CRC definitions
+
+===============================================================================
+15.3.1
+Changes to alternate STL limits.h for ARM5 compiler compatibility
+
+===============================================================================
+15.3.0
+Added etl::make_string_with_capacity
+
+===============================================================================
+15.2.1
+Compile time optimisations to etl::make_string
+
+===============================================================================
+15.2.0
+Added function adaptors and removed built-in sort functions from indirect_vector.
+Added etl::make_string for all string types.
+
+===============================================================================
+15.1.0
+Fixes to the conditional compilation of choose_tag_types.h and
+choose_pair_types.h to take into account ETL_NO_STL.
+
+===============================================================================
+15.0.0
+Unit tests and library code updated so that the ETL may be compiled and tested
+with and without STL support.
+
+===============================================================================
+14.38.2
+Added alternate 'No STL' reverse_iterator unit tests.
+Fixed missing equality operator for reverse_iterator.
+
+===============================================================================
+14.38.1
+Added missing C++11 specific conditional compilation in callback_timer.h
+
+===============================================================================
+14.38.0
+Added optional to force string and string_view construction from character
+pointers to be explicit.
+
+===============================================================================
+14.37.2
+Added assert.h include to memory.h
+
+===============================================================================
+14.37.1
+Fix to the return value of alternate STL 'copy'
+Added delegate option to callback_timer
+
+===============================================================================
+14.37.0
+Added etl::indirect_vector
+
+===============================================================================
+14.36.0
+Added wchar_t, u16 and u32 version of the 'set from string' function.
+
+===============================================================================
+14.35.5
+Bug fix for etl::multiset & etl::multimap erase.
+
+===============================================================================
+14.35.4
+Bug fix for etl::set & etl::map lower_bound.
+
+===============================================================================
+14.35.3
+Added assert when calling uninitialised delegate.
+
+===============================================================================
+14.35.2
+Fixed incorrect result when rounding up to integral part.
+
+===============================================================================
+14.35.1
+Fixed incorrect result for negative float to string.
+
+===============================================================================
+14.35.0
+Changed namespace for alternate ETL's STL support.
+
+===============================================================================
+14.34.1
+Fixed strict aliasing bug for -O3 optimisation in etl::pool
+
+===============================================================================
+14.34.0
+Fix alternate STL utility.h for ARM6
+Added ARM7 profiles.
+
+===============================================================================
+14.33.0
+Updated unit tests to C++17
+
+===============================================================================
+14.32.0
+Added Platform IO example
+
+===============================================================================
+14.31.2
+More PIO json tweaks
+
+===============================================================================
+14.31.1
+Fix error in PIO json
+
+===============================================================================
+14.31.0
+Removed C timer library
+
+===============================================================================
+14.30.0
+Allow conan's etl version metadata to automatically update via git tags
+
+===============================================================================
+14.29.4
+Fixed unordered_map iterator operator* return type
+
+===============================================================================
+14.29.3
+Minor updatess for etl::delegate
+
+===============================================================================
+14.29.2
+Fixed incorrect results returned from pointers for atomic_gcc_sync
+
+===============================================================================
+14.29.1
+Added #include "stl/utility.h" to etl::optional
+
+===============================================================================
+14.29.0
+Added const parameters and ETL_CONST_EXPR to etl::array_view
+
+===============================================================================
+14.28.3
+Removed redundant etl::const_array_view
+
+===============================================================================
+14.28.2
+Various fixes.
+void assign(const_pointer, size_t) did not set the truncation flag.
+Fixed resize(0) error for etl::forward_list
+Removed erroneous pointers in etl::unordered_map::begin()
+
+===============================================================================
+14.28.1
+Optimisation of floating point specialisations of etl::cumulative_moving_average.
+
+===============================================================================
+14.28.0
+Added runtime sample size specialisations to etl::cumulative_moving_average.
+
+===============================================================================
+14.27.1
+Removed ETL_IF_CONSTEXPR from etl::message_timer 'tick()'
+
+===============================================================================
+14.27.0
+ETL's random number generators are now non-polymorphic by default.
+Define ETL_POLYMORPHIC_RANDOM to enable previous functionality.
+
+===============================================================================
+14.26.8
+Moved global operators to ETL namespace.
+
+===============================================================================
+14.26.7
+Compatibility changes for GCC v5.4.
+
+===============================================================================
+14.26.6
+Added variadic parameters to observer notification.
+
+===============================================================================
+14.26.5
+Fixed misplaced semicolon in error_handler.h
+
+===============================================================================
+14.26.4
+FSM test example fix.
+
+===============================================================================
+14.26.3
+A few small optimisations to binary.h
+
+===============================================================================
+14.26.2
+Added #include <new> to files using 'placement new'.
+
+===============================================================================
+14.26.1
+Simplified 'to_string' templates.
+
+===============================================================================
+14.26.0
+Simplified message framework internal code.
+Additional receive() virtual function overload taking destination id.
+Removed is_bus() member function.
+
+===============================================================================
+14.25.0
+Added variadic template versions of etl::largest, etl::largest_type,
+etl::largest_alignment and etl::smallest
+
+===============================================================================
+14.24.2
+Fixed bug in 'vector of pointers' move constructor.
+
+===============================================================================
+14.24.1
+Added compile time functor version of 'create()'.
+
+===============================================================================
 14.24.0
 Added 'delegate' and 'delegate_service'.
 

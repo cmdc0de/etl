@@ -5,7 +5,7 @@ The MIT License(MIT)
 
 Embedded Template Library.
 https://github.com/ETLCPP/etl
-http://www.etlcpp.com
+https://www.etlcpp.com
 
 Copyright(c) 2014 jwellbelove
 
@@ -31,7 +31,6 @@ SOFTWARE.
 #ifndef ETL_INTEGRAL_LIMITS_INCLUDED
 #define ETL_INTEGRAL_LIMITS_INCLUDED
 
-#include <limits.h>
 #include <stddef.h>
 
 #include "platform.h"

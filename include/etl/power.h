@@ -5,7 +5,7 @@ The MIT License(MIT)
 
 Embedded Template Library.
 https://github.com/ETLCPP/etl
-http://www.etlcpp.com
+https://www.etlcpp.com
 
 Copyright(c) 2014 jwellbelove
 
@@ -41,8 +41,17 @@ SOFTWARE.
 /// power<N, POWER> : Calculates N to the power POWER.
 ///\ingroup maths
 
-namespace etl 
+namespace etl
 {
+  namespace private_power
+  {
+#if defined(ETL_NO_64BIT_TYPES)
+    typedef uint32_t type;
+#else
+    typedef uint64_t type;
+#endif
+  }
+
   //***************************************************************************
   ///\ingroup power
   /// Calculates powers.
@@ -51,7 +60,7 @@ namespace etl
   template <const size_t NV, const size_t POWER>
   struct power
   {
-    static const uint64_t value = NV * power<NV, POWER - 1>::value;
+    static const private_power::type value = NV * power<NV, POWER - 1>::value;
   };
 
   //***************************************************************************
@@ -62,7 +71,7 @@ namespace etl
   template <const size_t NV>
   struct power<NV, 0>
   {
-    static const uint64_t value = 1;
+    static const private_power::type value = 1;
   };
 
   //***************************************************************************

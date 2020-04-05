@@ -33,7 +33,10 @@ SOFTWARE.
 
 #include <stdint.h>
 
+#include <new>
+
 #include "platform.h"
+#include "utility.h"
 #include "array.h"
 #include "largest.h"
 #include "exception.h"
@@ -721,7 +724,7 @@ namespace etl
       ETL_STATIC_ASSERT(Type_Is_Supported<T>::value, "Unsupported type");
 
       destruct_current();
-      ::new (static_cast<T*>(data)) T(std::forward<Args>(args)...);
+      ::new (static_cast<T*>(data)) T(etl::forward<Args>(args)...);
       type_id = Type_Id_Lookup<T>::type_id;
 
       return *static_cast<T*>(data);

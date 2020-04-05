@@ -33,9 +33,11 @@ SOFTWARE.
 
 #include "platform.h"
 
-#include "stl/algorithm.h"
-#include "stl/iterator.h"
+#include <new>
 
+#include "algorithm.h"
+#include "iterator.h"
+#include "utility.h"
 #include "error_handler.h"
 #include "alignment.h"
 #include "array.h"
@@ -123,7 +125,7 @@ namespace etl
     //*************************************************************************
     /// Allocate storage for an object from the pool.
     /// If asserts or exceptions are enabled and there are no more free items an
-    /// etl::pool_no_allocation if thrown, otherwise a nullptr is returned.
+    /// etl::pool_no_allocation if thrown, otherwise a null pointer is returned.
     //*************************************************************************
     template <typename T>
     T* allocate()
@@ -136,11 +138,11 @@ namespace etl
       return reinterpret_cast<T*>(allocate_item());
     }
 
-#if !ETL_CPP11_SUPPORTED || ETL_POOL_CPP03_CODE || defined(ETL_STLPORT) || defined(ETL_NO_STL)
+#if !ETL_CPP11_SUPPORTED || ETL_POOL_CPP03_CODE || defined(ETL_STLPORT)
     //*************************************************************************
     /// Allocate storage for an object from the pool and create default.
     /// If asserts or exceptions are enabled and there are no more free items an
-    /// etl::pool_no_allocation if thrown, otherwise a nullptr is returned.
+    /// etl::pool_no_allocation if thrown, otherwise a null pointer is returned.
     //*************************************************************************
     template <typename T>
     T* create()
@@ -158,7 +160,7 @@ namespace etl
     //*************************************************************************
     /// Allocate storage for an object from the pool and create with 1 parameter.
     /// If asserts or exceptions are enabled and there are no more free items an
-    /// etl::pool_no_allocation if thrown, otherwise a nullptr is returned.
+    /// etl::pool_no_allocation if thrown, otherwise a null pointer is returned.
     //*************************************************************************
     template <typename T, typename T1>
     T* create(const T1& value1)
@@ -222,7 +224,7 @@ namespace etl
 
       if (p)
       {
-        ::new (p) T(std::forward<Args>(args)...);
+        ::new (p) T(etl::forward<Args>(args)...);
       }
 
       return p;
@@ -287,6 +289,14 @@ namespace etl
     }
 
     //*************************************************************************
+    /// Returns the maximum number of items in the pool.
+    //*************************************************************************
+    size_t capacity() const
+    {
+      return MAX_SIZE;
+    }
+
+    //*************************************************************************
     /// Returns the number of free items in the pool.
     //*************************************************************************
     size_t available() const
@@ -342,7 +352,7 @@ namespace etl
     //*************************************************************************
     char* allocate_item()
     {
-      char* p_value = nullptr;
+      char* p_value = ETL_NULLPTR;
 
       // Any free space left?
       if (items_allocated < MAX_SIZE)
@@ -350,8 +360,9 @@ namespace etl
         // Initialise another one if necessary.
         if (items_initialised < MAX_SIZE)
         {
-          uintptr_t p = reinterpret_cast<uintptr_t>(p_buffer + (items_initialised * ITEM_SIZE));
-          *reinterpret_cast<uintptr_t*>(p) = p + ITEM_SIZE;
+          char* p = p_buffer + (items_initialised * ITEM_SIZE);
+          char* np = p + ITEM_SIZE;
+          *reinterpret_cast<char**>(p) = np;
           ++items_initialised;
         }
 
@@ -367,7 +378,7 @@ namespace etl
         else
         {
           // No more left!
-          p_next = nullptr;
+          p_next = ETL_NULLPTR;
         }
       }
       else
@@ -386,7 +397,7 @@ namespace etl
       // Does it belong to us?
       ETL_ASSERT(is_item_in_pool(p_value), ETL_ERROR(pool_object_not_in_pool));
 
-      if (p_next != nullptr)
+      if (p_next != ETL_NULLPTR)
       {
         // Point it to the current free item.
         *(uintptr_t*)p_value = reinterpret_cast<uintptr_t>(p_next);
@@ -475,7 +486,7 @@ namespace etl
     //*************************************************************************
     /// Allocate an object from the pool.
     /// If asserts or exceptions are enabled and there are no more free items an
-    /// etl::pool_no_allocation if thrown, otherwise a nullptr is returned.
+    /// etl::pool_no_allocation if thrown, otherwise a null pointer is returned.
     /// Static asserts if the specified type is too large for the pool.
     //*************************************************************************
     template <typename U>
@@ -486,11 +497,11 @@ namespace etl
       return ipool::allocate<U>();
     }
 
-#if !ETL_CPP11_SUPPORTED || ETL_POOL_CPP03_CODE || defined(ETL_STLPORT) || defined(ETL_NO_STL)
+#if !ETL_CPP11_SUPPORTED || ETL_POOL_CPP03_CODE || defined(ETL_STLPORT)
     //*************************************************************************
     /// Allocate storage for an object from the pool and create with default.
     /// If asserts or exceptions are enabled and there are no more free items an
-    /// etl::pool_no_allocation if thrown, otherwise a nullptr is returned.
+    /// etl::pool_no_allocation if thrown, otherwise a null pointer is returned.
     //*************************************************************************
     template <typename U>
     U* create()
@@ -503,7 +514,7 @@ namespace etl
     //*************************************************************************
     /// Allocate storage for an object from the pool and create with 1 parameter.
     /// If asserts or exceptions are enabled and there are no more free items an
-    /// etl::pool_no_allocation if thrown, otherwise a nullptr is returned.
+    /// etl::pool_no_allocation if thrown, otherwise a null pointer is returned.
     //*************************************************************************
     template <typename U, typename T1>
     U* create(const T1& value1)
@@ -516,7 +527,7 @@ namespace etl
     //*************************************************************************
     /// Allocate storage for an object from the pool and create with 2 parameters.
     /// If asserts or exceptions are enabled and there are no more free items an
-    /// etl::pool_no_allocation if thrown, otherwise a nullptr is returned.
+    /// etl::pool_no_allocation if thrown, otherwise a null pointer is returned.
     //*************************************************************************
     template <typename U, typename T1, typename T2>
     U* create(const T1& value1, const T2& value2)
@@ -529,7 +540,7 @@ namespace etl
     //*************************************************************************
     /// Allocate storage for an object from the pool and create with 3 parameters.
     /// If asserts or exceptions are enabled and there are no more free items an
-    /// etl::pool_no_allocation if thrown, otherwise a nullptr is returned.
+    /// etl::pool_no_allocation if thrown, otherwise a null pointer is returned.
     //*************************************************************************
     template <typename U, typename T1, typename T2, typename T3>
     U* create(const T1& value1, const T2& value2, const T3& value3)
@@ -542,7 +553,7 @@ namespace etl
     //*************************************************************************
     /// Allocate storage for an object from the pool and create with 4 parameters.
     /// If asserts or exceptions are enabled and there are no more free items an
-    /// etl::pool_no_allocation if thrown, otherwise a nullptr is returned.
+    /// etl::pool_no_allocation if thrown, otherwise a null pointer is returned.
     //*************************************************************************
     template <typename U, typename T1, typename T2, typename T3, typename T4>
     U* create(const T1& value1, const T2& value2, const T3& value3, const T4& value4)
@@ -560,7 +571,7 @@ namespace etl
     {
       ETL_STATIC_ASSERT(etl::alignment_of<U>::value <= ALIGNMENT_, "Type has incompatible alignment");
       ETL_STATIC_ASSERT(sizeof(U) <= TYPE_SIZE, "Type too large for pool");
-      return ipool::create<U>(std::forward<Args>(args)...);
+      return ipool::create<U>(etl::forward<Args>(args)...);
     }
 #endif
 
@@ -583,7 +594,7 @@ namespace etl
     // The pool element.
     union Element
     {
-      uintptr_t next;              ///< Pointer to the next free element.
+      char*     next;              ///< Pointer to the next free element.
       char      value[TYPE_SIZE_]; ///< Storage for value type.
       typename  etl::type_with_alignment<ALIGNMENT_>::type dummy; ///< Dummy item to get correct alignment.
     };
@@ -626,7 +637,7 @@ namespace etl
     /// Allocate an object from the pool.
     /// Uses the default constructor.
     /// If asserts or exceptions are enabled and there are no more free items an
-    /// etl::pool_no_allocation if thrown, otherwise a nullptr is returned.
+    /// etl::pool_no_allocation if thrown, otherwise a null pointer is returned.
     /// Static asserts if the specified type is too large for the pool.
     //*************************************************************************
     template <typename U>
@@ -637,11 +648,11 @@ namespace etl
       return base_t::template allocate<U>();
     }
 
-#if !ETL_CPP11_SUPPORTED || ETL_POOL_CPP03_CODE || defined(ETL_STLPORT) || defined(ETL_NO_STL)
+#if !ETL_CPP11_SUPPORTED || ETL_POOL_CPP03_CODE || defined(ETL_STLPORT)
     //*************************************************************************
     /// Allocate storage for an object from the pool and create with default.
     /// If asserts or exceptions are enabled and there are no more free items an
-    /// etl::pool_no_allocation if thrown, otherwise a nullptr is returned.
+    /// etl::pool_no_allocation if thrown, otherwise a null pointer is returned.
     //*************************************************************************
     template <typename U>
     U* create()
@@ -654,7 +665,7 @@ namespace etl
     //*************************************************************************
     /// Allocate storage for an object from the pool and create with 1 parameter.
     /// If asserts or exceptions are enabled and there are no more free items an
-    /// etl::pool_no_allocation if thrown, otherwise a nullptr is returned.
+    /// etl::pool_no_allocation if thrown, otherwise a null pointer is returned.
     //*************************************************************************
     template <typename U, typename T1>
     U* create(const T1& value1)
@@ -667,7 +678,7 @@ namespace etl
     //*************************************************************************
     /// Allocate storage for an object from the pool and create with 2 parameters.
     /// If asserts or exceptions are enabled and there are no more free items an
-    /// etl::pool_no_allocation if thrown, otherwise a nullptr is returned.
+    /// etl::pool_no_allocation if thrown, otherwise a null pointer is returned.
     //*************************************************************************
     template <typename U, typename T1, typename T2>
     U* create(const T1& value1, const T2& value2)
@@ -680,7 +691,7 @@ namespace etl
     //*************************************************************************
     /// Allocate storage for an object from the pool and create with 3 parameters.
     /// If asserts or exceptions are enabled and there are no more free items an
-    /// etl::pool_no_allocation if thrown, otherwise a nullptr is returned.
+    /// etl::pool_no_allocation if thrown, otherwise a null pointer is returned.
     //*************************************************************************
     template <typename U, typename T1, typename T2, typename T3>
     U* create(const T1& value1, const T2& value2, const T3& value3)
@@ -693,7 +704,7 @@ namespace etl
     //*************************************************************************
     /// Allocate storage for an object from the pool and create with 4 parameters.
     /// If asserts or exceptions are enabled and there are no more free items an
-    /// etl::pool_no_allocation if thrown, otherwise a nullptr is returned.
+    /// etl::pool_no_allocation if thrown, otherwise a null pointer is returned.
     //*************************************************************************
     template <typename U, typename T1, typename T2, typename T3, typename T4>
     U* create(const T1& value1, const T2& value2, const T3& value3, const T4& value4)
@@ -706,14 +717,14 @@ namespace etl
     //*************************************************************************
     /// Allocate storage for an object from the pool and create with variadic parameters.
     /// If asserts or exceptions are enabled and there are no more free items an
-    /// etl::pool_no_allocation if thrown, otherwise a nullptr is returned.
+    /// etl::pool_no_allocation if thrown, otherwise a null pointer is returned.
     //*************************************************************************
     template <typename U, typename... Args>
     U* create(Args&&... args)
     {
       ETL_STATIC_ASSERT(etl::alignment_of<U>::value <= ALIGNMENT, "Type has incompatible alignment");
       ETL_STATIC_ASSERT(sizeof(U) <= TYPE_SIZE, "Type too large for pool");
-      return base_t::template create<U>(std::forward<Args>(args)...);
+      return base_t::template create<U>(etl::forward<Args>(args)...);
     }
 #endif
 

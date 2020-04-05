@@ -3,22 +3,13 @@ project(etl_unit_tests)
 
 add_definitions(-DETL_DEBUG)
 
-
 if(NOT UnitTest++_FOUND)
   # Add unittest-cpp as an ExternalProject
   include(cmake/unit-test_external_project.cmake)
   add_unittest_cpp()
-else()
-  include(${UnitTest++_CONFIG})
-  # The CMake install of UnitTest++ puts the include directory to ${CMAKE_INSTALL_PREFIX}/include
-  # under the assumptions that clients will consume the headers via
-  # #include<UnitTest++/UnitTest++.h>
-  # However the tests in etl include the headers directly, e.g.
-  # #include "UnitTest++.h"
-  # Therefore we update the provide UTPP_INCLUDE_DIRS here
-  set(UTPP_INCLUDE_DIRS "${UTPP_INCLUDE_DIRS}/UnitTest++")
 endif()
-include_directories(${UTPP_INCLUDE_DIRS})
+
+include_directories(${UTPP_INCLUDE_DIRS} ${PROJECT_SOURCE_DIR}/../include)
 
 set(TEST_SOURCE_FILES
   main.cpp
@@ -35,10 +26,10 @@ set(TEST_SOURCE_FILES
   test_callback_timer.cpp
   test_checksum.cpp
   test_compare.cpp
+  test_compiler_settings.cpp
   test_constant.cpp
   test_container.cpp
   test_crc.cpp
-  test_c_timer_framework.cpp
   test_cyclic_value.cpp
   test_debounce.cpp
   test_deque.cpp
@@ -117,12 +108,34 @@ set(TEST_SOURCE_FILES
   test_visitor.cpp
   test_xor_checksum.cpp
   test_xor_rotate_checksum.cpp
-
-  # Compile the source level ecl_timer here as test has provided a ecl_user.h file
-  ${PROJECT_SOURCE_DIR}/../src/c/ecl_timer.c
+  test_atomic_std.cpp
+  test_callback_service.cpp
+  test_cumulative_moving_average.cpp
+  test_delegate.cpp
+  test_delegate_service.cpp
+  test_forward_list_shared_pool.cpp
+  test_list_shared_pool.cpp
+  test_multi_array.cpp
+  test_queue_memory_model_small.cpp
+  test_queue_mpmc_mutex.cpp
+  test_queue_mpmc_mutex_small.cpp
+  test_queue_spsc_atomic.cpp
+  test_queue_spsc_atomic_small.cpp
+  test_queue_spsc_isr.cpp
+  test_queue_spsc_isr_small.cpp
+  test_queue_spsc_locked.cpp
+  test_queue_spsc_locked_small.cpp
+  test_scaled_rounding.cpp
+  test_state_chart.cpp
+  test_string_view.cpp
+  test_to_string.cpp
+  test_to_u16string.cpp
+  test_to_u32string.cpp
+  test_to_wstring.cpp
+  test_type_select.cpp
+  test_vector_external_buffer.cpp
+  test_vector_pointer_external_buffer.cpp
   )
-
-
 
 if (WIN32)
   # test_error_handler.cpp uses windows APIs that assume the microsoft project
@@ -132,7 +145,6 @@ if (WIN32)
   ADD_DEFINITIONS(-D_UNICODE)
 endif()
 
-
 if (CMAKE_CXX_COMPILER_ID MATCHES "GNU")
   list(APPEND TEST_SOURCE_FILES "test_atomic_gcc_sync.cpp")
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fexceptions")
@@ -140,7 +152,8 @@ endif()
 add_executable(etl_tests
   ${TEST_SOURCE_FILES}
   )
-target_link_libraries(etl_tests etl UnitTest++)
+#target_link_libraries(etl_tests etl UnitTest++)
+target_link_libraries(etl_tests UnitTest++)
 target_include_directories(etl_tests
   PUBLIC
   ${CMAKE_CURRENT_LIST_DIR}
@@ -155,6 +168,6 @@ add_test(etl_unit_tests etl_tests)
 add_custom_target(test_verbose COMMAND ${CMAKE_CTEST_COMMAND} --verbose)
 
 
-# Remaining Tests to be implemented:
-#1. Enable embedded compile target testing
-#   - test_embedded_compile.cpp
+#RSG
+set_property(TARGET etl_tests PROPERTY CXX_STANDARD 17)
+

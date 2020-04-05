@@ -49,13 +49,44 @@ Original publication: https://www.codeproject.com/Articles/1170503/The-Impossibl
 #define ETL_DELEGATE_INCLUDED
 
 #include "platform.h"
+#include "error_handler.h"
+#include "exception.h"
 
 #if ETL_CPP11_SUPPORTED == 0
 #error NOT SUPPORTED FOR C++03 OR BELOW
 #endif
 
+#undef ETL_FILE
+#define ETL_FILE "51"
+
 namespace etl
 {
+  //***************************************************************************
+  /// The base class for delegate exceptions.
+  //***************************************************************************
+  class delegate_exception : public exception
+  {
+  public:
+
+    delegate_exception(string_type reason_, string_type file_name_, numeric_type line_number_)
+      : exception(reason_, file_name_, line_number_)
+    {
+    }
+  };
+
+  //***************************************************************************
+  /// The exception thrown when the delegate is uninitialised.
+  //***************************************************************************
+  class delegate_uninitialised : public delegate_exception
+  {
+  public:
+
+    delegate_uninitialised(string_type file_name_, numeric_type line_number_)
+      : delegate_exception(ETL_ERROR_TEXT("delegate:uninitialised", ETL_FILE"A"), file_name_, line_number_)
+    {
+    }
+  };
+
   template <typename T> class delegate;
 
   template <typename TReturn, typename... TParams>
@@ -71,10 +102,7 @@ namespace etl
     //*************************************************************************
     // Copy constructor.
     //*************************************************************************
-    delegate(const delegate& other)
-    {
-      other.invocation.clone(invocation);
-    }
+    delegate(const delegate& other) = default;
 
     //*************************************************************************
     // Constructor from lambda or functor.
@@ -91,7 +119,7 @@ namespace etl
     template <TReturn(*Method)(TParams...)>
     static delegate create()
     {
-      return delegate(nullptr, function_stub<Method>);
+      return delegate(ETL_NULLPTR, function_stub<Method>);
     }
 
     //*************************************************************************
@@ -113,6 +141,13 @@ namespace etl
     }
 
     //*************************************************************************
+    /// Create from instance method (Run time).
+    /// Deleted for rvalue references.
+    //*************************************************************************
+    template <typename T, TReturn(T::*Method)(TParams...)>
+    static delegate create(T&& instance) = delete;
+
+    //*************************************************************************
     /// Create from const instance method (Run time).
     //*************************************************************************
     template <typename T, TReturn(T::*Method)(TParams...) const>
@@ -120,6 +155,12 @@ namespace etl
     {
       return delegate((void*)(&instance), const_method_stub<T, Method>);
     }
+
+    //*************************************************************************
+    /// Disable create from rvalue instance method (Run time).
+    //*************************************************************************
+    template <typename T, TReturn(T::*Method)(TParams...) const>
+    static delegate create(T&& instance) = delete;
 
     //*************************************************************************
     /// Create from instance method (Compile time).
@@ -139,22 +180,32 @@ namespace etl
       return delegate(const_method_instance_stub<T, Instance, Method>);
     }
 
+#if !defined(ETL_COMPILER_GCC)
+    //*************************************************************************
+    /// Create from instance function operator (Compile time).
+    /// At the time of writing, GCC appears to have trouble with this.
+    //*************************************************************************
+    template <typename T, T& Instance>
+    static delegate create()
+    {
+      return delegate(operator_instance_stub<T, Instance>);
+    }
+#endif
+
     //*************************************************************************
     /// Execute the delegate.
     //*************************************************************************
     TReturn operator()(TParams... args) const
     {
+      ETL_ASSERT(is_valid(), ETL_ERROR(delegate_uninitialised));
+
       return (*invocation.stub)(invocation.object, args...);
     }
 
     //*************************************************************************
     /// Create from function (Compile time).
     //*************************************************************************
-    delegate& operator =(const delegate& other)
-    {
-      other.invocation.clone(invocation);
-      return *this;
-    }
+    delegate& operator =(const delegate& rhs) = default;
 
     //*************************************************************************
     /// Create from Lambda or Functor.
@@ -169,17 +220,17 @@ namespace etl
     //*************************************************************************
     /// Checks equality.
     //*************************************************************************
-    bool operator == (const delegate& other) const
+    bool operator == (const delegate& rhs) const
     {
-      return invocation == other.invocation;
+      return invocation == rhs.invocation;
     }
 
     //*************************************************************************
     /// Returns <b>true</b> if the delegate is valid.
     //*************************************************************************
-    bool operator != (const delegate& other) const
+    bool operator != (const delegate& rhs) const
     {
-      return invocation != other.invocation;
+      return invocation != rhs.invocation;
     }
 
     //*************************************************************************
@@ -187,7 +238,7 @@ namespace etl
     //*************************************************************************
     bool is_valid() const
     {
-      return invocation.stub != nullptr;
+      return invocation.stub != ETL_NULLPTR;
     }
 
     //*************************************************************************
@@ -217,27 +268,20 @@ namespace etl
       }
 
       //***********************************************************************
-      void clone(invocation_element& target) const
+      bool operator ==(const invocation_element& rhs) const
       {
-        target.stub   = stub;
-        target.object = object;
+        return (rhs.stub == stub) && (rhs.object == object);
       }
 
       //***********************************************************************
-      bool operator ==(const invocation_element& another) const
+      bool operator !=(const invocation_element& rhs) const
       {
-        return (another.stub == stub) && (another.object == object);
+        return (rhs.stub != stub) || (rhs.object != object);
       }
 
       //***********************************************************************
-      bool operator !=(const invocation_element& another) const
-      {
-        return (another.stub != stub) || (another.object != object);
-      }
-
-      //***********************************************************************
-      void*     object = nullptr;
-      stub_type stub   = nullptr;
+      void*     object = ETL_NULLPTR;
+      stub_type stub   = ETL_NULLPTR;
     };
 
     //*************************************************************************
@@ -254,7 +298,7 @@ namespace etl
     //*************************************************************************
     delegate(stub_type stub)
     {
-      invocation.object = nullptr;
+      invocation.object = ETL_NULLPTR;
       invocation.stub   = stub;
     }
 
@@ -305,6 +349,17 @@ namespace etl
       return (Instance.*Method)(params...);
     }
 
+#if !defined(ETL_COMPILER_GCC)
+    //*************************************************************************
+    /// Stub call for a function operator. Compile time instance.
+    //*************************************************************************
+    template <typename T, T& Instance>
+    static TReturn operator_instance_stub(void*, TParams... params)
+    {
+      return Instance.operator()(params...);
+    }
+#endif
+
     //*************************************************************************
     /// Stub call for a free function.
     //*************************************************************************
@@ -330,5 +385,7 @@ namespace etl
     invocation_element invocation;
   };
 }
+
+#undef ETL_FILE
 
 #endif

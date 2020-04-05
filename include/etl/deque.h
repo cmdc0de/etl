@@ -34,11 +34,13 @@ SOFTWARE.
 #include <stddef.h>
 #include <stdint.h>
 
+#include <new>
+
 #include "platform.h"
 
-#include "stl/algorithm.h"
-#include "stl/iterator.h"
-#include "stl/utility.h"
+#include "algorithm.h"
+#include "iterator.h"
+#include "utility.h"
 
 #include "container.h"
 #include "alignment.h"
@@ -49,6 +51,7 @@ SOFTWARE.
 #include "debug_count.h"
 #include "algorithm.h"
 #include "type_traits.h"
+#include "iterator.h"
 
 #if ETL_CPP11_SUPPORTED && !defined(ETL_STLPORT) && !defined(ETL_NO_STL)
   #include <initializer_list>
@@ -236,7 +239,7 @@ namespace etl
 #endif
     typedef T*       pointer;
     typedef const T* const_pointer;
-    typedef typename std::iterator_traits<pointer>::difference_type difference_type;
+    typedef typename etl::iterator_traits<pointer>::difference_type difference_type;
 
   protected:
 
@@ -253,15 +256,16 @@ namespace etl
     //*************************************************************************
     /// Iterator
     //*************************************************************************
-    struct iterator : public std::iterator<std::random_access_iterator_tag, T>
+    struct iterator : public etl::iterator<ETL_OR_STD::random_access_iterator_tag, T>
     {
       friend class ideque;
+      friend struct const_iterator;
 
       //***************************************************
       iterator()
-        : index(0),
-        p_deque(0),
-        p_buffer(0)
+        : index(0)
+        , p_deque(0)
+        , p_buffer(0)
       {
       }
 
@@ -271,6 +275,16 @@ namespace etl
         p_deque(other.p_deque),
         p_buffer(other.p_buffer)
       {
+      }
+
+      //***************************************************
+      iterator& operator =(const iterator& other)
+      {
+        index    = other.index;
+        p_deque  = other.p_deque;
+        p_buffer = other.p_buffer;
+
+        return *this;
       }
 
       //***************************************************
@@ -418,16 +432,18 @@ namespace etl
       //***************************************************
       void swap(iterator& other)
       {
-        std::swap(index, other.index);
+        using ETL_OR_STD::swap; // Allow ADL
+
+        swap(index, other.index);
       }
 
     private:
 
       //***************************************************
       iterator(difference_type index_, ideque& the_deque, pointer p_buffer_)
-        : index(index_),
-          p_deque(&the_deque),
-          p_buffer(p_buffer_)
+        : index(index_)
+        , p_deque(&the_deque)
+        , p_buffer(p_buffer_)
       {
       }
 
@@ -439,32 +455,51 @@ namespace etl
     //*************************************************************************
     /// Const Iterator
     //*************************************************************************
-    struct const_iterator : public std::iterator<std::random_access_iterator_tag, const T>
+    struct const_iterator : public etl::iterator<ETL_OR_STD::random_access_iterator_tag, const T>
     {
       friend class ideque;
 
       //***************************************************
       const_iterator()
-        : index(0),
-        p_deque(0),
-        p_buffer(0)
+        : index(0)
+        , p_deque(0)
+        , p_buffer(0)
       {
       }
 
       //***************************************************
       const_iterator(const const_iterator& other)
-        : index(other.index),
-        p_deque(other.p_deque),
-        p_buffer(other.p_buffer)
+        : index(other.index)
+        , p_deque(other.p_deque)
+        , p_buffer(other.p_buffer)
       {
       }
 
       //***************************************************
       const_iterator(const typename ideque::iterator& other)
-        : index(other.index),
-        p_deque(other.p_deque),
-        p_buffer(other.p_buffer)
+        : index(other.index)
+        , p_deque(other.p_deque)
+        , p_buffer(other.p_buffer)
       {
+      }
+
+      //***************************************************
+      const_iterator& operator =(const const_iterator& other)
+      {
+        index    = other.index;
+        p_deque  = other.p_deque;
+        p_buffer = other.p_buffer;
+
+        return *this;
+      }
+
+      const_iterator& operator =(const typename ideque::iterator& other)
+      {
+        index    = other.index;
+        p_deque  = other.p_deque;
+        p_buffer = other.p_buffer;
+
+        return *this;
       }
 
       //***************************************************
@@ -600,7 +635,7 @@ namespace etl
       //***************************************************
       void swap(const_iterator& other)
       {
-        std::swap(index, other.index);
+        swap(index, other.index);
       }
 
     private:
@@ -620,9 +655,9 @@ namespace etl
 
       //***************************************************
       const_iterator(difference_type index_, ideque& the_deque, pointer p_buffer_)
-        : index(index_),
-          p_deque(&the_deque),
-          p_buffer(p_buffer_)
+        : index(index_)
+        , p_deque(&the_deque)
+        , p_buffer(p_buffer_)
       {
       }
 
@@ -631,8 +666,8 @@ namespace etl
       pointer         p_buffer;
     };
 
-    typedef std::reverse_iterator<iterator>       reverse_iterator;
-    typedef std::reverse_iterator<const_iterator> const_reverse_iterator;
+    typedef ETL_OR_STD::reverse_iterator<iterator>       reverse_iterator;
+    typedef ETL_OR_STD::reverse_iterator<const_iterator> const_reverse_iterator;
 
     //*************************************************************************
     /// Assigns a range to the deque.
@@ -890,13 +925,13 @@ namespace etl
       else
       {
         // Are we closer to the front?
-        if (std::distance(_begin, position) < std::distance(position, _end - 1))
+        if (etl::distance(_begin, position) < etl::distance(position, _end - 1))
         {
           // Construct the _begin.
           create_element_front(*_begin);
 
           // Move the values.
-          std::copy(_begin + 1, position, _begin);
+          etl::move(_begin + 1, position, _begin);
 
           // Write the new value.
           *--position = value;
@@ -907,7 +942,7 @@ namespace etl
           create_element_back(*(_end - 1));
 
           // Move the values.
-          std::copy_backward(position, _end - 2, _end - 1);
+          etl::move_backward(position, _end - 2, _end - 1);
 
           // Write the new value.
           *position = value;
@@ -932,38 +967,38 @@ namespace etl
 
       if (insert_position == begin())
       {
-        create_element_front(std::move(value));
+        create_element_front(etl::move(value));
         position = _begin;
       }
       else if (insert_position == end())
       {
-        create_element_back(std::move(value));
+        create_element_back(etl::move(value));
         position = _end - 1;
       }
       else
       {
         // Are we closer to the front?
-        if (std::distance(_begin, position) < std::distance(position, _end - 1))
+        if (etl::distance(_begin, position) < etl::distance(position, _end - 1))
         {
           // Construct the _begin.
-          create_element_front(std::move(*_begin));
+          create_element_front(etl::move(*_begin));
 
           // Move the values.
-          std::move(_begin + 1, position, _begin);
+          etl::move(_begin + 1, position, _begin);
 
           // Write the new value.
-          *--position = std::move(value);
+          *--position = etl::move(value);
         }
         else
         {
           // Construct the _end.
-          create_element_back(std::move(*(_end - 1)));
+          create_element_back(etl::move(*(_end - 1)));
 
           // Move the values.
-          std::move_backward(position, _end - 2, _end - 1);
+          etl::move_backward(position, _end - 2, _end - 1);
 
           // Write the new value.
-          *position = std::move(value);
+          *position = etl::move(value);
         }
       }
 
@@ -1005,13 +1040,13 @@ namespace etl
       else
       {
         // Are we closer to the front?
-        if (std::distance(_begin, position) < std::distance(position, _end - 1))
+        if (etl::distance(_begin, position) < etl::distance(position, _end - 1))
         {
           // Construct the _begin.
           create_element_front(*_begin);
 
           // Move the values.
-          std::copy(_begin + 1, position, _begin);
+          etl::move(_begin + 1, position, _begin);
 
           // Write the new value.
           --position;
@@ -1024,7 +1059,7 @@ namespace etl
           create_element_back(*(_end - 1));
 
           // Move the values.
-          std::copy_backward(position, _end - 2, _end - 1);
+          etl::move_backward(position, _end - 2, _end - 1);
 
           // Write the new value.
           (*position).~T();
@@ -1032,7 +1067,7 @@ namespace etl
         }
       }
 
-      ::new (p) T(std::forward<Args>(args)...);
+      ::new (p) T(etl::forward<Args>(args)...);
 
       return position;
     }
@@ -1072,13 +1107,13 @@ namespace etl
       else
       {
         // Are we closer to the front?
-        if (std::distance(_begin, position) < std::distance(position, _end - 1))
+        if (etl::distance(_begin, position) < etl::distance(position, _end - 1))
         {
           // Construct the _begin.
           create_element_front(*_begin);
 
           // Move the values.
-          std::copy(_begin + 1, position, _begin);
+          etl::move(_begin + 1, position, _begin);
 
           // Write the new value.
           --position;
@@ -1091,7 +1126,7 @@ namespace etl
           create_element_back(*(_end - 1));
 
           // Move the values.
-          std::copy_backward(position, _end - 2, _end - 1);
+          etl::move_backward(position, _end - 2, _end - 1);
 
           // Write the new value.
           (*position).~T();
@@ -1137,13 +1172,13 @@ namespace etl
       else
       {
         // Are we closer to the front?
-        if (std::distance(_begin, position) < std::distance(position, _end - 1))
+        if (etl::distance(_begin, position) < etl::distance(position, _end - 1))
         {
           // Construct the _begin.
           create_element_front(*_begin);
 
           // Move the values.
-          std::copy(_begin + 1, position, _begin);
+          etl::move(_begin + 1, position, _begin);
 
           // Write the new value.
           --position;
@@ -1156,7 +1191,7 @@ namespace etl
           create_element_back(*(_end - 1));
 
           // Move the values.
-          std::copy_backward(position, _end - 2, _end - 1);
+          etl::move_backward(position, _end - 2, _end - 1);
 
           // Write the new value.
           (*position).~T();
@@ -1202,13 +1237,13 @@ namespace etl
       else
       {
         // Are we closer to the front?
-        if (std::distance(_begin, position) < std::distance(position, _end - 1))
+        if (etl::distance(_begin, position) < etl::distance(position, _end - 1))
         {
           // Construct the _begin.
           create_element_front(*_begin);
 
           // Move the values.
-          std::copy(_begin + 1, position, _begin);
+          etl::move(_begin + 1, position, _begin);
 
           // Write the new value.
           --position;
@@ -1221,7 +1256,7 @@ namespace etl
           create_element_back(*(_end - 1));
 
           // Move the values.
-          std::copy_backward(position, _end - 2, _end - 1);
+          etl::move_backward(position, _end - 2, _end - 1);
 
           // Write the new value.
           (*position).~T();
@@ -1267,13 +1302,13 @@ namespace etl
       else
       {
         // Are we closer to the front?
-        if (std::distance(_begin, position) < std::distance(position, _end - 1))
+        if (etl::distance(_begin, position) < etl::distance(position, _end - 1))
         {
           // Construct the _begin.
           create_element_front(*_begin);
 
           // Move the values.
-          std::copy(_begin + 1, position, _begin);
+          etl::move(_begin + 1, position, _begin);
 
           // Write the new value.
           --position;
@@ -1286,7 +1321,7 @@ namespace etl
           create_element_back(*(_end - 1));
 
           // Move the values.
-          std::copy_backward(position, _end - 2, _end - 1);
+          etl::move_backward(position, _end - 2, _end - 1);
 
           // Write the new value.
           (*position).~T();
@@ -1340,8 +1375,8 @@ namespace etl
         if (distance(_begin, insert_position) <= difference_type(current_size / 2))
         {
           size_t n_insert = n;
-          size_t n_move = std::distance(begin(), position);
-          size_t n_create_copy = std::min(n_insert, n_move);
+          size_t n_move = etl::distance(begin(), position);
+          size_t n_create_copy = etl::min(n_insert, n_move);
           size_t n_create_new = (n_insert > n_create_copy) ? n_insert - n_create_copy : 0;
           size_t n_copy_new = (n_insert > n_create_new) ? n_insert - n_create_new : 0;
           size_t n_copy_old = n_move - n_create_copy;
@@ -1362,22 +1397,22 @@ namespace etl
             create_element_front(*from--);
           }
 
-          // Copy old.
+          // Move old.
           from = position - n_copy_old;
           to = _begin + n_create_copy;
-          etl::copy_n(from, n_copy_old, to);
+          etl::move(from, from + n_copy_old, to);
 
           // Copy new.
           to = position - n_create_copy;
-          std::fill_n(to, n_copy_new, value);
+          etl::fill_n(to, n_copy_new, value);
 
           position = _begin + n_move;
         }
         else
         {
           size_t n_insert = n;
-          size_t n_move = std::distance(position, end());
-          size_t n_create_copy = std::min(n_insert, n_move);
+          size_t n_move = etl::distance(position, end());
+          size_t n_create_copy = etl::min(n_insert, n_move);
           size_t n_create_new = (n_insert > n_create_copy) ? n_insert - n_create_copy : 0;
           size_t n_copy_new = (n_insert > n_create_new) ? n_insert - n_create_new : 0;
           size_t n_copy_old = n_move - n_create_copy;
@@ -1396,11 +1431,11 @@ namespace etl
             create_element_back(*from++);
           }
 
-          // Copy old.
-          std::copy_backward(position, position + n_copy_old, position + n_insert + n_copy_old);
+          // Move old.
+          etl::move_backward(position, position + n_copy_old, position + n_insert + n_copy_old);
 
           // Copy new.
-          std::fill_n(position, n_copy_new, value);
+          etl::fill_n(position, n_copy_new, value);
         }
       }
 
@@ -1420,7 +1455,7 @@ namespace etl
     {
       iterator position;
 
-      difference_type n = std::distance(range_begin, range_end);
+      difference_type n = etl::distance(range_begin, range_end);
 
       ETL_ASSERT((current_size + n) <= CAPACITY, ETL_ERROR(deque_full));
 
@@ -1448,8 +1483,8 @@ namespace etl
         if (distance(_begin, insert_position) < difference_type(current_size / 2))
         {
           size_t n_insert = n;
-          size_t n_move = std::distance(begin(), position);
-          size_t n_create_copy = std::min(n_insert, n_move);
+          size_t n_move = etl::distance(begin(), position);
+          size_t n_create_copy = etl::min(n_insert, n_move);
           size_t n_create_new = (n_insert > n_create_copy) ? n_insert - n_create_copy : 0;
           size_t n_copy_new = (n_insert > n_create_new) ? n_insert - n_create_new : 0;
           size_t n_copy_old = n_move - n_create_copy;
@@ -1464,23 +1499,23 @@ namespace etl
           // Create copy.
           create_element_front(n_create_copy, _begin + n_create_new);
 
-          // Copy old.
+          // Move old.
           from = position - n_copy_old;
           to = _begin + n_create_copy;
-          etl::copy_n(from, n_copy_old, to);
+          etl::move(from, from + n_copy_old, to);
 
           // Copy new.
           to = position - n_create_copy;
           range_begin += n_create_new;
-          etl::copy_n(range_begin, n_copy_new, to);
+          etl::copy(range_begin, range_begin + n_copy_new, to);
 
           position = _begin + n_move;
         }
         else
         {
           size_t n_insert = n;
-          size_t n_move = std::distance(position, end());
-          size_t n_create_copy = std::min(n_insert, n_move);
+          size_t n_move = etl::distance(position, end());
+          size_t n_create_copy = etl::min(n_insert, n_move);
           size_t n_create_new = (n_insert > n_create_copy) ? n_insert - n_create_copy : 0;
           size_t n_copy_new = (n_insert > n_create_new) ? n_insert - n_create_new : 0;
           size_t n_copy_old = n_move - n_create_copy;
@@ -1500,12 +1535,12 @@ namespace etl
             create_element_back(*from++);
           }
 
-          // Copy old.
-          std::copy_backward(position, position + n_copy_old, position + n_insert + n_copy_old);
+          // Move old.
+          etl::move_backward(position, position + n_copy_old, position + n_insert + n_copy_old);
 
           // Copy new.
           item = range_begin;
-          etl::copy_n(item, n_copy_new, position);
+          etl::copy(item, item + n_copy_new, position);
         }
       }
 
@@ -1538,13 +1573,13 @@ namespace etl
         // Are we closer to the front?
         if (distance(_begin, position) < difference_type(current_size / 2))
         {
-          std::copy_backward(_begin, position, position + 1);
+          etl::move_backward(_begin, position, position + 1);
           destroy_element_front();
           ++position;
         }
         else
         {
-          std::copy(position + 1, _end, position);
+          etl::move(position + 1, _end, position);
           destroy_element_back();
         }
       }
@@ -1565,7 +1600,7 @@ namespace etl
       ETL_ASSERT((distance(range_begin) <= difference_type(current_size)) && (distance(range_end) <= difference_type(current_size)), ETL_ERROR(deque_out_of_bounds));
 
       // How many to erase?
-      size_t length = std::distance(range_begin, range_end);
+      size_t length = etl::distance(range_begin, range_end);
 
       // At the beginning?
       if (position == _begin)
@@ -1594,7 +1629,7 @@ namespace etl
         if (distance(_begin, position) < difference_type(current_size / 2))
         {
           // Move the items.
-          std::copy_backward(_begin, position, position + length);
+          etl::move_backward(_begin, position, position + length);
 
           for (size_t i = 0; i < length; ++i)
           {
@@ -1607,7 +1642,7 @@ namespace etl
           // Must be closer to the back.
         {
           // Move the items.
-          std::copy(position + length, _end, position);
+          etl::move(position + length, _end, position);
 
           for (size_t i = 0; i < length; ++i)
           {
@@ -1643,7 +1678,7 @@ namespace etl
 #if defined(ETL_CHECK_PUSH_POP)
       ETL_ASSERT(!full(), ETL_ERROR(deque_full));
 #endif
-      create_element_back(std::move(item));
+      create_element_back(etl::move(item));
     }
 #endif
 
@@ -1659,7 +1694,7 @@ namespace etl
       ETL_ASSERT(!full(), ETL_ERROR(deque_full));
 #endif
 
-      ::new (&(*_end)) T(std::forward<Args>(args)...);
+      ::new (&(*_end)) T(etl::forward<Args>(args)...);
       ++_end;
       ++current_size;
       ETL_INCREMENT_DEBUG_COUNT
@@ -1771,7 +1806,7 @@ namespace etl
 #if defined(ETL_CHECK_PUSH_POP)
       ETL_ASSERT(!full(), ETL_ERROR(deque_full));
 #endif
-      create_element_front(std::move(item));
+      create_element_front(etl::move(item));
     }
 #endif
 
@@ -1788,7 +1823,7 @@ namespace etl
 #endif
 
       --_begin;
-      ::new (&(*_begin)) T(std::forward<Args>(args)...);
+      ::new (&(*_begin)) T(etl::forward<Args>(args)...);
       ++current_size;
       ETL_INCREMENT_DEBUG_COUNT
     }
@@ -1962,7 +1997,7 @@ namespace etl
         iterator itr = rhs.begin();
         while (itr != rhs.end())
         {
-          push_back(std::move(*itr));
+          push_back(etl::move(*itr));
           ++itr;
         }
 
@@ -2114,7 +2149,7 @@ namespace etl
     void create_element_front(rvalue_reference value)
     {
       --_begin;
-      ::new (&(*_begin)) T(std::move(value));
+      ::new (&(*_begin)) T(etl::move(value));
       ++current_size;
       ETL_INCREMENT_DEBUG_COUNT
     }
@@ -2124,7 +2159,7 @@ namespace etl
     //*********************************************************************
     void create_element_back(rvalue_reference value)
     {
-      ::new (&(*_end)) T(std::move(value));
+      ::new (&(*_end)) T(etl::move(value));
       ++_end;
       ++current_size;
       ETL_INCREMENT_DEBUG_COUNT
@@ -2230,7 +2265,7 @@ namespace etl
     typedef T&       reference;
     typedef const T& const_reference;
     typedef size_t   size_type;
-    typedef typename std::iterator_traits<pointer>::difference_type difference_type;
+    typedef typename etl::iterator_traits<pointer>::difference_type difference_type;
 
     //*************************************************************************
     /// Default constructor.
@@ -2275,11 +2310,9 @@ namespace etl
         typename etl::ideque<T>::iterator itr = other.begin();
         while (itr != other.end())
         {
-          this->push_back(std::move(*itr));
+          this->push_back(etl::move(*itr));
           ++itr;
         }
-
-        other.initialise();
       }
     }
 #endif
@@ -2339,11 +2372,9 @@ namespace etl
         typename etl::ideque<T>::iterator itr = rhs.begin();
         while (itr != rhs.end())
         {
-          this->push_back(std::move(*itr));
+          this->push_back(etl::move(*itr));
           ++itr;
         }
-
-        rhs.initialise();
       }
 
       return *this;
@@ -2359,7 +2390,7 @@ namespace etl
     void repair()
     {
 #if ETL_CPP11_TYPE_TRAITS_IS_TRIVIAL_SUPPORTED
-      ETL_ASSERT(std::is_trivially_copyable<T>::value, ETL_ERROR(etl::deque_incompatible_type));
+      ETL_ASSERT(etl::is_trivially_copyable<T>::value, ETL_ERROR(etl::deque_incompatible_type));
 #endif
 
       etl::ideque<T>::repair_buffer(reinterpret_cast<T*>(&buffer[0]));
@@ -2370,87 +2401,87 @@ namespace etl
     /// The uninitialised buffer of T used in the deque.
     typename etl::aligned_storage<sizeof(T), etl::alignment_of<T>::value>::type buffer[BUFFER_SIZE];
   };
-}
 
-//***************************************************************************
-/// Equal operator.
-///\param lhs  Reference to the _begin deque.
-///\param rhs  Reference to the second deque.
-///\return <b>true</b> if the arrays are equal, otherwise <b>false</b>
-///\ingroup deque
-//***************************************************************************
-template <typename T>
-bool operator ==(const etl::ideque<T>& lhs, const etl::ideque<T>& rhs)
-{
-  return (lhs.size() == rhs.size()) && std::equal(lhs.begin(), lhs.end(), rhs.begin());
-}
+  //***************************************************************************
+  /// Equal operator.
+  ///\param lhs  Reference to the _begin deque.
+  ///\param rhs  Reference to the second deque.
+  ///\return <b>true</b> if the arrays are equal, otherwise <b>false</b>
+  ///\ingroup deque
+  //***************************************************************************
+  template <typename T>
+  bool operator ==(const etl::ideque<T>& lhs, const etl::ideque<T>& rhs)
+  {
+    return (lhs.size() == rhs.size()) && etl::equal(lhs.begin(), lhs.end(), rhs.begin());
+  }
 
-//***************************************************************************
-/// Not equal operator.
-///\param lhs  Reference to the _begin deque.
-///\param rhs  Reference to the second deque.
-///\return <b>true</b> if the arrays are not equal, otherwise <b>false</b>
-///\ingroup deque
-//***************************************************************************
-template <typename T>
-bool operator !=(const etl::ideque<T>& lhs, const etl::ideque<T>& rhs)
-{
-  return !(lhs == rhs);
-}
+  //***************************************************************************
+  /// Not equal operator.
+  ///\param lhs  Reference to the _begin deque.
+  ///\param rhs  Reference to the second deque.
+  ///\return <b>true</b> if the arrays are not equal, otherwise <b>false</b>
+  ///\ingroup deque
+  //***************************************************************************
+  template <typename T>
+  bool operator !=(const etl::ideque<T>& lhs, const etl::ideque<T>& rhs)
+  {
+    return !(lhs == rhs);
+  }
 
-//***************************************************************************
-/// Less than operator.
-///\param lhs  Reference to the _begin deque.
-///\param rhs  Reference to the second deque.
-///\return <b>true</b> if the _begin deque is lexicographically less than the second, otherwise <b>false</b>
-///\ingroup deque
-//***************************************************************************
-template <typename T>
-bool operator <(const etl::ideque<T>& lhs, const etl::ideque<T>& rhs)
-{
-  return std::lexicographical_compare(lhs.begin(),
-    lhs.end(),
-    rhs.begin(),
-    rhs.end());
-}
+  //***************************************************************************
+  /// Less than operator.
+  ///\param lhs  Reference to the _begin deque.
+  ///\param rhs  Reference to the second deque.
+  ///\return <b>true</b> if the _begin deque is lexicographically less than the second, otherwise <b>false</b>
+  ///\ingroup deque
+  //***************************************************************************
+  template <typename T>
+  bool operator <(const etl::ideque<T>& lhs, const etl::ideque<T>& rhs)
+  {
+    return etl::lexicographical_compare(lhs.begin(),
+                                           lhs.end(),
+                                           rhs.begin(),
+                                           rhs.end());
+  }
 
-//***************************************************************************
-/// Less than or equal operator.
-///\param lhs  Reference to the _begin deque.
-///\param rhs  Reference to the second deque.
-///\return <b>true</b> if the _begin deque is lexicographically less than or equal to the second, otherwise <b>false</b>
-///\ingroup deque
-//***************************************************************************
-template <typename T>
-bool operator <=(const etl::ideque<T>& lhs, const etl::ideque<T>& rhs)
-{
-  return !(lhs > rhs);
-}
+  //***************************************************************************
+  /// Less than or equal operator.
+  ///\param lhs  Reference to the _begin deque.
+  ///\param rhs  Reference to the second deque.
+  ///\return <b>true</b> if the _begin deque is lexicographically less than or equal to the second, otherwise <b>false</b>
+  ///\ingroup deque
+  //***************************************************************************
+  template <typename T>
+  bool operator <=(const etl::ideque<T>& lhs, const etl::ideque<T>& rhs)
+  {
+    return !(lhs > rhs);
+  }
 
-//***************************************************************************
-/// Greater than operator.
-///\param lhs  Reference to the _begin deque.
-///\param rhs  Reference to the second deque.
-///\return <b>true</b> if the _begin deque is lexicographically greater than the second, otherwise <b>false</b>
-///\ingroup deque
-//***************************************************************************
-template <typename T>
-bool operator >(const etl::ideque<T>& lhs, const etl::ideque<T>& rhs)
-{
-  return (rhs < lhs);
-}
+  //***************************************************************************
+  /// Greater than operator.
+  ///\param lhs  Reference to the _begin deque.
+  ///\param rhs  Reference to the second deque.
+  ///\return <b>true</b> if the _begin deque is lexicographically greater than the second, otherwise <b>false</b>
+  ///\ingroup deque
+  //***************************************************************************
+  template <typename T>
+  bool operator >(const etl::ideque<T>& lhs, const etl::ideque<T>& rhs)
+  {
+    return (rhs < lhs);
+  }
 
-//***************************************************************************
-/// Greater than or equal operator.
-///\param "lhs  Reference to the _begin deque.
-///\param "rhs  Reference to the second deque.
-///\return <b>true</b> if the _begin deque is lexicographically greater than or equal to the second, otherwise <b>false</b>
-///\ingroup deque
-//***************************************************************************
-template <typename T>
-bool operator >=(const etl::ideque<T>& lhs, const etl::ideque<T>& rhs)
-{
-  return !(lhs < rhs);
+  //***************************************************************************
+  /// Greater than or equal operator.
+  ///\param "lhs  Reference to the _begin deque.
+  ///\param "rhs  Reference to the second deque.
+  ///\return <b>true</b> if the _begin deque is lexicographically greater than or equal to the second, otherwise <b>false</b>
+  ///\ingroup deque
+  //***************************************************************************
+  template <typename T>
+  bool operator >=(const etl::ideque<T>& lhs, const etl::ideque<T>& rhs)
+  {
+    return !(lhs < rhs);
+  }
 }
 
 #undef ETL_FILE
