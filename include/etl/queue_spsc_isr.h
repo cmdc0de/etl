@@ -34,14 +34,13 @@ SOFTWARE.
 #include <stddef.h>
 #include <stdint.h>
 
-#include <new>
-
 #include "platform.h"
 #include "alignment.h"
 #include "parameter_type.h"
 #include "memory_model.h"
 #include "integral_limits.h"
 #include "utility.h"
+#include "placement_new.h"
 
 #undef ETL_FILE
 #define ETL_FILE "46"
@@ -86,7 +85,7 @@ namespace etl
     /// If asserts or exceptions are enabled, throws an etl::queue_full if the queue if already full.
     ///\param value The value to use to construct the item to push to the queue.
     //*************************************************************************
-#if ETL_CPP11_SUPPORTED && !defined(ETL_STLPORT) && !defined(ETL_QUEUE_ISR_FORCE_CPP03)
+#if ETL_CPP11_SUPPORTED && ETL_NOT_USING_STLPORT && !defined(ETL_QUEUE_ISR_FORCE_CPP03)
     template <typename ... Args>
     bool emplace_from_isr(Args&&... args)
     {
@@ -236,7 +235,7 @@ namespace etl
     }
 #endif
 
-#if ETL_CPP11_SUPPORTED && !defined(ETL_STLPORT) && !defined(ETL_QUEUE_ISR_FORCE_CPP03)
+#if ETL_CPP11_SUPPORTED && ETL_NOT_USING_STLPORT && !defined(ETL_QUEUE_ISR_FORCE_CPP03)
     //*************************************************************************
     /// Constructs a value in the queue 'in place'.
     /// If asserts or exceptions are enabled, throws an etl::queue_full if the queue if already full.
@@ -515,7 +514,7 @@ namespace etl
     /// Constructs a value in the queue 'in place'.
     /// If asserts or exceptions are enabled, throws an etl::queue_full if the queue if already full.
     //*************************************************************************
-#if ETL_CPP11_SUPPORTED && !defined(ETL_STLPORT) && !defined(ETL_QUEUE_ISR_FORCE_CPP03)
+#if ETL_CPP11_SUPPORTED && ETL_NOT_USING_STLPORT && !defined(ETL_QUEUE_ISR_FORCE_CPP03)
     template <typename ... Args>
     bool emplace(Args&&... args)
     {

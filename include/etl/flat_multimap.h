@@ -5,7 +5,7 @@ The MIT License(MIT)
 
 Embedded Template Library.
 https://github.com/ETLCPP/etl
-http://www.etlcpp.com
+https://www.etlcpp.com
 
 Copyright(c) 2015 jwellbelove
 
@@ -31,14 +31,13 @@ SOFTWARE.
 #ifndef ETL_FLAT_MULTMAP_INCLUDED
 #define ETL_FLAT_MULTMAP_INCLUDED
 
-#include <new>
-
 #include "platform.h"
 #include "reference_flat_multimap.h"
 #include "pool.h"
 #include "utility.h"
+#include "placement_new.h"
 
-#if ETL_CPP11_SUPPORTED && !defined(ETL_STLPORT) && !defined(ETL_NO_STL)
+#if ETL_CPP11_SUPPORTED && ETL_NOT_USING_STLPORT && ETL_USING_STL
   #include <initializer_list>
 #endif
 
@@ -47,7 +46,7 @@ SOFTWARE.
 
 //*****************************************************************************
 ///\defgroup flat_multimap flat_multimap
-/// A flat_multimapmap with the capacity defined at compile time.
+/// A flat_multimap with the capacity defined at compile time.
 /// Has insertion of O(N) and find of O(logN)
 /// Duplicate entries and not allowed.
 ///\ingroup containers
@@ -362,7 +361,7 @@ namespace etl
       return refmap_t::insert_at(i_element, *pvalue);
     }
 
-#if ETL_CPP11_SUPPORTED && !defined(ETL_STLPORT)
+#if ETL_CPP11_SUPPORTED && ETL_NOT_USING_STLPORT
     //*************************************************************************
     /// Emplaces a value to the map.
     //*************************************************************************
@@ -850,7 +849,7 @@ namespace etl
       this->assign(first, last);
     }
 
-#if ETL_CPP11_SUPPORTED && !defined(ETL_STLPORT) && !defined(ETL_NO_STL)
+#if ETL_CPP11_SUPPORTED && ETL_NOT_USING_STLPORT && ETL_USING_STL
     //*************************************************************************
     /// Construct from initializer_list.
     //*************************************************************************
@@ -907,6 +906,17 @@ namespace etl
     // The vector that stores pointers to the nodes.
     etl::vector<node_t*, MAX_SIZE> lookup;
   };
+
+  //*************************************************************************
+  /// Template deduction guides.
+  //*************************************************************************
+#if ETL_CPP17_SUPPORTED && ETL_NOT_USING_STLPORT && ETL_USING_STL
+  template <typename T, typename... Ts>
+  flat_multimap(T, Ts...)
+    ->flat_multimap<etl::enable_if_t<(etl::is_same_v<T, Ts> && ...), typename T::first_type>,
+    etl::enable_if_t<(etl::is_same_v<T, Ts> && ...), typename T::second_type>,
+    1U + sizeof...(Ts)>;
+#endif 
 }
 
 #undef ETL_FILE

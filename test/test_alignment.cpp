@@ -3,7 +3,7 @@ The MIT License(MIT)
 
 Embedded Template Library.
 https://github.com/ETLCPP/etl
-http://www.etlcpp.com
+https://www.etlcpp.com
 
 Copyright(c) 2014 jwellbelove
 
@@ -35,6 +35,14 @@ SOFTWARE.
 #include <utility>
 #include <string>
 #include <ostream>
+
+#if defined(ETL_COMPILER_MICROSOFT)
+  #pragma warning(disable : 4996)
+#endif
+
+#ifdef ETL_COMPILER_GCC
+  #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+#endif
 
 void f(int)
 {

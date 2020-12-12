@@ -241,8 +241,7 @@ namespace etl
   {
     ETL_STATIC_ASSERT(etl::is_integral<TValue>::value,  "TValue not an integral type");
     ETL_STATIC_ASSERT(etl::is_integral<TReturn>::value, "TReturn not an integral type");
-    ETL_STATIC_ASSERT(etl::is_signed<TReturn>::value,   "TReturn not a signed type");
-    ETL_STATIC_ASSERT(NBITS <= etl::numeric_limits<TReturn>::digits, "NBITS too large for return type");
+    ETL_STATIC_ASSERT(NBITS <= etl::integral_limits<TReturn>::bits, "NBITS too large for return type");
 
     struct S
     {
@@ -263,9 +262,8 @@ namespace etl
   {
     ETL_STATIC_ASSERT(etl::is_integral<TValue>::value,  "TValue not an integral type");
     ETL_STATIC_ASSERT(etl::is_integral<TReturn>::value, "TReturn not an integral type");
-    ETL_STATIC_ASSERT(etl::is_signed<TReturn>::value,   "TReturn not a signed type");
-    ETL_STATIC_ASSERT(NBITS <= etl::numeric_limits<TReturn>::digits, "NBITS too large for return type");
-    ETL_STATIC_ASSERT(SHIFT <= etl::numeric_limits<TReturn>::digits, "SHIFT too large");
+    ETL_STATIC_ASSERT(NBITS <= etl::integral_limits<TReturn>::bits, "NBITS too large for return type");
+    ETL_STATIC_ASSERT(SHIFT <= etl::integral_limits<TReturn>::bits, "SHIFT too large");
 
     struct S
     {
@@ -285,12 +283,11 @@ namespace etl
   {
     ETL_STATIC_ASSERT(etl::is_integral<TValue>::value,  "TValue not an integral type");
     ETL_STATIC_ASSERT(etl::is_integral<TReturn>::value, "TReturn not an integral type");
-    ETL_STATIC_ASSERT(etl::is_signed<TReturn>::value,   "TReturn not a signed type");
 
-    ETL_ASSERT((NBITS <= etl::numeric_limits<TReturn>::digits), ETL_ERROR(binary_out_of_range));
+    ETL_ASSERT((NBITS <= etl::integral_limits<TReturn>::bits), ETL_ERROR(binary_out_of_range));
 
     TReturn mask = TReturn(1) << (NBITS - 1);
-    value = value & static_cast<TValue>((TReturn(1) << NBITS) - 1);
+    value = value & TValue((TValue(1) << NBITS) - 1);
 
     return TReturn((value ^ mask) - mask);
   }
@@ -306,12 +303,11 @@ namespace etl
   {
     ETL_STATIC_ASSERT(etl::is_integral<TValue>::value,  "TValue not an integral type");
     ETL_STATIC_ASSERT(etl::is_integral<TReturn>::value, "TReturn not an integral type");
-    ETL_STATIC_ASSERT(etl::is_signed<TReturn>::value,   "TReturn not a signed type");
 
-    ETL_ASSERT((NBITS <= etl::numeric_limits<TReturn>::digits), ETL_ERROR(binary_out_of_range));
+    ETL_ASSERT((NBITS <= etl::integral_limits<TReturn>::bits), ETL_ERROR(binary_out_of_range));
 
     TReturn mask = TReturn(1) << (NBITS - 1);
-    value = (value >> SHIFT) & static_cast<TValue>((TReturn(1) << NBITS) - 1);
+    value = (value >> SHIFT) & TValue((TValue(1) << NBITS) - 1);
 
     return TReturn((value ^ mask) - mask);
   }
@@ -538,7 +534,7 @@ namespace etl
     return int32_t(reverse_bits(uint32_t(value)));
   }
 
-#if !defined(ETL_NO_64BIT_TYPES)
+#if ETL_USING_64BIT_TYPES
   //***************************************************************************
   /// Reverse 64 bits.
   ///\ingroup binary
@@ -608,7 +604,7 @@ namespace etl
     return int32_t(reverse_bytes(uint32_t(value)));
   }
 
-#if !defined(ETL_NO_64BIT_TYPES)
+#if ETL_USING_64BIT_TYPES
   //***************************************************************************
   /// Reverse bytes 64 bit.
   ///\ingroup binary
@@ -687,7 +683,7 @@ namespace etl
     return int32_t(gray_to_binary(uint32_t(value)));
   }
 
-#if !defined(ETL_NO_64BIT_TYPES)
+#if ETL_USING_64BIT_TYPES
   //***************************************************************************
   /// Converts Gray code to binary.
   ///\ingroup binary
@@ -776,7 +772,7 @@ namespace etl
     return count_bits(uint32_t(value));
   }
 
-#if !defined(ETL_NO_64BIT_TYPES)
+#if ETL_USING_64BIT_TYPES
   //***************************************************************************
   /// Count set bits. 64 bits.
   ///\ingroup binary
@@ -854,7 +850,7 @@ namespace etl
     return parity(uint32_t(value));
   }
 
-#if !defined(ETL_NO_64BIT_TYPES)
+#if ETL_USING_64BIT_TYPES
   //***************************************************************************
   /// Parity. 64bits. 0 = even, 1 = odd
   ///\ingroup binary
@@ -1015,7 +1011,7 @@ namespace etl
     return count_trailing_zeros(uint32_t(value));
   }
 
-#if !defined(ETL_NO_64BIT_TYPES)
+#if ETL_USING_64BIT_TYPES
   //***************************************************************************
   /// Count trailing zeros. 64bit.
   /// Uses a binary search.
@@ -1129,7 +1125,7 @@ namespace etl
     return int32_t(binary_interleave(uint16_t(first), uint16_t(second)));
   }
 
-#if !defined(ETL_NO_64BIT_TYPES)
+#if ETL_USING_64BIT_TYPES
   //*****************************************************************************
   /// Binary interleave
   ///\ingroup binary

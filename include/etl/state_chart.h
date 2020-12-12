@@ -72,7 +72,6 @@ namespace etl
     }
 
     state_id_t current_state_id; ///< The current state id.
-    state_id_t next_state_id;    ///< The next state id.
   };
 
   //***************************************************************************
@@ -88,11 +87,11 @@ namespace etl
     //*************************************************************************
     struct transition
     {
-      transition(const state_id_t current_state_id_,
-                 const event_id_t event_id_,
-                 const state_id_t next_state_id_,
-                 void (TObject::* const action_)() = ETL_NULLPTR,
-                 bool (TObject::* const guard_)()  = ETL_NULLPTR)
+      ETL_CONSTEXPR transition(const state_id_t current_state_id_,
+                               const event_id_t event_id_,
+                               const state_id_t next_state_id_,
+                               void (TObject::* const action_)() = ETL_NULLPTR,
+                               bool (TObject::* const guard_)()  = ETL_NULLPTR)
         : from_any_state(false),
           current_state_id(current_state_id_),
           event_id(event_id_),
@@ -102,10 +101,10 @@ namespace etl
       {
       }
 
-      transition(const event_id_t event_id_,
-                 const state_id_t next_state_id_,
-                 void (TObject::* const action_)() = ETL_NULLPTR,
-                 bool (TObject::* const guard_)()  = ETL_NULLPTR)
+      ETL_CONSTEXPR transition(const event_id_t event_id_,
+                               const state_id_t next_state_id_,
+                               void (TObject::* const action_)() = ETL_NULLPTR,
+                               bool (TObject::* const guard_)()  = ETL_NULLPTR)
           : from_any_state(true),
             current_state_id(0),
             event_id(event_id_),
@@ -128,9 +127,9 @@ namespace etl
     //*************************************************************************
     struct state
     {
-      state(const state_id_t state_id_,
-            void (TObject::* const on_entry_)() = ETL_NULLPTR,
-            void (TObject::* const on_exit_)()  = ETL_NULLPTR)
+      ETL_CONSTEXPR state(const state_id_t state_id_,
+                          void (TObject::* const on_entry_)() = ETL_NULLPTR,
+                          void (TObject::* const on_exit_)()  = ETL_NULLPTR)
         : state_id(state_id_),
           on_entry(on_entry_),
           on_exit(on_exit_)
@@ -149,10 +148,10 @@ namespace etl
     /// \param transition_table_end_   The end of the table of transitions.
     /// \param state_id_               The initial state id.
     //*************************************************************************
-    state_chart(TObject& object_,
-                const transition* transition_table_begin_,
-                const transition* transition_table_end_,
-                const state_id_t state_id_)
+    ETL_CONSTEXPR state_chart(TObject& object_,
+                              const transition* transition_table_begin_,
+                              const transition* transition_table_end_,
+                              const state_id_t state_id_)
       : istate_chart(state_id_),
         object(object_),
         transition_table(transition_table_begin_, transition_table_end_),
@@ -169,12 +168,12 @@ namespace etl
     /// \param state_table_end_        The end of the state table.
     /// \param state_id_               The initial state id.
     //*************************************************************************
-    state_chart(TObject& object_,
-                const transition* transition_table_begin_,
-                const transition* transition_table_end_,
-                const state* state_table_begin_,
-                const state* state_table_end_,
-                const state_id_t state_id_)
+    ETL_CONSTEXPR state_chart(TObject& object_,
+                              const transition* transition_table_begin_,
+                              const transition* transition_table_end_,
+                              const state* state_table_begin_,
+                              const state* state_table_end_,
+                              const state_id_t state_id_)
       : istate_chart(state_id_),
         object(object_),
         transition_table(transition_table_begin_, transition_table_end_),
@@ -236,15 +235,15 @@ namespace etl
       else
       {
         return etl::find_if(state_table.begin(),
-                               state_table.end(),
-                               is_state(state_id));
+                            state_table.end(),
+                            is_state(state_id));
       }
     }
 
     //*************************************************************************
     ///
     //*************************************************************************
-    void start(const bool on_entry_initial = true)
+    virtual void start(const bool on_entry_initial = true)
     {
       if (!started)
       {
@@ -270,7 +269,7 @@ namespace etl
     /// that satisfies the conditions for executing the action.
     /// \param event_id The id of the event to process.
     //*************************************************************************
-    void process_event(const event_id_t event_id)
+    virtual void process_event(const event_id_t event_id)
     {
       if (started)
       {
@@ -281,8 +280,8 @@ namespace etl
         {
           // Scan the transition table from the latest position.
           t = etl::find_if(t,
-                              transition_table.end(),
-                              is_transition(event_id, current_state_id));
+                           transition_table.end(),
+                           is_transition(event_id, current_state_id));
 
           // Found an entry?
           if (t != transition_table.end())
@@ -290,9 +289,6 @@ namespace etl
             // Shall we execute the transition?
             if ((t->guard == ETL_NULLPTR) || ((object.*t->guard)()))
             {
-              // Remember the next state.
-              next_state_id = t->next_state_id;
-
               // Shall we execute the action?
               if (t->action != ETL_NULLPTR)
               {
@@ -300,7 +296,7 @@ namespace etl
               }
 
               // Changing state?
-              if (current_state_id != next_state_id)
+              if (current_state_id != t->next_state_id)
               {
                 const state* s;
 
@@ -313,10 +309,10 @@ namespace etl
                   (object.*(s->on_exit))();
                 }
 
-                current_state_id = next_state_id;
+                current_state_id = t->next_state_id;
 
-                // See if we have a state item for the next state.
-                s = find_state(next_state_id);
+                // See if we have a state item for the new state.
+                s = find_state(current_state_id);
 
                 // If the new state has an 'on_entry' then call it.
                 if ((s != state_table.end()) && (s->on_entry != ETL_NULLPTR))

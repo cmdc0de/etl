@@ -5,7 +5,7 @@ The MIT License(MIT)
 
 Embedded Template Library.
 https://github.com/ETLCPP/etl
-http://www.etlcpp.com
+https://www.etlcpp.com
 
 Copyright(c) 2016 jwellbelove
 
@@ -33,15 +33,11 @@ SOFTWARE.
 
 #include <stddef.h>
 
-#include <new>
-
 #include "platform.h"
-
 #include "algorithm.h"
 #include "iterator.h"
 #include "functional.h"
 #include "utility.h"
-
 #include "container.h"
 #include "pool.h"
 #include "vector.h"
@@ -54,6 +50,11 @@ SOFTWARE.
 #include "exception.h"
 #include "debug_count.h"
 #include "iterator.h"
+#include "placement_new.h"
+
+#if ETL_CPP11_SUPPORTED && ETL_NOT_USING_STLPORT && ETL_USING_STL
+  #include <initializer_list>
+#endif
 
 #undef ETL_FILE
 #define ETL_FILE "26"
@@ -894,22 +895,31 @@ namespace etl
     //*********************************************************************
     iterator erase(const_iterator first_, const_iterator last_)
     {
+      // Erasing everything?
+      if ((first_ == begin()) && (last_ == end()))
+      {
+        clear();
+        return end();
+      }
+
       // Make a note of the last.
       iterator result((pbuckets + number_of_buckets), last_.get_bucket_list_iterator(), last_.get_local_iterator());
 
       // Get the starting point.
-      bucket_t*      pbucket   = first_.get_bucket_list_iterator();
-      local_iterator iprevious = pbucket->before_begin();
-      local_iterator icurrent  = first_.get_local_iterator();
-      local_iterator iend      = last_.get_local_iterator(); // Note: May not be in the same bucket as icurrent.
+      bucket_t*      pbucket     = first_.get_bucket_list_iterator();
+      bucket_t*      pend_bucket = last_.get_bucket_list_iterator();
+      local_iterator iprevious   = pbucket->before_begin();
+      local_iterator icurrent    = first_.get_local_iterator();
+      local_iterator iend        = last_.get_local_iterator(); // Note: May not be in the same bucket as icurrent.
 
-                                                       // Find the node previous to the first one.
+      // Find the node previous to the first one.
       while (iprevious->etl_next != &*icurrent)
       {
         ++iprevious;
       }
 
-      while (icurrent != iend)
+      // Until we reach the end.
+      while ((icurrent != iend) || (pbucket != pend_bucket))
       {
 
         local_iterator inext = pbucket->erase_after(iprevious); // Unlink from the bucket.
@@ -920,8 +930,8 @@ namespace etl
 
         icurrent = inext;
 
-        // Are we there yet?
-        if (icurrent != iend)
+        // Have we not reached the end?
+        if ((icurrent != iend) || (pbucket != pend_bucket))
         {
           // At the end of this bucket?
           if ((icurrent == pbucket->end()))
@@ -933,7 +943,7 @@ namespace etl
             } while (pbucket->empty());
 
             iprevious = pbucket->before_begin();
-            icurrent = pbucket->begin();
+            icurrent  = pbucket->begin();
           }
         }
       }
@@ -1107,6 +1117,14 @@ namespace etl
     /// Gets the maximum possible size of the unordered_multiset.
     //*************************************************************************
     size_type max_size() const
+    {
+      return pnodepool->max_size();
+    }
+
+    //*************************************************************************
+    /// Gets the maximum possible size of the unordered_multiset.
+    //*************************************************************************
+    size_type capacity() const
     {
       return pnodepool->max_size();
     }
@@ -1470,6 +1488,17 @@ namespace etl
       base::assign(first_, last_);
     }
 
+#if ETL_CPP11_SUPPORTED && ETL_NOT_USING_STLPORT && ETL_USING_STL
+    //*************************************************************************
+    /// Construct from initializer_list.
+    //*************************************************************************
+    unordered_multiset(std::initializer_list<TKey> init)
+      : base(node_pool, buckets, MAX_BUCKETS)
+    {
+      base::assign(init.begin(), init.end());
+    }
+#endif
+
     //*************************************************************************
     /// Destructor.
     //*************************************************************************
@@ -1517,6 +1546,15 @@ namespace etl
     /// The buckets of node lists.
     etl::intrusive_forward_list<typename base::node_t> buckets[MAX_BUCKETS_];
   };
+
+  //*************************************************************************
+  /// Template deduction guides.
+  //*************************************************************************
+#if ETL_CPP17_SUPPORTED && ETL_NOT_USING_STLPORT && ETL_USING_STL
+  template <typename T, typename... Ts>
+  unordered_multiset(T, Ts...)
+    ->unordered_multiset<etl::enable_if_t<(etl::is_same_v<T, Ts> && ...), T>, 1U + sizeof...(Ts)>;
+#endif 
 }
 
 #undef ETL_FILE

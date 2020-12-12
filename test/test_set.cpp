@@ -3,7 +3,7 @@ The MIT License(MIT)
 
 Embedded Template Library.
 https://github.com/ETLCPP/etl
-http://www.etlcpp.com
+https://www.etlcpp.com
 
 Copyright(c) 2014 jwellbelove, rlindeman
 
@@ -74,30 +74,6 @@ using Data_iterator               = Data::iterator;
 using Data_const_iterator         = Data::const_iterator;
 using Compare_Data_iterator       = Compare_Data::iterator;
 using Compare_Data_const_iterator = Compare_Data::const_iterator;
-
-//*************************************************************************
-static std::ostream& operator << (std::ostream& os, const Data_iterator& it)
-{
-  os << (*it);
-
-  return os;
-}
-
-//*************************************************************************
-static std::ostream& operator << (std::ostream& os, const Data_const_iterator& it)
-{
-  os << (*it);
-
-  return os;
-}
-
-//*************************************************************************
-static std::ostream& operator << (std::ostream& os, const Compare_Data_iterator& it)
-{
-  os << (*it);
-
-  return os;
-}
 
 namespace
 {
@@ -244,10 +220,29 @@ namespace
 
       CHECK_EQUAL(data.size(), size_t(0));
       CHECK(data.empty());
-      CHECK_EQUAL(data.capacity(), MAX_SIZE);
-      CHECK_EQUAL(data.max_size(), MAX_SIZE);
+      CHECK_EQUAL(MAX_SIZE, data.available());
+      CHECK_EQUAL(MAX_SIZE, data.capacity());
+      CHECK_EQUAL(MAX_SIZE, data.max_size());
       CHECK(data.begin() == data.end());
     }
+
+#if ETL_USING_STL && !defined(ETL_TEMPLATE_DEDUCTION_GUIDE_TESTS_DISABLED)
+    //*************************************************************************
+    TEST(test_cpp17_deduced_constructor)
+    {
+      etl::set data{ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
+      etl::set<int, 10U> check = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
+
+      CHECK(!data.empty());
+      CHECK(data.full());
+      CHECK(data.begin() != data.end());
+      CHECK_EQUAL(10U, data.size());
+      CHECK_EQUAL(0U, data.available());
+      CHECK_EQUAL(10U, data.capacity());
+      CHECK_EQUAL(10U, data.max_size());
+      CHECK(data == check);
+    }
+#endif
 
     //*************************************************************************
     TEST_FIXTURE(SetupFixture, test_copy_constructor)
@@ -319,7 +314,7 @@ namespace
       CHECK(isEqual);
     }
 
-#if !defined(ETL_NO_STL)
+#if ETL_USING_STL
     //*************************************************************************
     TEST_FIXTURE(SetupFixture, test_constructor_initializer_list)
     {
@@ -415,8 +410,8 @@ namespace
       Data data(initial_data.begin(), initial_data.end());
       const Data constData(data);
 
-      CHECK_EQUAL(data.begin(), std::begin(data));
-      CHECK_EQUAL(constData.begin(), std::begin(constData));
+      CHECK(data.begin() == std::begin(data));
+      CHECK(constData.begin() == std::begin(constData));
     }
 
     //*************************************************************************
@@ -425,8 +420,8 @@ namespace
       Data data(initial_data.begin(), initial_data.end());
       const Data constData(data);
 
-      CHECK_EQUAL(data.end(), std::end(data));
-      CHECK_EQUAL(constData.end(), std::end(constData));
+      CHECK(data.end() == std::end(data));
+      CHECK(constData.end() == std::end(constData));
     }
 
     //*************************************************************************
@@ -933,7 +928,7 @@ namespace
       CHECK_EQUAL(3, *it);
 
       it = data.find(11);
-      CHECK_EQUAL(data.end(), it);
+      CHECK(data.end() == it);
     }
 
     //*************************************************************************
@@ -945,7 +940,7 @@ namespace
       CHECK_EQUAL(3, *it);
 
       it = data.find(11);
-      CHECK_EQUAL(data.end(), it);
+      CHECK(data.end() == it);
     }
 
     //*************************************************************************
@@ -986,14 +981,14 @@ namespace
 
 #ifdef TEST_GREATER_THAN
       i_compare = compare_data.lower_bound(-1);
-      CHECK_EQUAL(compare_data.end(), i_compare);
+      CHECK(compare_data.end() == i_compare);
 
       i_data = data.lower_bound(-1);
-      CHECK_EQUAL(data.end(), i_data);
+      CHECK(data.end() == i_data);
 
       i_compare = compare_data.lower_bound(11);
       i_data = data.lower_bound(11);
-      CHECK_EQUAL(*i_compare, *i_data);
+      CHECK(*i_compare == *i_data);
 #else
       i_compare = compare_data.lower_bound(-1);
       i_data = data.lower_bound(-1);
@@ -1019,10 +1014,10 @@ namespace
 
 #ifdef TEST_GREATER_THAN
       i_compare = compare_data.lower_bound(-1);
-      CHECK_EQUAL(compare_data.end(), i_compare);
+      CHECK(compare_data.end() == i_compare);
 
       i_data = data.lower_bound(-1);
-      CHECK_EQUAL(data.end(), i_data);
+      CHECK(data.end() == i_data);
 
       i_compare = compare_data.lower_bound(11);
       i_data = data.lower_bound(11);
@@ -1052,10 +1047,10 @@ namespace
 
 #ifdef TEST_GREATER_THAN
       i_compare = compare_data.upper_bound(-1);
-      CHECK_EQUAL(compare_data.end(), i_compare);
+      CHECK(compare_data.end() == i_compare);
 
       i_data = data.upper_bound(-1);
-      CHECK_EQUAL(data.end(), i_data);
+      CHECK(data.end() == i_data);
 
       i_compare = compare_data.upper_bound(11);
       i_data = data.upper_bound(11);
@@ -1085,10 +1080,10 @@ namespace
 
 #ifdef TEST_GREATER_THAN
       i_compare = compare_data.upper_bound(-1);
-      CHECK_EQUAL(compare_data.end(), i_compare);
+      CHECK(compare_data.end() == i_compare);
 
       i_data = data.upper_bound(-1);
-      CHECK_EQUAL(data.end(), i_data);
+      CHECK(data.end() == i_data);
 
       i_compare = compare_data.upper_bound(11);
       i_data = data.upper_bound(11);

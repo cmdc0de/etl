@@ -34,8 +34,6 @@ SOFTWARE.
 #include <stddef.h>
 #include <stdint.h>
 
-#include <new>
-
 #include "platform.h"
 #include "alignment.h"
 #include "parameter_type.h"
@@ -43,6 +41,7 @@ SOFTWARE.
 #include "memory_model.h"
 #include "integral_limits.h"
 #include "utility.h"
+#include "placement_new.h"
 
 #undef ETL_FILE
 #define ETL_FILE "47"
@@ -252,7 +251,7 @@ namespace etl
     }
 #endif
 
-#if ETL_CPP11_SUPPORTED && !defined(ETL_STLPORT) && !defined(ETL_QUEUE_ATOMIC_FORCE_CPP03)
+#if ETL_CPP11_SUPPORTED && ETL_NOT_USING_STLPORT && !defined(ETL_QUEUE_ATOMIC_FORCE_CPP03)
     //*************************************************************************
     /// Constructs a value in the queue 'in place'.
     /// If asserts or exceptions are enabled, throws an etl::queue_full if the queue if already full.

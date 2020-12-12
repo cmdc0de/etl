@@ -51,6 +51,7 @@ Original publication: https://www.codeproject.com/Articles/1170503/The-Impossibl
 #include "platform.h"
 #include "error_handler.h"
 #include "exception.h"
+#include "type_traits.h"
 
 #if ETL_CPP11_SUPPORTED == 0
 #error NOT SUPPORTED FOR C++03 OR BELOW
@@ -107,7 +108,7 @@ namespace etl
     //*************************************************************************
     // Constructor from lambda or functor.
     //*************************************************************************
-    template <typename TLambda>
+    template <typename TLambda, typename = typename etl::enable_if<etl::is_class<TLambda>::value, void>::type>
     delegate(const TLambda& instance)
     {
       assign((void*)(&instance), lambda_stub<TLambda>);
@@ -117,7 +118,7 @@ namespace etl
     /// Create from function (Compile time).
     //*************************************************************************
     template <TReturn(*Method)(TParams...)>
-    static delegate create()
+    constexpr static delegate create()
     {
       return delegate(ETL_NULLPTR, function_stub<Method>);
     }
@@ -125,8 +126,8 @@ namespace etl
     //*************************************************************************
     /// Create from Lambda or Functor.
     //*************************************************************************
-    template <typename TLambda>
-    static delegate create(const TLambda& instance)
+    template <typename TLambda, typename = typename etl::enable_if<etl::is_class<TLambda>::value, void>::type>
+    constexpr static delegate create(const TLambda& instance)
     {
       return delegate((void*)(&instance), lambda_stub<TLambda>);
     }
@@ -135,7 +136,7 @@ namespace etl
     /// Create from instance method (Run time).
     //*************************************************************************
     template <typename T, TReturn(T::*Method)(TParams...)>
-    static delegate create(T& instance)
+    constexpr static delegate create(T& instance)
     {
       return delegate((void*)(&instance), method_stub<T, Method>);
     }
@@ -151,7 +152,7 @@ namespace etl
     /// Create from const instance method (Run time).
     //*************************************************************************
     template <typename T, TReturn(T::*Method)(TParams...) const>
-    static delegate create(const T& instance)
+    constexpr static delegate create(const T& instance)
     {
       return delegate((void*)(&instance), const_method_stub<T, Method>);
     }
@@ -160,13 +161,13 @@ namespace etl
     /// Disable create from rvalue instance method (Run time).
     //*************************************************************************
     template <typename T, TReturn(T::*Method)(TParams...) const>
-    static delegate create(T&& instance) = delete;
+    constexpr static delegate create(T&& instance) = delete;
 
     //*************************************************************************
     /// Create from instance method (Compile time).
     //*************************************************************************
     template <typename T, T& Instance, TReturn(T::*Method)(TParams...)>
-    static delegate create()
+    constexpr static delegate create()
     {
       return delegate(method_instance_stub<T, Instance, Method>);
     }
@@ -175,7 +176,7 @@ namespace etl
     /// Create from const instance method (Compile time).
     //*************************************************************************
     template <typename T, T const& Instance, TReturn(T::*Method)(TParams...) const>
-    static delegate create()
+    constexpr static delegate create()
     {
       return delegate(const_method_instance_stub<T, Instance, Method>);
     }
@@ -186,7 +187,7 @@ namespace etl
     /// At the time of writing, GCC appears to have trouble with this.
     //*************************************************************************
     template <typename T, T& Instance>
-    static delegate create()
+    constexpr static delegate create()
     {
       return delegate(operator_instance_stub<T, Instance>);
     }
@@ -210,7 +211,7 @@ namespace etl
     //*************************************************************************
     /// Create from Lambda or Functor.
     //*************************************************************************
-    template <typename TLambda>
+    template <typename TLambda, typename = typename etl::enable_if<etl::is_class<TLambda>::value, void>::type>
     delegate& operator =(const TLambda& instance)
     {
       assign((void*)(&instance), lambda_stub<TLambda>);
@@ -261,7 +262,7 @@ namespace etl
       invocation_element() = default;
 
       //***********************************************************************
-      invocation_element(void* object_, stub_type stub_)
+      constexpr invocation_element(void* object_, stub_type stub_)
         : object(object_)
         , stub(stub_)
       {
@@ -287,19 +288,17 @@ namespace etl
     //*************************************************************************
     /// Constructs a delegate from an object and stub.
     //*************************************************************************
-    delegate(void* object, stub_type stub)
+    constexpr delegate(void* object, stub_type stub)
+      : invocation(object, stub)
     {
-      invocation.object = object;
-      invocation.stub   = stub;
     }
 
     //*************************************************************************
     /// Constructs a delegate from a stub.
     //*************************************************************************
-    delegate(stub_type stub)
+    constexpr delegate(stub_type stub)
+      : invocation(ETL_NULLPTR, stub)
     {
-      invocation.object = ETL_NULLPTR;
-      invocation.stub   = stub;
     }
 
     //*************************************************************************

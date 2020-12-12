@@ -5,7 +5,7 @@ The MIT License(MIT)
 
 Embedded Template Library.
 https://github.com/ETLCPP/etl
-http://www.etlcpp.com
+https://www.etlcpp.com
 
 Copyright(c) 2014 jwellbelove
 
@@ -33,15 +33,11 @@ SOFTWARE.
 
 #include <stddef.h>
 
-#include <new>
-
 #include "platform.h"
-
 #include "algorithm.h"
 #include "iterator.h"
 #include "functional.h"
 #include "utility.h"
-
 #include "pool.h"
 #include "container.h"
 #include "exception.h"
@@ -51,8 +47,10 @@ SOFTWARE.
 #include "type_traits.h"
 #include "memory.h"
 #include "iterator.h"
+#include "static_assert.h"
+#include "placement_new.h"
 
-#if ETL_CPP11_SUPPORTED && !defined(ETL_STLPORT) && !defined(ETL_NO_STL)
+#if ETL_CPP11_SUPPORTED && ETL_NOT_USING_STLPORT && ETL_USING_STL
   #include <initializer_list>
 #endif
 
@@ -173,6 +171,22 @@ namespace etl
     }
 
     //*************************************************************************
+    /// Gets the maximum possible size of the forward_list.
+    //*************************************************************************
+    size_type max_size() const
+    {
+      return MAX_SIZE;
+    }
+
+    //*************************************************************************
+    /// Gets the maximum possible size of the forward_list.
+    //*************************************************************************
+    size_type capacity() const
+    {
+      return MAX_SIZE;
+    }
+
+    //*************************************************************************
     /// Gets the size of the forward_list.
     //*************************************************************************
     size_type size() const
@@ -194,17 +208,8 @@ namespace etl
       }
       else
       {
-        ETL_ASSERT(p_node_pool != ETL_NULLPTR, ETL_ERROR(forward_list_no_pool));
         return p_node_pool->size();
       }
-    }
-
-    //*************************************************************************
-    /// Gets the maximum possible size of the forward_list.
-    //*************************************************************************
-    size_type max_size() const
-    {
-      return MAX_SIZE;
     }
 
     //*************************************************************************
@@ -212,15 +217,7 @@ namespace etl
     //*************************************************************************
     bool empty() const
     {
-      if (has_shared_pool())
-      {
-        return (size() == 0);
-      }
-      else
-      {
-        ETL_ASSERT(p_node_pool != ETL_NULLPTR, ETL_ERROR(forward_list_no_pool));
-        return p_node_pool->empty();
-      }
+      return (start_node.next == ETL_NULLPTR);
     }
 
     //*************************************************************************
@@ -741,7 +738,7 @@ namespace etl
     }
 #endif
 
-#if ETL_CPP11_SUPPORTED && !defined(ETL_STLPORT)
+#if ETL_CPP11_SUPPORTED && ETL_NOT_USING_STLPORT
     //*************************************************************************
     /// Emplaces a value to the front of the list..
     //*************************************************************************
@@ -816,7 +813,7 @@ namespace etl
       ETL_INCREMENT_DEBUG_COUNT
       insert_node_after(start_node, *p_data_node);
     }
-#endif // ETL_CPP11_SUPPORTED && !defined(ETL_STLPORT)
+#endif // ETL_CPP11_SUPPORTED && ETL_NOT_USING_STLPORT
 
     //*************************************************************************
     /// Removes a value from the front of the forward_list.
@@ -898,7 +895,7 @@ namespace etl
       return iterator(&data_node);
     }
 
-#if ETL_CPP11_SUPPORTED && !defined(ETL_STLPORT)
+#if ETL_CPP11_SUPPORTED && ETL_NOT_USING_STLPORT
     //*************************************************************************
     /// Emplaces a value to the forward_list after the specified position.
     //*************************************************************************
@@ -978,7 +975,7 @@ namespace etl
 
       return iterator(p_data_node);
     }
-#endif // ETL_CPP11_SUPPORTED && !defined(ETL_STLPORT)
+#endif // ETL_CPP11_SUPPORTED && ETL_NOT_USING_STLPORT
 
     //*************************************************************************
     /// Inserts 'n' copies of a value to the forward_list after the specified position.
@@ -1478,23 +1475,50 @@ namespace etl
       {
         this->initialise();
 
-        node_t* p_last_node = &start_node;
-
-        etl::iforward_list<T>::iterator first = rhs.begin();
-        etl::iforward_list<T>::iterator last = rhs.end();
-
-        // Add all of the elements.
-        while (first != last)
+        if (!rhs.empty())
         {
-          ETL_ASSERT(!full(), ETL_ERROR(forward_list_full));
+          node_t* p_last_node = &this->start_node;
+          node_t* p_rhs_node  = rhs.start_node.next;
 
-          data_node_t& data_node = this->allocate_data_node(etl::move(*first++));
-          join(p_last_node, &data_node);
-          data_node.next = ETL_NULLPTR;
-          p_last_node = &data_node;
+          // Are we using the same pool?
+          if (this->get_node_pool() == rhs.get_node_pool())
+          {
+            // Just link the nodes to the new forward_list.
+            do
+            {
+              node_t* p_node = p_rhs_node;
+              p_rhs_node = p_rhs_node->next;
+
+              insert_node_after(*p_last_node, *p_node);
+
+              p_last_node = p_node;
+
+              ETL_INCREMENT_DEBUG_COUNT;
+
+            } while (p_rhs_node != ETL_NULLPTR);
+
+            ETL_OBJECT_RESET_DEBUG_COUNT(rhs);
+            rhs.start_node.next = ETL_NULLPTR;
+          }
+          else
+          {
+            // Add all of the elements.
+            etl::iforward_list<T>::iterator first = rhs.begin();
+            etl::iforward_list<T>::iterator last = rhs.end();
+
+            while (first != last)
+            {
+              ETL_ASSERT(!full(), ETL_ERROR(forward_list_full));
+
+              data_node_t& data_node = this->allocate_data_node(etl::move(*first++));
+              join(p_last_node, &data_node);
+              data_node.next = ETL_NULLPTR;
+              p_last_node = &data_node;
+            }
+
+            rhs.initialise();
+          }
         }
-
-        rhs.initialise();
       }
     }
 #endif
@@ -1598,6 +1622,8 @@ namespace etl
   {
   public:
 
+    ETL_STATIC_ASSERT((MAX_SIZE_ > 0U), "Zero capacity etl::forward_list is not valid");
+
     static const size_t MAX_SIZE = MAX_SIZE_;
 
   public:
@@ -1657,7 +1683,7 @@ namespace etl
       this->assign(first, last);
     }
 
-#if ETL_CPP11_SUPPORTED && !defined(ETL_STLPORT) && !defined(ETL_NO_STL)
+#if ETL_CPP11_SUPPORTED && ETL_NOT_USING_STLPORT && ETL_USING_STL
     //*************************************************************************
     /// Construct from initializer_list.
     //*************************************************************************
@@ -1709,11 +1735,20 @@ namespace etl
   };
 
   //*************************************************************************
+  /// Template deduction guides.
+  //*************************************************************************
+#if ETL_CPP17_SUPPORTED && ETL_NOT_USING_STLPORT && ETL_USING_STL
+  template <typename T, typename... Ts>
+  forward_list(T, Ts...)
+    ->forward_list<etl::enable_if_t<(etl::is_same_v<T, Ts> && ...), T>, 1U + sizeof...(Ts)>;
+#endif
+
+  //*************************************************************************
   /// A templated forward_list implementation that uses a fixed size pool.
   ///\note 'merge' and 'splice_after' and are not supported.
   //*************************************************************************
   template <typename T>
-  class forward_list<T, 0> : public etl::iforward_list<T>
+  class forward_list_ext : public etl::iforward_list<T>
   {
   public:
 
@@ -1729,7 +1764,7 @@ namespace etl
     //*************************************************************************
     /// Default constructor.
     //*************************************************************************
-    forward_list()
+    forward_list_ext()
       : etl::iforward_list<T>(true)
     {
     }
@@ -1737,7 +1772,7 @@ namespace etl
     //*************************************************************************
     /// Default constructor.
     //*************************************************************************
-    explicit forward_list(etl::ipool& node_pool)
+    explicit forward_list_ext(etl::ipool& node_pool)
       : etl::iforward_list<T>(node_pool, node_pool.max_size(), true)
     {
       this->initialise();
@@ -1746,7 +1781,7 @@ namespace etl
     //*************************************************************************
     /// Construct from size.
     //*************************************************************************
-    explicit forward_list(size_t initial_size, etl::ipool& node_pool)
+    explicit forward_list_ext(size_t initial_size, etl::ipool& node_pool)
       : etl::iforward_list<T>(node_pool, node_pool.max_size(), true)
     {
       this->assign(initial_size, T());
@@ -1755,41 +1790,47 @@ namespace etl
     //*************************************************************************
     /// Construct from size and value.
     //*************************************************************************
-    explicit forward_list(size_t initial_size, const T& value, etl::ipool& node_pool)
+    explicit forward_list_ext(size_t initial_size, const T& value, etl::ipool& node_pool)
       : etl::iforward_list<T>(node_pool, node_pool.max_size(), true)
     {
       this->assign(initial_size, value);
     }
 
     //*************************************************************************
-    /// Copy constructor.
+    /// Copy constructor. Implicit pool.
     //*************************************************************************
-    forward_list(const forward_list& other)
+    forward_list_ext(const forward_list_ext& other)
       : etl::iforward_list<T>(*other.p_node_pool, other.p_node_pool->max_size(), true)
+    {
+      this->assign(other.cbegin(), other.cend());
+    }
+
+    //*************************************************************************
+    /// Copy constructor. Explicit pool.
+    //*************************************************************************
+    forward_list_ext(const forward_list_ext& other, etl::ipool& node_pool)
+      : etl::iforward_list<T>(node_pool, node_pool.max_size(), true)
     {
       this->assign(other.cbegin(), other.cend());
     }
 
 #if ETL_CPP11_SUPPORTED
     //*************************************************************************
-    /// Move constructor.
+    /// Move constructor. Implicit pool
     //*************************************************************************
-    forward_list(forward_list&& other)
+    forward_list_ext(forward_list_ext&& other)
       : etl::iforward_list<T>(*other.p_node_pool, other.p_node_pool->max_size(), true)
     {
-      if (this != &other)
-      {
-        this->initialise();
+      this->move_container(std::move(other));
+    }
 
-        typename etl::iforward_list<T>::iterator itr = other.begin();
-        while (itr != other.end())
-        {
-          this->push_back(etl::move(*itr));
-          ++itr;
-        }
-
-        other.initialise();
-      }
+    //*************************************************************************
+    /// Move constructor. Explicit pool
+    //*************************************************************************
+    forward_list_ext(forward_list_ext&& other, etl::ipool& node_pool)
+      : etl::iforward_list<T>(node_pool, node_pool.max_size(), true)
+    {
+      this->move_container(std::move(other));
     }
 #endif
 
@@ -1797,17 +1838,17 @@ namespace etl
     /// Construct from range.
     //*************************************************************************
     template <typename TIterator>
-    forward_list(TIterator first, TIterator last, etl::ipool& node_pool)
+    forward_list_ext(TIterator first, TIterator last, etl::ipool& node_pool)
       : etl::iforward_list<T>(node_pool, node_pool.max_size(), true)
     {
       this->assign(first, last);
     }
 
-#if ETL_CPP11_SUPPORTED && !defined(ETL_STLPORT) && !defined(ETL_NO_STL)
+#if ETL_CPP11_SUPPORTED && ETL_NOT_USING_STLPORT && ETL_USING_STL
     //*************************************************************************
     /// Construct from initializer_list.
     //*************************************************************************
-    forward_list(std::initializer_list<T> init, etl::ipool& node_pool)
+    forward_list_ext(std::initializer_list<T> init, etl::ipool& node_pool)
       : etl::iforward_list<T>(node_pool, node_pool.max_size(), true)
     {
       this->assign(init.begin(), init.end());
@@ -1817,7 +1858,7 @@ namespace etl
     //*************************************************************************
     /// Destructor.
     //*************************************************************************
-    ~forward_list()
+    ~forward_list_ext()
     {
       this->initialise();
     }
@@ -1825,7 +1866,7 @@ namespace etl
     //*************************************************************************
     /// Assignment operator.
     //*************************************************************************
-    forward_list& operator = (const forward_list& rhs)
+    forward_list_ext& operator = (const forward_list_ext& rhs)
     {
       if (&rhs != this)
       {
@@ -1839,7 +1880,7 @@ namespace etl
     //*************************************************************************
     /// Move assignment operator.
     //*************************************************************************
-    forward_list& operator = (forward_list&& rhs)
+    forward_list_ext& operator = (forward_list_ext&& rhs)
     {
       this->move_container(etl::move(rhs));
 
@@ -1859,6 +1900,14 @@ namespace etl
       }
 
       this->set_node_pool(pool);
+    }
+
+    //*************************************************************************
+    /// Get the pool instance.
+    //*************************************************************************
+    etl::ipool& get_pool() const
+    {
+      return *this->p_node_pool;
     }
   };
 

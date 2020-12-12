@@ -52,7 +52,6 @@ SOFTWARE.
 #define ETL_MESSAGE_ROUTER_INCLUDED
 
 #include <stdint.h>
-#include <new>
 
 #include "platform.h"
 #include "message.h"
@@ -63,6 +62,7 @@ SOFTWARE.
 #include "exception.h"
 #include "largest.h"
 #include "nullptr.h"
+#include "placement_new.h"
 
 #undef ETL_FILE
 #define ETL_FILE "35"
@@ -96,6 +96,8 @@ namespace etl
   };
 
   //***************************************************************************
+  /// This is the base of all message routers.
+  //***************************************************************************
   class imessage_router
   {
   public:
@@ -106,6 +108,8 @@ namespace etl
     virtual void receive(imessage_router& source, etl::message_router_id_t destination_router_id, const etl::imessage& message) = 0;
     virtual bool accepts(etl::message_id_t id) const = 0;
     virtual bool is_null_router() const = 0;
+    virtual bool is_producer() const = 0;
+    virtual bool is_consumer() const = 0;
 
     //********************************************
     bool accepts(const etl::imessage& msg) const
@@ -172,8 +176,7 @@ namespace etl
   };
 
   //***************************************************************************
-  /// This router can be used either as a sink for messages
-  /// or as a producer-only of messages such an interrupt routine.
+  /// This router can be used as a sink for messages or a 'null source' router.
   //***************************************************************************
   class null_message_router : public imessage_router
   {
@@ -185,30 +188,42 @@ namespace etl
     }
 
     //********************************************
-    void receive(const etl::imessage&)
+    void receive(const etl::imessage&) ETL_OVERRIDE
     {
     }
 
     //********************************************
-    void receive(etl::imessage_router&, const etl::imessage&)
+    void receive(etl::imessage_router&, const etl::imessage&) ETL_OVERRIDE
     {
     }
 
     //********************************************
-    void receive(imessage_router&, etl::message_router_id_t, const etl::imessage&)
+    void receive(imessage_router&, etl::message_router_id_t, const etl::imessage&) ETL_OVERRIDE
     {
     }
 
     //********************************************
-    bool accepts(etl::message_id_t) const
+    bool accepts(etl::message_id_t) const ETL_OVERRIDE
     {
       return false;
     }
 
     //********************************************
-    bool is_null_router() const
+    ETL_DEPRECATED bool is_null_router() const ETL_OVERRIDE
     {
       return true;
+    }
+
+    //********************************************
+    bool is_producer() const ETL_OVERRIDE
+    {
+      return false;
+    }
+
+    //********************************************
+    bool is_consumer() const ETL_OVERRIDE
+    {
+      return false;
     }
 
     //********************************************
@@ -219,6 +234,57 @@ namespace etl
     }
   };
 
+  //***************************************************************************
+  /// This router can be used as a producer-only of messages, such an interrupt routine.
+  //***************************************************************************
+  class message_producer : public imessage_router
+  {
+  public:
+
+    message_producer(etl::message_router_id_t id_)
+      : imessage_router(id_)
+    {
+    }
+
+    //********************************************
+    void receive(const etl::imessage&) ETL_OVERRIDE
+    {
+    }
+
+    //********************************************
+    void receive(etl::imessage_router&, const etl::imessage&) ETL_OVERRIDE
+    {
+    }
+
+    //********************************************
+    void receive(imessage_router&, etl::message_router_id_t, const etl::imessage&) ETL_OVERRIDE
+    {
+    }
+
+    //********************************************
+    bool accepts(etl::message_id_t) const ETL_OVERRIDE
+    {
+      return false;
+    }
+
+    //********************************************
+    ETL_DEPRECATED bool is_null_router() const ETL_OVERRIDE
+    {
+      return false;
+    }
+
+    //********************************************
+    bool is_producer() const ETL_OVERRIDE
+    {
+      return true;
+    }
+
+    //********************************************
+    bool is_consumer() const ETL_OVERRIDE
+    {
+      return false;
+    }
+  };
   //***************************************************************************
   /// Send a message to a router.
   /// Sets the 'sender' to etl::null_message_router type.
@@ -268,13 +334,13 @@ namespace etl
     }
 
     //**********************************************
-    void receive(const etl::imessage& msg)
+    void receive(const etl::imessage& msg) ETL_OVERRIDE
     {
       receive(etl::null_message_router::instance(), msg);
     }
 
     //**********************************************
-    void receive(etl::imessage_router& source, etl::message_router_id_t destination_router_id, const etl::imessage& msg)
+    void receive(etl::imessage_router& source, etl::message_router_id_t destination_router_id, const etl::imessage& msg) ETL_OVERRIDE
     {
       if ((destination_router_id == get_message_router_id()) || (destination_router_id == imessage_router::ALL_MESSAGE_ROUTERS))
       {
@@ -283,7 +349,7 @@ namespace etl
     }
 
     //**********************************************
-    void receive(etl::imessage_router& source, const etl::imessage& msg)
+    void receive(etl::imessage_router& source, const etl::imessage& msg) ETL_OVERRIDE
     {
       const etl::message_id_t id = msg.message_id;
 
@@ -323,22 +389,34 @@ namespace etl
     using imessage_router::accepts;
 
     //**********************************************
-    bool accepts(etl::message_id_t id) const
+    bool accepts(etl::message_id_t id) const ETL_OVERRIDE
     {
       switch (id)
       {
         case T1::ID: case T2::ID: case T3::ID: case T4::ID: case T5::ID: case T6::ID: case T7::ID: case T8::ID: 
         case T9::ID: case T10::ID: case T11::ID: case T12::ID: case T13::ID: case T14::ID: case T15::ID: case T16::ID: 
-          return true; break;
+          return true;
         default:
-          return false; break;
+          return false;
       }
     }
 
     //********************************************
-    bool is_null_router() const
+    ETL_DEPRECATED bool is_null_router() const ETL_OVERRIDE
     {
       return false;
+    }
+
+    //********************************************
+    bool is_producer() const ETL_OVERRIDE
+    {
+      return true;
+    }
+
+    //********************************************
+    bool is_consumer() const ETL_OVERRIDE
+    {
+      return true;
     }
   };
 
@@ -372,13 +450,13 @@ namespace etl
     }
 
     //**********************************************
-    void receive(const etl::imessage& msg)
+    void receive(const etl::imessage& msg) ETL_OVERRIDE
     {
       receive(etl::null_message_router::instance(), msg);
     }
 
     //**********************************************
-    void receive(etl::imessage_router& source, etl::message_router_id_t destination_router_id, const etl::imessage& msg)
+    void receive(etl::imessage_router& source, etl::message_router_id_t destination_router_id, const etl::imessage& msg) ETL_OVERRIDE
     {
       if ((destination_router_id == get_message_router_id()) || (destination_router_id == imessage_router::ALL_MESSAGE_ROUTERS))
       {
@@ -387,7 +465,7 @@ namespace etl
     }
 
     //**********************************************
-    void receive(etl::imessage_router& source, const etl::imessage& msg)
+    void receive(etl::imessage_router& source, const etl::imessage& msg) ETL_OVERRIDE
     {
       const size_t id = msg.message_id;
 
@@ -426,22 +504,34 @@ namespace etl
     using imessage_router::accepts;
 
     //**********************************************
-    bool accepts(etl::message_id_t id) const
+    bool accepts(etl::message_id_t id) const ETL_OVERRIDE
     {
       switch (id)
       {
         case T1::ID: case T2::ID: case T3::ID: case T4::ID: case T5::ID: case T6::ID: case T7::ID: case T8::ID: 
         case T9::ID: case T10::ID: case T11::ID: case T12::ID: case T13::ID: case T14::ID: case T15::ID: 
-          return true; break;
+          return true;
         default:
-          return false; break;
+          return false;
       }
     }
 
     //********************************************
-    bool is_null_router() const
+    ETL_DEPRECATED bool is_null_router() const ETL_OVERRIDE
     {
       return false;
+    }
+
+    //********************************************
+    bool is_producer() const ETL_OVERRIDE
+    {
+      return true;
+    }
+
+    //********************************************
+    bool is_consumer() const ETL_OVERRIDE
+    {
+      return true;
     }
   };
 
@@ -475,13 +565,13 @@ namespace etl
     }
 
     //**********************************************
-    void receive(const etl::imessage& msg)
+    void receive(const etl::imessage& msg) ETL_OVERRIDE
     {
       receive(etl::null_message_router::instance(), msg);
     }
 
     //**********************************************
-    void receive(etl::imessage_router& source, etl::message_router_id_t destination_router_id, const etl::imessage& msg)
+    void receive(etl::imessage_router& source, etl::message_router_id_t destination_router_id, const etl::imessage& msg) ETL_OVERRIDE
     {
       if ((destination_router_id == get_message_router_id()) || (destination_router_id == imessage_router::ALL_MESSAGE_ROUTERS))
       {
@@ -490,7 +580,7 @@ namespace etl
     }
 
     //**********************************************
-    void receive(etl::imessage_router& source, const etl::imessage& msg)
+    void receive(etl::imessage_router& source, const etl::imessage& msg) ETL_OVERRIDE
     {
       const size_t id = msg.message_id;
 
@@ -528,22 +618,34 @@ namespace etl
     using imessage_router::accepts;
 
     //**********************************************
-    bool accepts(etl::message_id_t id) const
+    bool accepts(etl::message_id_t id) const ETL_OVERRIDE
     {
       switch (id)
       {
         case T1::ID: case T2::ID: case T3::ID: case T4::ID: case T5::ID: case T6::ID: case T7::ID: case T8::ID: 
         case T9::ID: case T10::ID: case T11::ID: case T12::ID: case T13::ID: case T14::ID: 
-          return true; break;
+          return true;
         default:
-          return false; break;
+          return false;
       }
     }
 
     //********************************************
-    bool is_null_router() const
+    ETL_DEPRECATED bool is_null_router() const ETL_OVERRIDE
     {
       return false;
+    }
+
+    //********************************************
+    bool is_producer() const ETL_OVERRIDE
+    {
+      return true;
+    }
+
+    //********************************************
+    bool is_consumer() const ETL_OVERRIDE
+    {
+      return true;
     }
   };
 
@@ -577,13 +679,13 @@ namespace etl
     }
 
     //**********************************************
-    void receive(const etl::imessage& msg)
+    void receive(const etl::imessage& msg) ETL_OVERRIDE
     {
       receive(etl::null_message_router::instance(), msg);
     }
 
     //**********************************************
-    void receive(etl::imessage_router& source, etl::message_router_id_t destination_router_id, const etl::imessage& msg)
+    void receive(etl::imessage_router& source, etl::message_router_id_t destination_router_id, const etl::imessage& msg) ETL_OVERRIDE
     {
       if ((destination_router_id == get_message_router_id()) || (destination_router_id == imessage_router::ALL_MESSAGE_ROUTERS))
       {
@@ -592,7 +694,7 @@ namespace etl
     }
 
     //**********************************************
-    void receive(etl::imessage_router& source, const etl::imessage& msg)
+    void receive(etl::imessage_router& source, const etl::imessage& msg) ETL_OVERRIDE
     {
       const size_t id = msg.message_id;
 
@@ -629,22 +731,34 @@ namespace etl
     using imessage_router::accepts;
 
     //**********************************************
-    bool accepts(etl::message_id_t id) const
+    bool accepts(etl::message_id_t id) const ETL_OVERRIDE
     {
       switch (id)
       {
         case T1::ID: case T2::ID: case T3::ID: case T4::ID: case T5::ID: case T6::ID: case T7::ID: case T8::ID: 
         case T9::ID: case T10::ID: case T11::ID: case T12::ID: case T13::ID: 
-          return true; break;
+          return true;
         default:
-          return false; break;
+          return false;
       }
     }
 
     //********************************************
-    bool is_null_router() const
+    ETL_DEPRECATED bool is_null_router() const ETL_OVERRIDE
     {
       return false;
+    }
+
+    //********************************************
+    bool is_producer() const ETL_OVERRIDE
+    {
+      return true;
+    }
+
+    //********************************************
+    bool is_consumer() const ETL_OVERRIDE
+    {
+      return true;
     }
   };
 
@@ -677,13 +791,13 @@ namespace etl
     }
 
     //**********************************************
-    void receive(const etl::imessage& msg)
+    void receive(const etl::imessage& msg) ETL_OVERRIDE
     {
       receive(etl::null_message_router::instance(), msg);
     }
 
     //**********************************************
-    void receive(etl::imessage_router& source, etl::message_router_id_t destination_router_id, const etl::imessage& msg)
+    void receive(etl::imessage_router& source, etl::message_router_id_t destination_router_id, const etl::imessage& msg) ETL_OVERRIDE
     {
       if ((destination_router_id == get_message_router_id()) || (destination_router_id == imessage_router::ALL_MESSAGE_ROUTERS))
       {
@@ -692,7 +806,7 @@ namespace etl
     }
 
     //**********************************************
-    void receive(etl::imessage_router& source, const etl::imessage& msg)
+    void receive(etl::imessage_router& source, const etl::imessage& msg) ETL_OVERRIDE
     {
       const size_t id = msg.message_id;
 
@@ -728,22 +842,34 @@ namespace etl
     using imessage_router::accepts;
 
     //**********************************************
-    bool accepts(etl::message_id_t id) const
+    bool accepts(etl::message_id_t id) const ETL_OVERRIDE
     {
       switch (id)
       {
         case T1::ID: case T2::ID: case T3::ID: case T4::ID: case T5::ID: case T6::ID: case T7::ID: case T8::ID: 
         case T9::ID: case T10::ID: case T11::ID: case T12::ID: 
-          return true; break;
+          return true;
         default:
-          return false; break;
+          return false;
       }
     }
 
     //********************************************
-    bool is_null_router() const
+    ETL_DEPRECATED bool is_null_router() const ETL_OVERRIDE
     {
       return false;
+    }
+
+    //********************************************
+    bool is_producer() const ETL_OVERRIDE
+    {
+      return true;
+    }
+
+    //********************************************
+    bool is_consumer() const ETL_OVERRIDE
+    {
+      return true;
     }
   };
 
@@ -776,13 +902,13 @@ namespace etl
     }
 
     //**********************************************
-    void receive(const etl::imessage& msg)
+    void receive(const etl::imessage& msg) ETL_OVERRIDE
     {
       receive(etl::null_message_router::instance(), msg);
     }
 
     //**********************************************
-    void receive(etl::imessage_router& source, etl::message_router_id_t destination_router_id, const etl::imessage& msg)
+    void receive(etl::imessage_router& source, etl::message_router_id_t destination_router_id, const etl::imessage& msg) ETL_OVERRIDE
     {
       if ((destination_router_id == get_message_router_id()) || (destination_router_id == imessage_router::ALL_MESSAGE_ROUTERS))
       {
@@ -791,7 +917,7 @@ namespace etl
     }
 
     //**********************************************
-    void receive(etl::imessage_router& source, const etl::imessage& msg)
+    void receive(etl::imessage_router& source, const etl::imessage& msg) ETL_OVERRIDE
     {
       const size_t id = msg.message_id;
 
@@ -826,22 +952,34 @@ namespace etl
     using imessage_router::accepts;
 
     //**********************************************
-    bool accepts(etl::message_id_t id) const
+    bool accepts(etl::message_id_t id) const ETL_OVERRIDE
     {
       switch (id)
       {
         case T1::ID: case T2::ID: case T3::ID: case T4::ID: case T5::ID: case T6::ID: case T7::ID: case T8::ID: 
         case T9::ID: case T10::ID: case T11::ID: 
-          return true; break;
+          return true;
         default:
-          return false; break;
+          return false;
       }
     }
 
     //********************************************
-    bool is_null_router() const
+    ETL_DEPRECATED bool is_null_router() const ETL_OVERRIDE
     {
       return false;
+    }
+
+    //********************************************
+    bool is_producer() const ETL_OVERRIDE
+    {
+      return true;
+    }
+
+    //********************************************
+    bool is_consumer() const ETL_OVERRIDE
+    {
+      return true;
     }
   };
 
@@ -874,13 +1012,13 @@ namespace etl
     }
 
     //**********************************************
-    void receive(const etl::imessage& msg)
+    void receive(const etl::imessage& msg) ETL_OVERRIDE
     {
       receive(etl::null_message_router::instance(), msg);
     }
 
     //**********************************************
-    void receive(etl::imessage_router& source, etl::message_router_id_t destination_router_id, const etl::imessage& msg)
+    void receive(etl::imessage_router& source, etl::message_router_id_t destination_router_id, const etl::imessage& msg) ETL_OVERRIDE
     {
       if ((destination_router_id == get_message_router_id()) || (destination_router_id == imessage_router::ALL_MESSAGE_ROUTERS))
       {
@@ -889,7 +1027,7 @@ namespace etl
     }
 
     //**********************************************
-    void receive(etl::imessage_router& source, const etl::imessage& msg)
+    void receive(etl::imessage_router& source, const etl::imessage& msg) ETL_OVERRIDE
     {
       const size_t id = msg.message_id;
 
@@ -923,22 +1061,34 @@ namespace etl
     using imessage_router::accepts;
 
     //**********************************************
-    bool accepts(etl::message_id_t id) const
+    bool accepts(etl::message_id_t id) const ETL_OVERRIDE
     {
       switch (id)
       {
         case T1::ID: case T2::ID: case T3::ID: case T4::ID: case T5::ID: case T6::ID: case T7::ID: case T8::ID: 
         case T9::ID: case T10::ID: 
-          return true; break;
+          return true;
         default:
-          return false; break;
+          return false;
       }
     }
 
     //********************************************
-    bool is_null_router() const
+    ETL_DEPRECATED bool is_null_router() const ETL_OVERRIDE
     {
       return false;
+    }
+
+    //********************************************
+    bool is_producer() const ETL_OVERRIDE
+    {
+      return true;
+    }
+
+    //********************************************
+    bool is_consumer() const ETL_OVERRIDE
+    {
+      return true;
     }
   };
 
@@ -971,13 +1121,13 @@ namespace etl
     }
 
     //**********************************************
-    void receive(const etl::imessage& msg)
+    void receive(const etl::imessage& msg) ETL_OVERRIDE
     {
       receive(etl::null_message_router::instance(), msg);
     }
 
     //**********************************************
-    void receive(etl::imessage_router& source, etl::message_router_id_t destination_router_id, const etl::imessage& msg)
+    void receive(etl::imessage_router& source, etl::message_router_id_t destination_router_id, const etl::imessage& msg) ETL_OVERRIDE
     {
       if ((destination_router_id == get_message_router_id()) || (destination_router_id == imessage_router::ALL_MESSAGE_ROUTERS))
       {
@@ -986,7 +1136,7 @@ namespace etl
     }
 
     //**********************************************
-    void receive(etl::imessage_router& source, const etl::imessage& msg)
+    void receive(etl::imessage_router& source, const etl::imessage& msg) ETL_OVERRIDE
     {
       const size_t id = msg.message_id;
 
@@ -1019,22 +1169,34 @@ namespace etl
     using imessage_router::accepts;
 
     //**********************************************
-    bool accepts(etl::message_id_t id) const
+    bool accepts(etl::message_id_t id) const ETL_OVERRIDE
     {
       switch (id)
       {
         case T1::ID: case T2::ID: case T3::ID: case T4::ID: case T5::ID: case T6::ID: case T7::ID: case T8::ID: 
         case T9::ID: 
-          return true; break;
+          return true;
         default:
-          return false; break;
+          return false;
       }
     }
 
     //********************************************
-    bool is_null_router() const
+    ETL_DEPRECATED bool is_null_router() const ETL_OVERRIDE
     {
       return false;
+    }
+
+    //********************************************
+    bool is_producer() const ETL_OVERRIDE
+    {
+      return true;
+    }
+
+    //********************************************
+    bool is_consumer() const ETL_OVERRIDE
+    {
+      return true;
     }
   };
 
@@ -1066,13 +1228,13 @@ namespace etl
     }
 
     //**********************************************
-    void receive(const etl::imessage& msg)
+    void receive(const etl::imessage& msg) ETL_OVERRIDE
     {
       receive(etl::null_message_router::instance(), msg);
     }
 
     //**********************************************
-    void receive(etl::imessage_router& source, etl::message_router_id_t destination_router_id, const etl::imessage& msg)
+    void receive(etl::imessage_router& source, etl::message_router_id_t destination_router_id, const etl::imessage& msg) ETL_OVERRIDE
     {
       if ((destination_router_id == get_message_router_id()) || (destination_router_id == imessage_router::ALL_MESSAGE_ROUTERS))
       {
@@ -1081,7 +1243,7 @@ namespace etl
     }
 
     //**********************************************
-    void receive(etl::imessage_router& source, const etl::imessage& msg)
+    void receive(etl::imessage_router& source, const etl::imessage& msg) ETL_OVERRIDE
     {
       const size_t id = msg.message_id;
 
@@ -1113,22 +1275,34 @@ namespace etl
     using imessage_router::accepts;
 
     //**********************************************
-    bool accepts(etl::message_id_t id) const
+    bool accepts(etl::message_id_t id) const ETL_OVERRIDE
     {
       switch (id)
       {
         case T1::ID: case T2::ID: case T3::ID: case T4::ID: case T5::ID: case T6::ID: case T7::ID: case T8::ID: 
         
-          return true; break;
+          return true;
         default:
-          return false; break;
+          return false;
       }
     }
 
     //********************************************
-    bool is_null_router() const
+    ETL_DEPRECATED bool is_null_router() const ETL_OVERRIDE
     {
       return false;
+    }
+
+    //********************************************
+    bool is_producer() const ETL_OVERRIDE
+    {
+      return true;
+    }
+
+    //********************************************
+    bool is_consumer() const ETL_OVERRIDE
+    {
+      return true;
     }
   };
 
@@ -1160,13 +1334,13 @@ namespace etl
     }
 
     //**********************************************
-    void receive(const etl::imessage& msg)
+    void receive(const etl::imessage& msg) ETL_OVERRIDE
     {
       receive(etl::null_message_router::instance(), msg);
     }
 
     //**********************************************
-    void receive(etl::imessage_router& source, etl::message_router_id_t destination_router_id, const etl::imessage& msg)
+    void receive(etl::imessage_router& source, etl::message_router_id_t destination_router_id, const etl::imessage& msg) ETL_OVERRIDE
     {
       if ((destination_router_id == get_message_router_id()) || (destination_router_id == imessage_router::ALL_MESSAGE_ROUTERS))
       {
@@ -1175,7 +1349,7 @@ namespace etl
     }
 
     //**********************************************
-    void receive(etl::imessage_router& source, const etl::imessage& msg)
+    void receive(etl::imessage_router& source, const etl::imessage& msg) ETL_OVERRIDE
     {
       const size_t id = msg.message_id;
 
@@ -1206,21 +1380,33 @@ namespace etl
     using imessage_router::accepts;
 
     //**********************************************
-    bool accepts(etl::message_id_t id) const
+    bool accepts(etl::message_id_t id) const ETL_OVERRIDE
     {
       switch (id)
       {
         case T1::ID: case T2::ID: case T3::ID: case T4::ID: case T5::ID: case T6::ID: case T7::ID: 
-          return true; break;
+          return true;
         default:
-          return false; break;
+          return false;
       }
     }
 
     //********************************************
-    bool is_null_router() const
+    ETL_DEPRECATED bool is_null_router() const ETL_OVERRIDE
     {
       return false;
+    }
+
+    //********************************************
+    bool is_producer() const ETL_OVERRIDE
+    {
+      return true;
+    }
+
+    //********************************************
+    bool is_consumer() const ETL_OVERRIDE
+    {
+      return true;
     }
   };
 
@@ -1252,13 +1438,13 @@ namespace etl
     }
 
     //**********************************************
-    void receive(const etl::imessage& msg)
+    void receive(const etl::imessage& msg) ETL_OVERRIDE
     {
       receive(etl::null_message_router::instance(), msg);
     }
 
     //**********************************************
-    void receive(etl::imessage_router& source, etl::message_router_id_t destination_router_id, const etl::imessage& msg)
+    void receive(etl::imessage_router& source, etl::message_router_id_t destination_router_id, const etl::imessage& msg) ETL_OVERRIDE
     {
       if ((destination_router_id == get_message_router_id()) || (destination_router_id == imessage_router::ALL_MESSAGE_ROUTERS))
       {
@@ -1267,7 +1453,7 @@ namespace etl
     }
 
     //**********************************************
-    void receive(etl::imessage_router& source, const etl::imessage& msg)
+    void receive(etl::imessage_router& source, const etl::imessage& msg) ETL_OVERRIDE
     {
       const size_t id = msg.message_id;
 
@@ -1297,21 +1483,33 @@ namespace etl
     using imessage_router::accepts;
 
     //**********************************************
-    bool accepts(etl::message_id_t id) const
+    bool accepts(etl::message_id_t id) const ETL_OVERRIDE
     {
       switch (id)
       {
         case T1::ID: case T2::ID: case T3::ID: case T4::ID: case T5::ID: case T6::ID: 
-          return true; break;
+          return true;
         default:
-          return false; break;
+          return false;
       }
     }
 
     //********************************************
-    bool is_null_router() const
+    ETL_DEPRECATED bool is_null_router() const ETL_OVERRIDE
     {
       return false;
+    }
+
+    //********************************************
+    bool is_producer() const ETL_OVERRIDE
+    {
+      return true;
+    }
+
+    //********************************************
+    bool is_consumer() const ETL_OVERRIDE
+    {
+      return true;
     }
   };
 
@@ -1343,13 +1541,13 @@ namespace etl
     }
 
     //**********************************************
-    void receive(const etl::imessage& msg)
+    void receive(const etl::imessage& msg) ETL_OVERRIDE
     {
       receive(etl::null_message_router::instance(), msg);
     }
 
     //**********************************************
-    void receive(etl::imessage_router& source, etl::message_router_id_t destination_router_id, const etl::imessage& msg)
+    void receive(etl::imessage_router& source, etl::message_router_id_t destination_router_id, const etl::imessage& msg) ETL_OVERRIDE
     {
       if ((destination_router_id == get_message_router_id()) || (destination_router_id == imessage_router::ALL_MESSAGE_ROUTERS))
       {
@@ -1358,7 +1556,7 @@ namespace etl
     }
 
     //**********************************************
-    void receive(etl::imessage_router& source, const etl::imessage& msg)
+    void receive(etl::imessage_router& source, const etl::imessage& msg) ETL_OVERRIDE
     {
       const size_t id = msg.message_id;
 
@@ -1387,21 +1585,33 @@ namespace etl
     using imessage_router::accepts;
 
     //**********************************************
-    bool accepts(etl::message_id_t id) const
+    bool accepts(etl::message_id_t id) const ETL_OVERRIDE
     {
       switch (id)
       {
         case T1::ID: case T2::ID: case T3::ID: case T4::ID: case T5::ID: 
-          return true; break;
+          return true;
         default:
-          return false; break;
+          return false;
       }
     }
 
     //********************************************
-    bool is_null_router() const
+    ETL_DEPRECATED bool is_null_router() const ETL_OVERRIDE
     {
       return false;
+    }
+
+    //********************************************
+    bool is_producer() const ETL_OVERRIDE
+    {
+      return true;
+    }
+
+    //********************************************
+    bool is_consumer() const ETL_OVERRIDE
+    {
+      return true;
     }
   };
 
@@ -1432,13 +1642,13 @@ namespace etl
     }
 
     //**********************************************
-    void receive(const etl::imessage& msg)
+    void receive(const etl::imessage& msg) ETL_OVERRIDE
     {
       receive(etl::null_message_router::instance(), msg);
     }
 
     //**********************************************
-    void receive(etl::imessage_router& source, etl::message_router_id_t destination_router_id, const etl::imessage& msg)
+    void receive(etl::imessage_router& source, etl::message_router_id_t destination_router_id, const etl::imessage& msg) ETL_OVERRIDE
     {
       if ((destination_router_id == get_message_router_id()) || (destination_router_id == imessage_router::ALL_MESSAGE_ROUTERS))
       {
@@ -1447,7 +1657,7 @@ namespace etl
     }
 
     //**********************************************
-    void receive(etl::imessage_router& source, const etl::imessage& msg)
+    void receive(etl::imessage_router& source, const etl::imessage& msg) ETL_OVERRIDE
     {
       const size_t id = msg.message_id;
 
@@ -1475,21 +1685,33 @@ namespace etl
     using imessage_router::accepts;
 
     //**********************************************
-    bool accepts(etl::message_id_t id) const
+    bool accepts(etl::message_id_t id) const ETL_OVERRIDE
     {
       switch (id)
       {
         case T1::ID: case T2::ID: case T3::ID: case T4::ID: 
-          return true; break;
+          return true;
         default:
-          return false; break;
+          return false;
       }
     }
 
     //********************************************
-    bool is_null_router() const
+    ETL_DEPRECATED bool is_null_router() const ETL_OVERRIDE
     {
       return false;
+    }
+
+    //********************************************
+    bool is_producer() const ETL_OVERRIDE
+    {
+      return true;
+    }
+
+    //********************************************
+    bool is_consumer() const ETL_OVERRIDE
+    {
+      return true;
     }
   };
 
@@ -1520,13 +1742,13 @@ namespace etl
     }
 
     //**********************************************
-    void receive(const etl::imessage& msg)
+    void receive(const etl::imessage& msg) ETL_OVERRIDE
     {
       receive(etl::null_message_router::instance(), msg);
     }
 
     //**********************************************
-    void receive(etl::imessage_router& source, etl::message_router_id_t destination_router_id, const etl::imessage& msg)
+    void receive(etl::imessage_router& source, etl::message_router_id_t destination_router_id, const etl::imessage& msg) ETL_OVERRIDE
     {
       if ((destination_router_id == get_message_router_id()) || (destination_router_id == imessage_router::ALL_MESSAGE_ROUTERS))
       {
@@ -1535,7 +1757,7 @@ namespace etl
     }
 
     //**********************************************
-    void receive(etl::imessage_router& source, const etl::imessage& msg)
+    void receive(etl::imessage_router& source, const etl::imessage& msg) ETL_OVERRIDE
     {
       const size_t id = msg.message_id;
 
@@ -1562,21 +1784,33 @@ namespace etl
     using imessage_router::accepts;
 
     //**********************************************
-    bool accepts(etl::message_id_t id) const
+    bool accepts(etl::message_id_t id) const ETL_OVERRIDE
     {
       switch (id)
       {
         case T1::ID: case T2::ID: case T3::ID: 
-          return true; break;
+          return true;
         default:
-          return false; break;
+          return false;
       }
     }
 
     //********************************************
-    bool is_null_router() const
+    ETL_DEPRECATED bool is_null_router() const ETL_OVERRIDE
     {
       return false;
+    }
+
+    //********************************************
+    bool is_producer() const ETL_OVERRIDE
+    {
+      return true;
+    }
+
+    //********************************************
+    bool is_consumer() const ETL_OVERRIDE
+    {
+      return true;
     }
   };
 
@@ -1607,13 +1841,13 @@ namespace etl
     }
 
     //**********************************************
-    void receive(const etl::imessage& msg)
+    void receive(const etl::imessage& msg) ETL_OVERRIDE
     {
       receive(etl::null_message_router::instance(), msg);
     }
 
     //**********************************************
-    void receive(etl::imessage_router& source, etl::message_router_id_t destination_router_id, const etl::imessage& msg)
+    void receive(etl::imessage_router& source, etl::message_router_id_t destination_router_id, const etl::imessage& msg) ETL_OVERRIDE
     {
       if ((destination_router_id == get_message_router_id()) || (destination_router_id == imessage_router::ALL_MESSAGE_ROUTERS))
       {
@@ -1622,7 +1856,7 @@ namespace etl
     }
 
     //**********************************************
-    void receive(etl::imessage_router& source, const etl::imessage& msg)
+    void receive(etl::imessage_router& source, const etl::imessage& msg) ETL_OVERRIDE
     {
       const size_t id = msg.message_id;
 
@@ -1648,21 +1882,33 @@ namespace etl
     using imessage_router::accepts;
 
     //**********************************************
-    bool accepts(etl::message_id_t id) const
+    bool accepts(etl::message_id_t id) const ETL_OVERRIDE
     {
       switch (id)
       {
         case T1::ID: case T2::ID: 
-          return true; break;
+          return true;
         default:
-          return false; break;
+          return false;
       }
     }
 
     //********************************************
-    bool is_null_router() const
+    ETL_DEPRECATED bool is_null_router() const ETL_OVERRIDE
     {
       return false;
+    }
+
+    //********************************************
+    bool is_producer() const ETL_OVERRIDE
+    {
+      return true;
+    }
+
+    //********************************************
+    bool is_consumer() const ETL_OVERRIDE
+    {
+      return true;
     }
   };
 
@@ -1693,13 +1939,13 @@ namespace etl
     }
 
     //**********************************************
-    void receive(const etl::imessage& msg)
+    void receive(const etl::imessage& msg) ETL_OVERRIDE
     {
       receive(etl::null_message_router::instance(), msg);
     }
 
     //**********************************************
-    void receive(etl::imessage_router& source, etl::message_router_id_t destination_router_id, const etl::imessage& msg)
+    void receive(etl::imessage_router& source, etl::message_router_id_t destination_router_id, const etl::imessage& msg) ETL_OVERRIDE
     {
       if ((destination_router_id == get_message_router_id()) || (destination_router_id == imessage_router::ALL_MESSAGE_ROUTERS))
       {
@@ -1708,7 +1954,7 @@ namespace etl
     }
 
     //**********************************************
-    void receive(etl::imessage_router& source, const etl::imessage& msg)
+    void receive(etl::imessage_router& source, const etl::imessage& msg) ETL_OVERRIDE
     {
       const size_t id = msg.message_id;
 
@@ -1733,21 +1979,33 @@ namespace etl
     using imessage_router::accepts;
 
     //**********************************************
-    bool accepts(etl::message_id_t id) const
+    bool accepts(etl::message_id_t id) const ETL_OVERRIDE
     {
       switch (id)
       {
         case T1::ID: 
-          return true; break;
+          return true;
         default:
-          return false; break;
+          return false;
       }
     }
 
     //********************************************
-    bool is_null_router() const
+    ETL_DEPRECATED bool is_null_router() const ETL_OVERRIDE
     {
       return false;
+    }
+
+    //********************************************
+    bool is_producer() const ETL_OVERRIDE
+    {
+      return true;
+    }
+
+    //********************************************
+    bool is_consumer() const ETL_OVERRIDE
+    {
+      return true;
     }
   };
 }

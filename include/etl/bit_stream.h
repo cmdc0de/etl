@@ -29,14 +29,14 @@ SOFTWARE.
 #include <stdint.h>
 #include <limits.h>
 
-#include "etl/platform.h"
-#include "etl/type_traits.h"
-#include "etl/nullptr.h"
-#include "etl/endianness.h"
-#include "etl/integral_limits.h"
-#include "etl/binary.h"
-#include "etl/algorithm.h"
-#include "etl/iterator.h"
+#include "platform.h"
+#include "type_traits.h"
+#include "nullptr.h"
+#include "endianness.h"
+#include "integral_limits.h"
+#include "binary.h"
+#include "algorithm.h"
+#include "iterator.h"
 
 #include "private/minmax_push.h"
 
@@ -186,7 +186,7 @@ namespace etl
       return put_integral(static_cast<uint32_t>(value), width);
     }
 
-#if !defined(ETL_NO_64BIT_TYPES)
+#if ETL_USING_64BIT_TYPES
     //***************************************************************************
     /// For 64bit integral types
     //***************************************************************************
@@ -314,8 +314,6 @@ namespace etl
 
           from_bytes(data, value);
 
-          bits_remaining -= width;
-
           success = true;
         }
       }
@@ -398,7 +396,7 @@ namespace etl
       return success;
     }
 
-#if !defined(ETL_NO_64BIT_TYPES)
+#if ETL_USING_64BIT_TYPES
     //***************************************************************************
     /// For unsigned integral types. 64bit
     //***************************************************************************

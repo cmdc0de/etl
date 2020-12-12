@@ -40,6 +40,7 @@ SOFTWARE.
 #include "hash.h"
 #include "algorithm.h"
 #include "memory.h"
+#include "type_traits.h"
 
 ///\defgroup array array
 /// A wrapper for arrays
@@ -101,14 +102,22 @@ namespace etl
 
     typedef T        value_type;
     typedef size_t   size_type;
-    typedef T&       reference;
     typedef const T& const_reference;
-    typedef T*       pointer;
     typedef const T* const_pointer;
-    typedef T*       iterator;
     typedef const T* const_iterator;
-    typedef ETL_OR_STD::reverse_iterator<iterator>       reverse_iterator;
     typedef ETL_OR_STD::reverse_iterator<const_iterator> const_reverse_iterator;
+
+#if defined(ETL_ARRAY_VIEW_IS_MUTABLE)
+    typedef T* pointer;
+    typedef T& reference;
+    typedef T* iterator;
+    typedef ETL_OR_STD::reverse_iterator<iterator> reverse_iterator;
+#else
+    typedef const_pointer   pointer;
+    typedef const_reference reference;
+    typedef const_pointer   iterator;
+    typedef const_reverse_iterator reverse_iterator;
+#endif
 
     //*************************************************************************
     /// Default constructor.
@@ -124,7 +133,7 @@ namespace etl
     /// data() and size() member functions.
     //*************************************************************************
     template <typename TArray>
-    ETL_CONSTEXPR explicit array_view(TArray& a)
+    ETL_CONSTEXPR array_view(TArray& a)
       : mbegin(a.data()),
         mend(a.data() + a.size())
     {
@@ -154,8 +163,8 @@ namespace etl
     //*************************************************************************
     /// Construct from C array
     //*************************************************************************
-    template<const size_t ARRAY_SIZE>
-    ETL_CONSTEXPR explicit array_view(T(&begin_)[ARRAY_SIZE])
+    template<size_t ARRAY_SIZE>
+    ETL_CONSTEXPR array_view(T(&begin_)[ARRAY_SIZE])
       : mbegin(begin_),
         mend(begin_ + ARRAY_SIZE)
     {
@@ -369,6 +378,7 @@ namespace etl
       mend   = etl::addressof(*begin_) + size_;
     }
 
+#if defined(ETL_ARRAY_VIEW_IS_MUTABLE)
     //*************************************************************************
     /// Returns a reference to the indexed value.
     //*************************************************************************
@@ -376,6 +386,7 @@ namespace etl
     {
       return mbegin[i];
     }
+#endif
 
     //*************************************************************************
     /// Returns a const reference to the indexed value.
@@ -385,6 +396,7 @@ namespace etl
       return mbegin[i];
     }
 
+#if defined(ETL_ARRAY_VIEW_IS_MUTABLE)
     //*************************************************************************
     /// Returns a reference to the indexed value.
     //*************************************************************************
@@ -394,6 +406,7 @@ namespace etl
       ETL_ASSERT(i < size(), ETL_ERROR(array_view_bounds));
       return mbegin[i];
     }
+#endif
 
     //*************************************************************************
     /// Returns a const reference to the indexed value.
@@ -421,7 +434,10 @@ namespace etl
     //*************************************************************************
     void remove_prefix(const size_type n)
     {
-      mbegin += n;
+		if (n < size())
+			mbegin += n;
+		else
+			mbegin = mend;
     }
 
     //*************************************************************************
@@ -429,7 +445,10 @@ namespace etl
     //*************************************************************************
     void remove_suffix(const size_type n)
     {
-      mend -= n;
+		if (n < size())
+			mend -= n;
+		else
+			mend = mbegin;
     }
 
     //*************************************************************************
@@ -483,9 +502,27 @@ namespace etl
 
   private:
 
-    T* mbegin;
-    T* mend;
+    pointer mbegin;
+    pointer mend;
   };
+
+  //*************************************************************************
+  /// Template deduction guides.
+  //*************************************************************************
+#if ETL_CPP17_SUPPORTED
+  template <typename TArray>
+  array_view(TArray& a) 
+    -> array_view<typename TArray::value_type>;
+
+  template <typename TIterator>
+  array_view(const TIterator begin_, const TIterator end_)
+    -> array_view<etl::remove_pointer_t<TIterator>>;
+
+  template <typename TIterator,
+            typename TSize>
+  array_view(const TIterator begin_, const TSize size_)
+    -> array_view<etl::remove_pointer_t<TIterator>>;
+#endif  
 
   //*************************************************************************
   /// Hash function.
@@ -515,4 +552,3 @@ void swap(etl::array_view<T>& lhs, etl::array_view<T>& rhs)
 #undef ETL_FILE
 
 #endif
-

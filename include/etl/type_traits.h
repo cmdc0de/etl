@@ -65,13 +65,13 @@ SOFTWARE.
 /// Derived from either the standard or alternate definitions, dependant on whether or not ETL_NO_STL is defined.
 /// \ingroup utilities
 
-#if !defined(ETL_NO_STL) && ETL_CPP11_SUPPORTED
+#if ETL_USING_STL && ETL_CPP11_SUPPORTED
   #include <type_traits>
 #endif
 
 namespace etl
 {
-#if defined(ETL_NO_STL) || !ETL_CPP11_SUPPORTED
+#if ETL_NOT_USING_STL || ETL_CPP11_NOT_SUPPORTED
 
   //*****************************************************************************
   // Traits are defined by the ETL
@@ -99,9 +99,24 @@ namespace etl
   template <typename T, const T VALUE>
   const T integral_constant<T, VALUE>::value;
 
-#if ETL_CPP17_SUPPORTED
+#if ETL_CPP11_SUPPORTED
   template <bool B>
   using bool_constant = integral_constant<bool, B>;
+#else
+  template <bool B>
+  struct bool_constant : etl::integral_constant<bool, B> { };
+#endif
+
+  //***************************************************************************
+  /// negation
+  template <typename T>
+  struct negation : etl::bool_constant<!bool(T::value)>
+  {
+  };
+
+#if ETL_CPP17_SUPPORTED
+  template <typename T>
+  inline constexpr bool negation_v = negation<T>::value;
 #endif
 
   //***************************************************************************
@@ -617,17 +632,17 @@ namespace etl
   //***************************************************************************
   /// is_base_of
   template<typename TBase,
-    typename TDerived,
-    const bool IsFundamental = (etl::is_fundamental<TBase>::value || etl::is_fundamental<TDerived>::value)>
-    struct is_base_of
+           typename TDerived,
+           const bool IsFundamental = (etl::is_fundamental<TBase>::value || etl::is_fundamental<TDerived>::value)>
+  struct is_base_of
   {
   private:
 
     template<typename T> struct dummy {};
-  struct internal: TDerived, dummy<int>{};
+    struct internal: TDerived, dummy<int>{};
 
-  static TBase* check(TBase*);
-  template<typename T> static char check(dummy<T>*);
+    static TBase* check(TBase*);
+    template<typename T> static char check(dummy<T>*);
 
   public:
 
@@ -644,6 +659,24 @@ namespace etl
 #if ETL_CPP17_SUPPORTED
   template <typename T1, typename T2>
   inline constexpr bool is_base_of_v = is_base_of<T1, T2>::value;
+#endif
+
+  //***************************************************************************
+  /// is_class
+  namespace private_type_traits
+  {
+    template <typename T> char test(int T::*); // Match for classes.
+
+    struct dummy { char c[2]; };
+    template <typename T> dummy test(...);     // Match for non-classes.
+  }
+
+  template <typename T>
+  struct is_class : etl::integral_constant<bool, sizeof(private_type_traits::test<T>(0)) == 1U> {};
+
+#if ETL_CPP17_SUPPORTED
+  template <typename T>
+  inline constexpr bool is_class_v = is_class<T>::value;
 #endif
 
   //***************************************************************************
@@ -704,10 +737,15 @@ namespace etl
     auto nonvoid_convertible(...)->etl::false_type;
   }
 
+#if defined(ETL_COMPILER_ARM5)
+  template <typename TFrom, typename TTo>
+  struct is_convertible : etl::integral_constant<bool, __is_convertible_to(TFrom, TTo)> {};
+#else
   template <typename TFrom, typename TTo>
   struct is_convertible : etl::integral_constant<bool, (decltype(private_type_traits::returnable<TTo>(0))::value &&
                                                         decltype(private_type_traits::nonvoid_convertible<TFrom, TTo>(0))::value) ||
                                                         (etl::is_void<TFrom>::value && etl::is_void<TTo>::value)> {};
+#endif
 #endif
 
 #if ETL_CPP17_SUPPORTED
@@ -718,9 +756,9 @@ namespace etl
   //***************************************************************************
   /// Alignment templates.
   /// These require compiler specific intrinsics.
-#if ETL_CPP11_SUPPORTED
+#if ETL_CPP11_SUPPORTED && !defined(ETL_COMPILER_ARM5)
   template <typename T> struct alignment_of : integral_constant<size_t, alignof(T)> { };
-#elif ETL_COMPILER_MICROSOFT
+#elif defined(ETL_COMPILER_MICROSOFT)
   template <typename T> struct alignment_of : integral_constant<size_t, size_t(__alignof(T))> {};
 #elif defined(ETL_COMPILER_IAR) || defined(ETL_COMPILER_TI)
   template <typename T> struct alignment_of : integral_constant<size_t, size_t(__ALIGNOF__(T))> {};
@@ -737,7 +775,7 @@ namespace etl
   inline constexpr size_t alignment_of_v = etl::alignment_of<T>::value;
 #endif
 
-#else // Condition = !defined(ETL_NO_STL) && ETL_CPP11_SUPPORTED
+#else // Condition = ETL_USING_STL && ETL_CPP11_SUPPORTED
 
   //*****************************************************************************
   // Traits are derived from the STL
@@ -757,6 +795,22 @@ namespace etl
 #if ETL_CPP17_SUPPORTED
   template <bool B>
   using bool_constant = std::bool_constant<B>;
+#else
+  template <bool B>
+  struct bool_constant : std::integral_constant<bool, B> { };
+#endif
+
+  //***************************************************************************
+  /// negation
+  ///\ingroup type_traits
+#if ETL_CPP17_SUPPORTED
+  template <typename T>
+  struct negation : std::negation<T>
+  {
+  };
+
+  template <typename T>
+  inline constexpr bool negation_v = std::negation_v<T>;
 #endif
 
   //***************************************************************************
@@ -1014,14 +1068,21 @@ namespace etl
   //***************************************************************************
   /// is_pod
   ///\ingroup type_traits
-  template <typename T> struct is_pod : std::is_pod<T> {};
+  template <typename T>
+  struct is_pod : std::integral_constant<bool, std::is_standard_layout<T>::value && std::is_trivial<T>::value> {};
 
 #if ETL_CPP17_SUPPORTED
   template <typename T>
-  inline constexpr bool is_pod_v = std::is_pod_v<T>;
+  inline constexpr bool is_pod_v = std::is_standard_layout_v<T> && std::is_trivial_v<T>;
 #endif
 
-#if !defined(ARDUINO) && !defined(ETL_STLPORT)
+#if defined(ETL_COMPILER_GCC)
+  #if ETL_COMPILER_VERSION >= 5
+    #define ETL_GCC_V5_TYPE_TRAITS_SUPPORTED
+  #endif
+#endif
+
+#if !defined(ARDUINO) && ETL_NOT_USING_STLPORT && defined(ETL_GCC_V5_TYPE_TRAITS_SUPPORTED)
   //***************************************************************************
   /// is_trivially_constructible
   ///\ingroup type_traits
@@ -1221,6 +1282,15 @@ namespace etl
 #endif
 
   //***************************************************************************
+  /// is_class
+  template <typename T> struct is_class : std::is_class<T>{};
+
+#if ETL_CPP17_SUPPORTED
+  template <typename T>
+  inline constexpr bool is_class_v = is_class<T>::value;
+#endif
+
+  //***************************************************************************
   /// add_lvalue_reference
   template <typename T> struct add_lvalue_reference : std::add_lvalue_reference<T> {};
 
@@ -1271,7 +1341,7 @@ namespace etl
   inline constexpr size_t alignment_of_v = std::alignment_of_v<T>;
 #endif
 
-#endif // Condition = !defined(ETL_NO_STL) && ETL_CPP11_SUPPORTED
+#endif // Condition = ETL_USING_STL && ETL_CPP11_SUPPORTED
 
   //***************************************************************************
   // ETL extended type traits.
@@ -1319,14 +1389,13 @@ namespace etl
   /// Template to determine if a type is one of a specified list.
   ///\ingroup types
   template <typename T,
-            typename T1, typename T2 = void, typename T3 = void, typename T4 = void,
-            typename T5 = void, typename T6 = void, typename T7 = void, typename T8 = void,
-            typename T9 = void, typename T10 = void, typename T11 = void, typename T12 = void,
-            typename T13 = void, typename T14 = void, typename T15 = void, typename T16 = void,
-            typename T17 = void>
+            typename T1, typename T2 = void, typename T3 = void, typename T4 = void, 
+            typename T5 = void, typename T6 = void, typename T7 = void, typename T8 = void, 
+            typename T9 = void, typename T10 = void, typename T11 = void, typename T12 = void, 
+            typename T13 = void, typename T14 = void, typename T15 = void, typename T16 = void>
   struct is_one_of
   {
-    static const bool value =
+    static const bool value = 
         etl::is_same<T, T1>::value ||
         etl::is_same<T, T2>::value ||
         etl::is_same<T, T3>::value ||
@@ -1361,7 +1430,7 @@ namespace etl
   {
   private:
 
-    typedef typename etl::remove_cv<T>::type type_t;
+    typedef typename etl::remove_reference<typename etl::remove_cv<T>::type>::type type_t;
 
   public:
 
@@ -1383,7 +1452,7 @@ namespace etl
   {
   private:
 
-    typedef typename etl::remove_cv<T>::type type_t;
+    typedef typename etl::remove_reference<typename etl::remove_cv<T>::type>::type type_t;
 
   public:
 
@@ -1405,7 +1474,7 @@ namespace etl
   {
   private:
 
-    typedef typename etl::remove_cv<T>::type type_t;
+    typedef typename etl::remove_reference<typename etl::remove_cv<T>::type>::type type_t;
 
   public:
 
@@ -1427,7 +1496,7 @@ namespace etl
   {
   private:
 
-    typedef typename etl::remove_cv<T>::type type_t;
+    typedef typename etl::remove_reference<typename etl::remove_cv<T>::type>::type type_t;
 
   public:
 
@@ -1450,7 +1519,7 @@ namespace etl
   {
   private:
 
-    typedef typename etl::remove_cv<T>::type type_t;
+    typedef typename etl::remove_reference<typename etl::remove_cv<T>::type>::type type_t;
 
   public:
 
@@ -1467,7 +1536,7 @@ namespace etl
   };
 #endif
 
-#if ETL_CPP14_SUPPORTED
+#if ETL_CPP11_SUPPORTED
   template <typename T>
   using types_t = typename types<T>::type;
 
@@ -1499,6 +1568,28 @@ namespace etl
 #if ETL_CPP17_SUPPORTED
   template <typename T>
   inline constexpr size_t size_of_v = etl::size_of<T>::value;
+#endif
+
+#if ETL_CPP11_SUPPORTED
+  //***************************************************************************
+  /// are_all_same
+  template <typename T, typename T1, typename... TRest>
+  struct are_all_same
+  {
+    static const bool value = etl::is_same<T, T1>::value &&
+      etl::are_all_same<T, TRest...>::value;
+  };
+
+  template <typename T, typename T1>
+  struct are_all_same<T, T1>
+  {
+    static const bool value = etl::is_same<T, T1>::value;
+  };
+#endif
+
+#if ETL_CPP17_SUPPORTED
+  template <typename T, typename T1, typename... TRest>
+  inline constexpr bool are_all_same_v = are_all_same<T, T1, TRest...>::value;
 #endif
 }
 

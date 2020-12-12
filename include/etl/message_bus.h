@@ -93,8 +93,8 @@ namespace etl
     {
       bool ok = true;
 
-      // There's no point actually adding null routers.
-      if (!router.is_null_router())
+      // There's no point adding routers that don't consume messages.
+      if (router.is_consumer())
       {
         ok = !router_list.full();
 
@@ -103,9 +103,9 @@ namespace etl
         if (ok)
         {
           router_list_t::iterator irouter = etl::upper_bound(router_list.begin(),
-                                                                router_list.end(),
-                                                                router.get_message_router_id(),
-                                                                compare_router_id());
+                                                             router_list.end(),
+                                                             router.get_message_router_id(),
+                                                             compare_router_id());
 
           router_list.insert(irouter, &router);
         }
@@ -126,9 +126,9 @@ namespace etl
       else
       {
         ETL_OR_STD::pair<router_list_t::iterator, router_list_t::iterator> range = etl::equal_range(router_list.begin(),
-                                                                                               router_list.end(),
-                                                                                               id,
-                                                                                               compare_router_id());
+                                                                                                    router_list.end(),
+                                                                                                    id,
+                                                                                                    compare_router_id());
 
         router_list.erase(range.first, range.second);
       }
@@ -138,8 +138,8 @@ namespace etl
     void unsubscribe(etl::imessage_router& router)
     {
       router_list_t::iterator irouter = etl::find(router_list.begin(),
-                                                     router_list.end(),
-                                                     &router);
+                                                  router_list.end(),
+                                                  &router);
 
       if (irouter != router_list.end())
       {
@@ -148,7 +148,7 @@ namespace etl
     }
 
     //*******************************************
-    void receive(const etl::imessage& message)
+    void receive(const etl::imessage& message) ETL_OVERRIDE
     {
       etl::null_message_router nmr;
       receive(nmr, etl::imessage_router::ALL_MESSAGE_ROUTERS, message);
@@ -164,7 +164,7 @@ namespace etl
 
     //*******************************************
     void receive(etl::imessage_router& source,
-                 const etl::imessage&  message)
+                 const etl::imessage&  message) ETL_OVERRIDE
     {
       receive(source, etl::imessage_router::ALL_MESSAGE_ROUTERS, message);
     }
@@ -172,17 +172,10 @@ namespace etl
     //*******************************************
     void receive(etl::imessage_router&    source,
                  etl::message_router_id_t destination_router_id,
-                 const etl::imessage&     message)
+                 const etl::imessage&     message) ETL_OVERRIDE
     {
       switch (destination_router_id)
       {
-        //*****************************
-        // Null message router. These routers can never be subscribed.
-        case etl::imessage_router::NULL_MESSAGE_ROUTER:
-        {
-          break;
-        }
-
         //*****************************
         // Broadcast to all routers.
         case etl::imessage_router::ALL_MESSAGE_ROUTERS:
@@ -196,7 +189,7 @@ namespace etl
 
             if (router.accepts(message.message_id))
             {
-              router.receive(source, destination_router_id, message);
+              router.receive(source, message);
             }
 
             ++irouter;
@@ -213,9 +206,9 @@ namespace etl
 
           // Find routers with the id.
           ETL_OR_STD::pair<router_list_t::iterator, router_list_t::iterator> range = etl::equal_range(router_list.begin(),
-                                                                                                 router_list.end(),
-                                                                                                 destination_router_id,
-                                                                                                 compare_router_id());
+                                                                                                      router_list.end(),
+                                                                                                      destination_router_id,
+                                                                                                      compare_router_id());
 
           // Call all of them.
           while (range.first != range.second)
@@ -254,7 +247,7 @@ namespace etl
     /// Does this message bus accept the message id?
     /// Yes!, it accepts everything!
     //*******************************************
-    bool accepts(etl::message_id_t) const
+    bool accepts(etl::message_id_t) const ETL_OVERRIDE
     {
       return true;
     }
@@ -272,9 +265,21 @@ namespace etl
     }
 
     //********************************************
-    bool is_null_router() const
+    ETL_DEPRECATED bool is_null_router() const ETL_OVERRIDE
     {
       return false;
+    }
+
+    //********************************************
+    bool is_producer() const ETL_OVERRIDE
+    {
+      return true;
+    }
+
+    //********************************************
+    bool is_consumer() const ETL_OVERRIDE
+    {
+      return true;
     }
 
   protected:

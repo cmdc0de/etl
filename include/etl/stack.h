@@ -5,7 +5,7 @@ The MIT License(MIT)
 
 Embedded Template Library.
 https://github.com/ETLCPP/etl
-http://www.etlcpp.com
+https://www.etlcpp.com
 
 Copyright(c) 2014 jwellbelove, Mark Kitson
 
@@ -34,8 +34,6 @@ SOFTWARE.
 #include <stddef.h>
 #include <stdint.h>
 
-#include <new>
-
 #include "platform.h"
 #include "algorithm.h"
 #include "utility.h"
@@ -46,6 +44,7 @@ SOFTWARE.
 #include "error_handler.h"
 #include "debug_count.h"
 #include "type_traits.h"
+#include "placement_new.h"
 
 #undef ETL_FILE
 #define ETL_FILE "15"
@@ -280,7 +279,7 @@ namespace etl
     }
 #endif
 
-#if ETL_CPP11_SUPPORTED && !defined(ETL_STLPORT)
+#if ETL_CPP11_SUPPORTED && ETL_NOT_USING_STLPORT
     //*************************************************************************
     /// Constructs a value in the stack place'.
     /// If asserts or exceptions are enabled, throws an etl::stack_full if the stack is already full.
@@ -447,8 +446,7 @@ namespace etl
     istack& operator = (istack&& rhs)
     {
       if (&rhs != this)
-      {
-        clear();
+      {        
         clone(etl::move(rhs));
       }
 
@@ -463,6 +461,8 @@ namespace etl
     //*************************************************************************
     void clone(const istack& other)
     {
+      clear();
+
       size_t index = 0;
 
       for (size_t i = 0; i < other.size(); ++i)
@@ -477,6 +477,8 @@ namespace etl
     //*************************************************************************
     void clone(istack&& other)
     {
+      clear();
+
       size_t index = 0;
 
       for (size_t i = 0; i < other.size(); ++i)

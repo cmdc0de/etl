@@ -3,7 +3,7 @@ The MIT License(MIT)
 
 Embedded Template Library.
 https://github.com/ETLCPP/etl
-http://www.etlcpp.com
+https://www.etlcpp.com
 
 Copyright(c) 2018 jwellbelove
 
@@ -38,7 +38,7 @@ SOFTWARE.
 
 #if ETL_HAS_ATOMIC
 
-#if defined(ETL_COMPILER_MICROSOFT)
+#if defined(ETL_TARGET_OS_WINDOWS)
   #include <Windows.h>
 #endif
 

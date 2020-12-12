@@ -54,7 +54,6 @@ namespace
     StlVData stlvdata = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
 
     EtlData etldatasmaller = { 0, 1, 2, 3, 4, 5, 5, 7, 8, 9 };
-    EtlData etldatashorter = { 0, 1, 2, 3, 4, 5, 6, 7, 8 };
 
     EtlData etloriginal = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
     EtlData etlmodified = { 0, 1, 10, 10, 10, 10, 10, 10, 8, 9 };
@@ -248,6 +247,53 @@ namespace
     }
 
     //*************************************************************************
+    TEST(test_implicit_constructor_c_array_2)
+    {
+      CView view;
+
+      view = ccdata;
+
+      CHECK_EQUAL(SIZE, view.size());
+      CHECK_EQUAL(SIZE, view.max_size());
+
+      bool isEqual = std::equal(view.begin(), view.end(), ccdata);
+      CHECK(isEqual);
+    }
+
+#if ETL_USING_STL && !defined(ETL_TEMPLATE_DEDUCTION_GUIDE_TESTS_DISABLED)
+    //*************************************************************************
+    TEST(test_cpp17_deduced_constructor)
+    {
+      etl::array data{ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
+
+      etl::span span1{ data };
+      etl::span span2{ data.begin(), data.end() };
+      etl::span span3{ data.begin(), data.size() };
+      etl::span span4{ span1 };
+
+      int c_array[] = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
+      etl::span span5{ c_array };
+
+      bool isEqual = false;
+
+      isEqual = std::equal(span1.begin(), span1.end(), data.begin());
+      CHECK(isEqual);
+
+      isEqual = std::equal(span2.begin(), span2.end(), data.begin());
+      CHECK(isEqual);
+
+      isEqual = std::equal(span3.begin(), span3.end(), data.begin());
+      CHECK(isEqual);
+
+      isEqual = std::equal(span4.begin(), span4.end(), data.begin());
+      CHECK(isEqual);
+
+      isEqual = std::equal(span5.begin(), span5.end(), c_array);
+      CHECK(isEqual);
+    }
+#endif
+
+    //*************************************************************************
     TEST(test_constructor_range)
     {
       View view(etldata.begin() + 2, etldata.end() - 2);
@@ -361,6 +407,19 @@ namespace
     }
 
     //*************************************************************************
+    TEST(test_assignment_operator)
+    {
+      View view(etldata);
+      CView cview = view;
+
+      CHECK_EQUAL(etldata.size(), view.size());
+      CHECK_EQUAL(etldata.max_size(), view.max_size());
+
+      bool isEqual = std::equal(view.begin(), view.end(), etldata.begin());
+      CHECK(isEqual);
+    }
+
+    //*************************************************************************
     TEST(test_empty)
     {
       View view1(etldata.begin(), etldata.begin());
@@ -430,6 +489,27 @@ namespace
     }
 
     //*************************************************************************
+    TEST(test_first_2)
+    {
+      std::vector<int> original = {1, 2, 3, 4, 5, 6, 7, 8};
+      std::vector<int> first = {1, 2, 3, 4, 5, 6};
+      View view(original);
+      CView cview(original);
+
+      bool isEqual;
+
+      auto result = view.first(6);
+      isEqual = std::equal(result.begin(), result.end(), first.begin());
+      CHECK(isEqual);
+      CHECK_EQUAL(first.size(), result.size());
+
+      auto cresult = cview.first(6);
+      isEqual = std::equal(cresult.begin(), cresult.end(), first.begin());
+      CHECK(isEqual);
+      CHECK_EQUAL(first.size(), cresult.size());
+    }
+
+    //*************************************************************************
     TEST(test_last)
     {
       std::vector<int> original = { 1, 2, 3, 4, 5, 6, 7, 8 };
@@ -449,6 +529,27 @@ namespace
       isEqual = std::equal(cresult.begin(), cresult.end(), last.begin());
       CHECK(isEqual);
       CHECK_EQUAL(last.size(), cresult.extent);
+      CHECK_EQUAL(last.size(), cresult.size());
+    }
+
+    //*************************************************************************
+    TEST(test_last_2)
+    {
+      std::vector<int> original = {1, 2, 3, 4, 5, 6, 7, 8};
+      std::vector<int> last = {3, 4, 5, 6, 7, 8};
+      View view(original);
+      CView cview(original);
+
+      bool isEqual;
+
+      auto result = view.last(6);
+      isEqual = std::equal(result.begin(), result.end(), last.begin());
+      CHECK(isEqual);
+      CHECK_EQUAL(last.size(), result.size());
+
+      auto cresult = cview.last(6);
+      isEqual = std::equal(cresult.begin(), cresult.end(), last.begin());
+      CHECK(isEqual);
       CHECK_EQUAL(last.size(), cresult.size());
     }
 
@@ -486,6 +587,31 @@ namespace
       CHECK(isEqual);
       CHECK_EQUAL(etl::dynamic_extent, cspan2.extent);
       CHECK_EQUAL(sub2.size(), cspan2.size());
+
+      auto span3 = view.subspan(2, 4);
+      isEqual = std::equal(span3.begin(), span3.end(), sub1.begin());
+      CHECK(isEqual);
+      CHECK_EQUAL(etl::dynamic_extent, span3.extent);
+      CHECK_EQUAL(sub1.size(), span3.size());
+
+      auto cspan3 = cview.subspan(2, 4);
+      isEqual = std::equal(cspan3.begin(), cspan3.end(), sub1.begin());
+      CHECK(isEqual);
+      CHECK_EQUAL(etl::dynamic_extent, cspan3.extent);
+      CHECK_EQUAL(sub1.size(), cspan3.size());
+
+      auto span4 = view.subspan(2);
+      isEqual = std::equal(span4.begin(), span4.end(), sub2.begin());
+      CHECK(isEqual);
+      CHECK_EQUAL(etl::dynamic_extent, span4.extent);
+      CHECK_EQUAL(sub2.size(), span4.size());
+
+      auto cspan4 = cview.subspan(2);
+      isEqual = std::equal(cspan4.begin(), cspan4.end(), sub2.begin());
+      CHECK(isEqual);
+      CHECK_EQUAL(etl::dynamic_extent, cspan4.extent);
+      CHECK_EQUAL(sub2.size(), cspan4.size());
+
     }
 
     //*************************************************************************

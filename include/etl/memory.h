@@ -37,14 +37,13 @@ SOFTWARE.
 #include "iterator.h"
 #include "utility.h"
 #include "nullptr.h"
+#include "alignment.h"
+#include "placement_new.h"
 
 #include <assert.h>
-
 #include <string.h>
 
-#include <new>
-
-#if !defined(ETL_NO_STL)
+#if ETL_USING_STL
   #include <memory>
 #endif
 
@@ -61,14 +60,14 @@ namespace etl
   template <typename T>
   T* addressof(T& t)
   {
-#if ETL_CPP11_SUPPORTED && !defined(ETL_NO_STL)
+#if ETL_CPP11_SUPPORTED && ETL_USING_STL
     return std::addressof(t);
 #else
     return reinterpret_cast<T*>(&const_cast<char&>(reinterpret_cast<const volatile char&>(t)));
 #endif
   }
 
-#if defined(ETL_NO_STL)
+#if ETL_NOT_USING_STL
   //*****************************************************************************
   /// Fills uninitialised memory range with a value.
   /// https://en.cppreference.com/w/cpp/memory/uninitialized_fill
@@ -168,7 +167,7 @@ namespace etl
   }
 #endif
 
-#if defined(ETL_NO_STL) || !ETL_CPP11_SUPPORTED
+#if ETL_NOT_USING_STL || ETL_CPP11_NOT_SUPPORTED
   //*****************************************************************************
   /// Fills uninitialised memory with N values.
   /// https://en.cppreference.com/w/cpp/memory/uninitialized_fill_n
@@ -220,7 +219,7 @@ namespace etl
   }
 #endif
 
-#if defined(ETL_NO_STL)
+#if ETL_NOT_USING_STL
   //*****************************************************************************
   /// Copies a range of objects to uninitialised memory.
   /// https://en.cppreference.com/w/cpp/memory/uninitialized_copy
@@ -315,7 +314,7 @@ namespace etl
   }
 #endif
 
-#if defined(ETL_NO_STL) || !ETL_CPP11_SUPPORTED
+#if ETL_NOT_USING_STL || ETL_CPP11_NOT_SUPPORTED
   //*****************************************************************************
   /// Copies N objects to uninitialised memory.
   /// https://en.cppreference.com/w/cpp/memory/uninitialized_copy_n
@@ -368,7 +367,7 @@ namespace etl
 #endif
 
 #if ETL_CPP11_SUPPORTED
-#if defined(ETL_NO_STL) || !ETL_CPP17_SUPPORTED
+#if ETL_NOT_USING_STL || ETL_CPP17_NOT_SUPPORTED
   //*****************************************************************************
   /// Moves a range of objects to uninitialised memory.
   /// https://en.cppreference.com/w/cpp/memory/uninitialized_move
@@ -493,7 +492,7 @@ namespace etl
 #endif
 
 #if ETL_CPP11_SUPPORTED
-#if defined(ETL_NO_STL) || !ETL_CPP17_SUPPORTED
+#if ETL_NOT_USING_STL || ETL_CPP17_NOT_SUPPORTED
   //*****************************************************************************
   /// Moves a range of objects to uninitialised memory.
   /// https://en.cppreference.com/w/cpp/memory/uninitialized_move_n
@@ -625,7 +624,7 @@ namespace etl
   }
 #endif
 
-#if defined(ETL_NO_STL) || !ETL_CPP17_SUPPORTED
+#if ETL_NOT_USING_STL || ETL_CPP17_NOT_SUPPORTED
   //*****************************************************************************
   /// Default initialises a range of objects to uninitialised memory.
   /// https://en.cppreference.com/w/cpp/memory/uninitialized_default_construct
@@ -713,7 +712,7 @@ namespace etl
   }
 #endif
 
-#if defined(ETL_NO_STL) || !ETL_CPP17_SUPPORTED
+#if ETL_NOT_USING_STL || ETL_CPP17_NOT_SUPPORTED
   //*****************************************************************************
   /// Default initialises N objects to uninitialised memory.
   /// https://en.cppreference.com/w/cpp/memory/uninitialized_default_construct_n
@@ -805,7 +804,7 @@ namespace etl
   }
 #endif
 
-#if defined(ETL_NO_STL) || !ETL_CPP17_SUPPORTED
+#if ETL_NOT_USING_STL || ETL_CPP17_NOT_SUPPORTED
   //*****************************************************************************
   /// Default initialises a range of objects to uninitialised memory.
   /// https://en.cppreference.com/w/cpp/memory/uninitialized_value_construct
@@ -879,7 +878,7 @@ namespace etl
 
 #endif
 
-#if defined(ETL_NO_STL) || !ETL_CPP17_SUPPORTED
+#if ETL_NOT_USING_STL || ETL_CPP17_NOT_SUPPORTED
   //*****************************************************************************
   /// Default initialises N objects to uninitialised memory.
   /// https://en.cppreference.com/w/cpp/memory/uninitialized_value_construct_n
@@ -939,7 +938,7 @@ namespace etl
   }
 #endif
 
-#if defined(ETL_NO_STL) || !ETL_CPP17_SUPPORTED
+#if ETL_NOT_USING_STL || ETL_CPP17_NOT_SUPPORTED
   //*****************************************************************************
   /// Destroys an item at address p.
   /// https://en.cppreference.com/w/cpp/memory/destroy_at
@@ -1015,7 +1014,7 @@ namespace etl
   }
 #endif
 
-#if defined(ETL_NO_STL) || !ETL_CPP17_SUPPORTED
+#if ETL_NOT_USING_STL || ETL_CPP17_NOT_SUPPORTED
   //*****************************************************************************
   /// Destroys a range of items.
   /// https://en.cppreference.com/w/cpp/memory/destroy
@@ -1101,7 +1100,7 @@ namespace etl
   }
 #endif
 
-#if defined(ETL_NO_STL) || !ETL_CPP17_SUPPORTED
+#if ETL_NOT_USING_STL || ETL_CPP17_NOT_SUPPORTED
   //*****************************************************************************
   /// Destroys a number of items.
   /// https://en.cppreference.com/w/cpp/memory/destroy_n
@@ -1318,7 +1317,7 @@ namespace etl
       return (p != ETL_NULLPTR);
     }
 
-#if ETL_CPP11_SUPPORTED && !defined(ETL_NO_STL)
+#if ETL_CPP11_SUPPORTED && ETL_USING_STL
     //*********************************
     unique_ptr&	operator =(std::nullptr_t) ETL_NOEXCEPT
     {
@@ -1900,6 +1899,156 @@ namespace etl
       memory_clear(static_cast<volatile T&>(*this));
     }
   };
+
+  //***************************************************************************
+  /// Declares an aligned buffer of N_OBJECTS x of size OBJECT_SIZE at alignment ALIGNMENT.
+  ///\ingroup alignment
+  //***************************************************************************
+  template <size_t OBJECT_SIZE_, size_t N_OBJECTS_, size_t ALIGNMENT_>
+  class uninitialized_buffer
+  {
+  public:
+
+    static ETL_CONSTANT size_t OBJECT_SIZE = OBJECT_SIZE_;
+    static ETL_CONSTANT size_t N_OBJECTS   = N_OBJECTS_;
+    static ETL_CONSTANT size_t ALIGNMENT   = ALIGNMENT_;
+
+    /// Convert to T reference.
+    template <typename T>
+    operator T& ()
+    {
+      ETL_STATIC_ASSERT((etl::is_same<T*, void*>::value || ((ALIGNMENT % etl::alignment_of<T>::value) == 0)), "Incompatible alignment");
+      return *reinterpret_cast<T*>(raw);
+    }
+
+    /// Convert to const T reference.
+    template <typename T>
+    operator const T& () const
+    {
+      ETL_STATIC_ASSERT((etl::is_same<T*, void*>::value || ((ALIGNMENT % etl::alignment_of<T>::value) == 0)), "Incompatible alignment");
+      return *reinterpret_cast<const T*>(raw);
+    }
+
+    /// Convert to T pointer.
+    template <typename T>
+    operator T* ()
+    {
+      ETL_STATIC_ASSERT((etl::is_same<T*, void*>::value || ((ALIGNMENT % etl::alignment_of<T>::value) == 0)), "Incompatible alignment");
+      return reinterpret_cast<T*>(raw);
+    }
+
+    /// Convert to const T pointer.
+    template <typename T>
+    operator const T* () const
+    {
+      ETL_STATIC_ASSERT((etl::is_same<T*, void*>::value || ((ALIGNMENT % etl::alignment_of<T>::value) == 0)), "Incompatible alignment");
+      return reinterpret_cast<const T*>(raw);
+    }
+
+#if ETL_CPP11_SUPPORTED && !defined(ETL_COMPILER_ARM5) && !defined(ETL_UNINITIALIZED_BUFFER_FORCE_CPP03)
+    alignas(ALIGNMENT) char raw[OBJECT_SIZE * N_OBJECTS];
+#else
+    union
+    {
+      char raw[OBJECT_SIZE * N_OBJECTS];
+      typename etl::type_with_alignment<ALIGNMENT>::type etl_alignment_type; // A POD type that has the same alignment as ALIGNMENT.
+    };
+#endif
+  };
+
+  //***************************************************************************
+  /// Declares an aligned buffer of N_OBJECTS as if they were type T.
+  ///\ingroup alignment
+  //***************************************************************************
+  template <typename T, size_t N_OBJECTS_>
+  class uninitialized_buffer_of
+  {
+  public:
+
+    typedef T        value_type;
+    typedef T&       reference;
+    typedef const T& const_reference;
+    typedef T*       pointer;
+    typedef const T* const_pointer;
+    typedef T*       iterator;
+    typedef const T* const_iterator;
+
+    static ETL_CONSTANT size_t OBJECT_SIZE = sizeof(T);
+    static ETL_CONSTANT size_t N_OBJECTS = N_OBJECTS_;
+    static ETL_CONSTANT size_t ALIGNMENT = etl::alignment_of<T>::value;
+
+    /// Index operator.
+    T& operator [](int i)
+    {
+      return ((T*)this->raw)[i];
+    }
+
+    /// Index operator.
+    const T& operator [](int i) const
+    {
+      return ((T*)this->raw)[i];
+    }
+
+    /// Convert to T reference.
+    operator T& ()
+    {
+      return *reinterpret_cast<T*>(raw);
+    }
+
+    /// Convert to const T reference.
+    operator const T& () const
+    {
+      return *reinterpret_cast<const T*>(raw);
+    }
+
+    /// Convert to T pointer.
+    operator T* ()
+
+    {
+      return reinterpret_cast<T*>(raw);
+    }
+
+    /// Convert to const T pointer.
+    operator const T* () const
+    {
+      return reinterpret_cast<const T*>(raw);
+    }
+
+    T* begin()
+    {
+      return reinterpret_cast<const T*>(raw);
+    }
+
+    const T* begin() const
+    {
+      return reinterpret_cast<const T*>(raw);
+    }
+
+    T* end()
+    {
+      return reinterpret_cast<const T*>(raw + (sizeof(T) * N_OBJECTS));
+    }
+
+    const T* end() const
+    {
+      return reinterpret_cast<const T*>(raw + (sizeof(T) * N_OBJECTS));
+    }
+
+#if ETL_CPP11_SUPPORTED && !defined(ETL_COMPILER_ARM5) && !defined(ETL_UNINITIALIZED_BUFFER_FORCE_CPP03)
+    alignas(ALIGNMENT) char raw[sizeof(T) * N_OBJECTS];
+#else
+    union
+    {
+      char raw[sizeof(T) * N_OBJECTS];
+      typename etl::type_with_alignment<ALIGNMENT>::type etl_alignment_type; // A POD type that has the same alignment as ALIGNMENT.
+    };
+#endif
+  };
+
+#if ETL_CPP14_SUPPORTED
+  template <typename T, size_t N_OBJECTS>
+  using uninitialized_buffer_of_v = typename uninitialized_buffer_of<T, N_OBJECTS>::buffer;
+#endif
 }
 
 #endif

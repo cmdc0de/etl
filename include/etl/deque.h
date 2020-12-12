@@ -5,7 +5,7 @@ The MIT License(MIT)
 
 Embedded Template Library.
 https://github.com/ETLCPP/etl
-http://www.etlcpp.com
+https://www.etlcpp.com
 
 Copyright(c) 2014 jwellbelove
 
@@ -34,17 +34,11 @@ SOFTWARE.
 #include <stddef.h>
 #include <stdint.h>
 
-#include <new>
-
 #include "platform.h"
-
 #include "algorithm.h"
 #include "iterator.h"
 #include "utility.h"
-
 #include "container.h"
-#include "alignment.h"
-#include "array.h"
 #include "memory.h"
 #include "exception.h"
 #include "error_handler.h"
@@ -52,8 +46,9 @@ SOFTWARE.
 #include "algorithm.h"
 #include "type_traits.h"
 #include "iterator.h"
+#include "placement_new.h"
 
-#if ETL_CPP11_SUPPORTED && !defined(ETL_STLPORT) && !defined(ETL_NO_STL)
+#if ETL_CPP11_SUPPORTED && ETL_NOT_USING_STLPORT && ETL_USING_STL
   #include <initializer_list>
 #endif
 
@@ -187,6 +182,15 @@ namespace etl
     }
 
     //*************************************************************************
+    /// Returns the maximum possible size of the deque.
+    ///\return The maximum size of the deque.
+    //*************************************************************************
+    size_type capacity() const
+    {
+      return CAPACITY;
+    }
+
+    //*************************************************************************
     /// Returns the remaining capacity.
     ///\return The remaining capacity.
     //*************************************************************************
@@ -252,7 +256,7 @@ namespace etl
     };
 
   public:
-
+   
     //*************************************************************************
     /// Iterator
     //*************************************************************************
@@ -378,12 +382,6 @@ namespace etl
       }
 
       //***************************************************
-      bool operator <(const iterator& other) const
-      {
-        return ideque::distance(*this, other) > 0;
-      }
-
-      //***************************************************
       friend iterator operator +(const iterator& lhs, difference_type offset)
       {
         iterator result(lhs);
@@ -412,13 +410,45 @@ namespace etl
       }
 
       //***************************************************
+      friend bool operator < (const iterator& lhs, const iterator& rhs)
+      {
+        const difference_type lhs_index = lhs.get_index();
+        const difference_type rhs_index = rhs.get_index();
+        const difference_type reference_index = lhs.container().begin().get_index();
+        const size_t buffer_size = lhs.container().max_size() + 1;
+
+        const difference_type lhs_distance = (lhs_index < reference_index) ? buffer_size + lhs_index - reference_index : lhs_index - reference_index;
+        const difference_type rhs_distance = (rhs_index < reference_index) ? buffer_size + rhs_index - reference_index : rhs_index - reference_index;
+
+        return lhs_distance < rhs_distance;
+      }
+
+      //***************************************************
+      friend bool operator <= (const iterator& lhs, const iterator& rhs)
+      {
+        return !(lhs > rhs);
+      }
+
+      //***************************************************
+      friend bool operator > (const iterator& lhs, const iterator& rhs)
+      {
+        return (rhs < lhs);
+      }
+
+      //***************************************************
+      friend bool operator >= (const iterator& lhs, const iterator& rhs)
+      {
+        return !(lhs < rhs);
+      }
+
+      //***************************************************
       difference_type get_index() const
       {
         return index;
       }
 
       //***************************************************
-      ideque& get_deque() const
+      ideque& container() const
       {
         return *p_deque;
       }
@@ -438,6 +468,19 @@ namespace etl
       }
 
     private:
+
+      //***************************************************
+      difference_type distance(difference_type firstIndex, difference_type index_) const
+      {
+        if (index_ < firstIndex)
+        {
+          return p_deque->BUFFER_SIZE + index_ - firstIndex;
+        }
+        else
+        {
+          return index_ - firstIndex;
+        }
+      }
 
       //***************************************************
       iterator(difference_type index_, ideque& the_deque, pointer p_buffer_)
@@ -580,11 +623,7 @@ namespace etl
         return &p_buffer[index];
       }
 
-      //***************************************************
-      bool operator <(const const_iterator& other) const
-      {
-        return ideque::distance(*this, other) > 0;
-      }
+
 
       //***************************************************
       friend const_iterator operator +(const const_iterator& lhs, difference_type offset)
@@ -615,13 +654,45 @@ namespace etl
       }
 
       //***************************************************
+      friend bool operator < (const const_iterator& lhs, const const_iterator& rhs)
+      {
+        const difference_type lhs_index = lhs.get_index();
+        const difference_type rhs_index = rhs.get_index();
+        const difference_type reference_index = lhs.container().begin().get_index();
+        const size_t buffer_size = lhs.container().max_size() + 1;
+
+        const difference_type lhs_distance = (lhs_index < reference_index) ? buffer_size + lhs_index - reference_index : lhs_index - reference_index;
+        const difference_type rhs_distance = (rhs_index < reference_index) ? buffer_size + rhs_index - reference_index : rhs_index - reference_index;
+
+        return lhs_distance < rhs_distance;
+      }
+
+      //***************************************************
+      friend bool operator <= (const const_iterator& lhs, const const_iterator& rhs)
+      {
+        return !(lhs > rhs);
+      }
+
+      //***************************************************
+      friend bool operator > (const const_iterator& lhs, const const_iterator& rhs)
+      {
+        return (rhs < lhs);
+      }
+
+      //***************************************************
+      friend bool operator >= (const const_iterator& lhs, const const_iterator& rhs)
+      {
+        return !(lhs < rhs);
+      }
+
+      //***************************************************
       difference_type get_index() const
       {
         return index;
       }
 
       //***************************************************
-      ideque& get_deque() const
+      ideque& container() const
       {
         return *p_deque;
       }
@@ -635,13 +706,13 @@ namespace etl
       //***************************************************
       void swap(const_iterator& other)
       {
-        swap(index, other.index);
+        ETL_OR_STD::swap(index, other.index);
       }
 
     private:
 
       //***************************************************
-      difference_type distance(difference_type firstIndex, difference_type index_)
+      difference_type distance(difference_type firstIndex, difference_type index_) const
       {
         if (index_ < firstIndex)
         {
@@ -695,9 +766,6 @@ namespace etl
       ETL_ASSERT(n <= CAPACITY, ETL_ERROR(deque_full));
 
       initialise();
-
-      _begin.index = 0;
-      _end.index = 0;
 
       while (n > 0)
       {
@@ -1011,7 +1079,7 @@ namespace etl
     /// If asserts or exceptions are enabled, throws an etl::deque_full if the deque is full.
     ///\param insert_position>The insert position.
     //*************************************************************************
-#if ETL_CPP11_SUPPORTED && !defined(ETL_STLPORT)
+#if ETL_CPP11_SUPPORTED && ETL_NOT_USING_STLPORT
     template <typename ... Args>
     iterator emplace(const_iterator insert_position, Args && ... args)
     {
@@ -1682,7 +1750,7 @@ namespace etl
     }
 #endif
 
-#if ETL_CPP11_SUPPORTED && !defined(ETL_STLPORT)
+#if ETL_CPP11_SUPPORTED && ETL_NOT_USING_STLPORT
     //*************************************************************************
     /// Emplaces an item to the back of the deque.
     /// If asserts or exceptions are enabled, throws an etl::deque_full if the deque is already full.
@@ -1810,7 +1878,7 @@ namespace etl
     }
 #endif
 
-#if ETL_CPP11_SUPPORTED && !defined(ETL_STLPORT)
+#if ETL_CPP11_SUPPORTED && ETL_NOT_USING_STLPORT
     //*************************************************************************
     /// Emplaces an item to the front of the deque.
     /// If asserts or exceptions are enabled, throws an etl::deque_full if the deque is already full.
@@ -2087,16 +2155,7 @@ namespace etl
         return;
       }
 
-      if (!empty())
-      {
-        --_begin;
-        --n;
-      }
-
-      if (n > 0)
-      {
-        _begin -= n;
-      }
+      _begin -= n;
 
       iterator item = _begin;
 
@@ -2106,7 +2165,7 @@ namespace etl
         ++from;
         ++current_size;
         ETL_INCREMENT_DEBUG_COUNT
-      } while (n-- != 0);
+      } while (--n != 0);
     }
 
     //*********************************************************************
@@ -2207,8 +2266,8 @@ namespace etl
     static difference_type distance(const TIterator& other)
     {
       const difference_type index = other.get_index();
-      const difference_type reference_index = other.get_deque()._begin.index;
-      const size_t buffer_size = other.get_deque().BUFFER_SIZE;
+      const difference_type reference_index = other.container()._begin.index;
+      const size_t buffer_size = other.container().BUFFER_SIZE;
 
       if (index < reference_index)
       {
@@ -2251,11 +2310,11 @@ namespace etl
   {
   public:
 
-    static const size_t MAX_SIZE = MAX_SIZE_;
+    static ETL_CONSTANT size_t MAX_SIZE = MAX_SIZE_;
 
   private:
 
-    static const size_t BUFFER_SIZE = MAX_SIZE + 1;
+    static ETL_CONSTANT size_t BUFFER_SIZE = MAX_SIZE + 1;
 
   public:
 
@@ -2271,7 +2330,7 @@ namespace etl
     /// Default constructor.
     //*************************************************************************
     deque()
-      : etl::ideque<T>(reinterpret_cast<T*>(&buffer[0]), MAX_SIZE, BUFFER_SIZE)
+      : etl::ideque<T>(reinterpret_cast<T*>(buffer.raw), MAX_SIZE, BUFFER_SIZE)
     {
       this->initialise();
     }
@@ -2288,7 +2347,7 @@ namespace etl
     /// Copy constructor.
     //*************************************************************************
     deque(const deque& other)
-      : etl::ideque<T>(reinterpret_cast<T*>(&buffer[0]), MAX_SIZE, BUFFER_SIZE)
+      : etl::ideque<T>(reinterpret_cast<T*>(buffer.raw), MAX_SIZE, BUFFER_SIZE)
     {
       if (this != &other)
       {
@@ -2301,7 +2360,7 @@ namespace etl
     /// Move constructor.
     //*************************************************************************
     deque(deque&& other)
-      : etl::ideque<T>(reinterpret_cast<T*>(&buffer[0]), MAX_SIZE, BUFFER_SIZE)
+      : etl::ideque<T>(reinterpret_cast<T*>(buffer.raw), MAX_SIZE, BUFFER_SIZE)
     {
       if (this != &other)
       {
@@ -2322,7 +2381,7 @@ namespace etl
     //*************************************************************************
     template <typename TIterator>
     deque(TIterator begin_, TIterator end_)
-      : etl::ideque<T>(reinterpret_cast<T*>(&buffer[0]), MAX_SIZE, BUFFER_SIZE)
+      : etl::ideque<T>(reinterpret_cast<T*>(buffer.raw), MAX_SIZE, BUFFER_SIZE)
     {
       this->assign(begin_, end_);
     }
@@ -2331,17 +2390,17 @@ namespace etl
     /// Assigns data to the deque.
     //*************************************************************************
     explicit deque(size_t n, const_reference value = value_type())
-      : etl::ideque<T>(reinterpret_cast<T*>(&buffer[0]), MAX_SIZE, BUFFER_SIZE)
+      : etl::ideque<T>(reinterpret_cast<T*>(buffer.raw), MAX_SIZE, BUFFER_SIZE)
     {
       this->assign(n, value);
     }
 
-#if ETL_CPP11_SUPPORTED && !defined(ETL_STLPORT) && !defined(ETL_NO_STL)
+#if ETL_CPP11_SUPPORTED && ETL_NOT_USING_STLPORT && ETL_USING_STL
     //*************************************************************************
     /// Construct from initializer_list.
     //*************************************************************************
     deque(std::initializer_list<T> init)
-      : ideque<T>(reinterpret_cast<T*>(&buffer[0]), MAX_SIZE, BUFFER_SIZE)
+      : ideque<T>(reinterpret_cast<T*>(buffer.raw), MAX_SIZE, BUFFER_SIZE)
     {
       this->assign(init.begin(), init.end());
     }
@@ -2384,23 +2443,32 @@ namespace etl
     //*************************************************************************
     /// Fix the internal pointers after a low level memory copy.
     //*************************************************************************
-#ifdef ETL_IDEQUE_REPAIR_ENABLE
-    virtual
-#endif
     void repair()
+#ifdef ETL_ISTRING_REPAIR_ENABLE
+      ETL_OVERRIDE
+#endif
     {
 #if ETL_CPP11_TYPE_TRAITS_IS_TRIVIAL_SUPPORTED
       ETL_ASSERT(etl::is_trivially_copyable<T>::value, ETL_ERROR(etl::deque_incompatible_type));
 #endif
 
-      etl::ideque<T>::repair_buffer(reinterpret_cast<T*>(&buffer[0]));
+      etl::ideque<T>::repair_buffer(reinterpret_cast<T*>(buffer.raw));
     }
 
   private:
 
     /// The uninitialised buffer of T used in the deque.
-    typename etl::aligned_storage<sizeof(T), etl::alignment_of<T>::value>::type buffer[BUFFER_SIZE];
+    etl::uninitialized_buffer_of<T, BUFFER_SIZE> buffer;
   };
+
+  //*************************************************************************
+  /// Template deduction guides.
+  //*************************************************************************
+#if ETL_CPP17_SUPPORTED && ETL_NOT_USING_STLPORT && ETL_USING_STL
+  template <typename T, typename... Ts>
+  deque(T, Ts...)
+    ->deque<etl::enable_if_t<(etl::is_same_v<T, Ts> && ...), T>, 1U + sizeof...(Ts)>;
+#endif  
 
   //***************************************************************************
   /// Equal operator.

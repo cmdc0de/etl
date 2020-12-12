@@ -3,7 +3,7 @@ The MIT License(MIT)
 
 Embedded Template Library.
 https://github.com/ETLCPP/etl
-http://www.etlcpp.com
+https://www.etlcpp.com
 
 Copyright(c) 2018 jwellbelove
 
@@ -41,7 +41,7 @@ SOFTWARE.
 
 #if ETL_HAS_MUTEX
 
-#if defined(ETL_COMPILER_MICROSOFT)
+#if defined(ETL_TARGET_OS_WINDOWS)
   #include <Windows.h>
 #endif
 
@@ -79,13 +79,6 @@ namespace
   }
 
   using ItemM = TestDataM<int>;
-
-//  std::ostream& operator <<(std::ostream& os, const Data& data)
-//  {
-//    os << data.a << " " << data.b << " " << data.c << " " << data.d;
-//
-//    return os;
-//  }
 
   SUITE(test_queue_mpmc_mutex)
   {

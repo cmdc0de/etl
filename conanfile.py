@@ -23,7 +23,7 @@ class EmbeddedTemplateLibraryConan(ConanFile):
     author = "John Wellbelove <john.wellbelove@etlcpp.com>"
     url = "https://github.com/ETLCPP/etl"
     description = "A C++ template library for embedded applications"
-    topics = ("embedded", "template", "container")
+    topics = ("C++", "embedded", "template", "container", "utility", "framework", "messaging")
 
     # Source info
     scm = {

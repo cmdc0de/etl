@@ -5,7 +5,7 @@ The MIT License(MIT)
 
 Embedded Template Library.
 https://github.com/ETLCPP/etl
-http://www.etlcpp.com
+https://www.etlcpp.com
 
 Copyright(c) 2016 jwellbelove
 
@@ -997,7 +997,7 @@ namespace etl
     template <typename TCompare>
     void merge(list_type& other, TCompare compare)
     {
-      if (!other.empty())
+      if ((this != &other) && !other.empty())
       {
 #if defined(ETL_DEBUG)
         ETL_ASSERT(etl::is_sorted(other.begin(), other.end(), compare), ETL_ERROR(intrusive_forward_list_unsorted));

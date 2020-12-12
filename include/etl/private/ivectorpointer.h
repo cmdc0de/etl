@@ -308,12 +308,7 @@ namespace etl
     template <typename TIterator>
     void assign(TIterator first, TIterator last)
     {
-      base_t::initialise();
-
-      while (first != last)
-      {
-        *p_end++ = (void*)*first++;
-      }
+      base_t::assign(first, last);
     }
 
     //*********************************************************************
@@ -345,6 +340,16 @@ namespace etl
       base_t::push_back(value);
     }
 
+    //*********************************************************************
+    /// Constructs a value at the end of the vector.
+    /// If asserts or exceptions are enabled, emits vector_full if the vector is already full.
+    ///\param value The value to add.
+    //*********************************************************************
+    void emplace_back(parameter_t value)
+    {
+      base_t::emplace_back(value);
+    }
+
     //*************************************************************************
     /// Removes an element from the end of the vector.
     /// Does nothing if the vector is empty.
@@ -363,6 +368,14 @@ namespace etl
     iterator insert(iterator position, parameter_t value)
     {
       return iterator(base_t::insert(base_t::iterator(position), value));
+    }
+
+    //*************************************************************************
+    /// Emplaces a value to the vector at the specified position.
+    //*************************************************************************
+    iterator emplace(iterator position, parameter_t value)
+    {
+      return iterator(base_t::emplace(base_t::iterator(position), value));
     }
 
     //*********************************************************************
@@ -418,13 +431,29 @@ namespace etl
     //*************************************************************************
     ivector& operator = (const ivector& rhs)
     {
-      if (&rhs != this)
-      {
-        assign(rhs.cbegin(), rhs.cend());
-      }
+      base_t::operator = (rhs);
 
       return *this;
     }
+
+#if ETL_CPP11_SUPPORTED
+    //*************************************************************************
+    /// Move assignment operator.
+    //*************************************************************************
+    ivector& operator = (ivector&& rhs)
+    {
+      (void)base_t::operator = (etl::move(rhs));
+
+      return *this;
+    }
+#endif
+
+#ifdef ETL_IVECTOR_REPAIR_ENABLE
+    //*************************************************************************
+    /// Fix the internal pointers after a low level memory copy.
+    //*************************************************************************
+    virtual void repair() = 0;
+#endif
 
   protected:
 
@@ -434,24 +463,6 @@ namespace etl
     ivector(T** p_buffer_, size_t MAX_SIZE_)
       : pvoidvector(reinterpret_cast<void**>(p_buffer_), MAX_SIZE_)
     {
-    }
-
-    //*********************************************************************
-    /// Initialise the source vector after a move.
-    //*********************************************************************
-    void initialise_source_external_buffer_after_move()
-    {
-      ETL_SUBTRACT_DEBUG_COUNT(int32_t(etl::distance(p_buffer, p_end)))
-
-        p_end = p_buffer;
-    }
-
-    //*********************************************************************
-    /// Initialise the destination vector after a move.
-    //*********************************************************************
-    void initialise_destination_external_buffer_after_move()
-    {
-      ETL_ADD_DEBUG_COUNT(int32_t(etl::distance(p_buffer, p_end)))
     }
   };
 
@@ -719,12 +730,7 @@ namespace etl
     template <typename TIterator>
     void assign(TIterator first, TIterator last)
     {
-      base_t::initialise();
-
-      while (first != last)
-      {
-        *p_end++ = (void*)*first++;
-      }
+      base_t::assign(first, last);
     }
 
     //*********************************************************************
@@ -829,13 +835,29 @@ namespace etl
     //*************************************************************************
     ivector& operator = (const ivector& rhs)
     {
-      if (&rhs != this)
-      {
-        assign(rhs.cbegin(), rhs.cend());
-      }
+      base_t::operator = (rhs);
 
       return *this;
     }
+
+#if ETL_CPP11_SUPPORTED
+    //*************************************************************************
+    /// Move assignment operator.
+    //*************************************************************************
+    ivector& operator = (ivector&& rhs)
+    {
+      (void)base_t::operator = (etl::move(rhs));
+
+      return *this;
+    }
+#endif
+
+#ifdef ETL_IVECTOR_REPAIR_ENABLE
+    //*************************************************************************
+    /// Fix the internal pointers after a low level memory copy.
+    //*************************************************************************
+    virtual void repair() = 0;
+#endif
 
   protected:
 
@@ -845,24 +867,6 @@ namespace etl
     ivector(const T** p_buffer_, size_t MAX_SIZE_)
       : pvoidvector(reinterpret_cast<void**>(const_cast<T**>(p_buffer_)), MAX_SIZE_)
     {
-    }
-
-    //*********************************************************************
-    /// Initialise the source vector after a move.
-    //*********************************************************************
-    void initialise_source_external_buffer_after_move()
-    {
-      ETL_SUBTRACT_DEBUG_COUNT(int32_t(etl::distance(p_buffer, p_end)))
-
-        p_end = p_buffer;
-    }
-
-    //*********************************************************************
-    /// Initialise the destination vector after a move.
-    //*********************************************************************
-    void initialise_destination_external_buffer_after_move()
-    {
-      ETL_ADD_DEBUG_COUNT(int32_t(etl::distance(p_buffer, p_end)))
     }
   };
 

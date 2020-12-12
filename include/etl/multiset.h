@@ -5,7 +5,7 @@ The MIT License(MIT)
 
 Embedded Template Library.
 https://github.com/ETLCPP/etl
-http://www.etlcpp.com
+https://www.etlcpp.com
 
 Copyright(c) 2014 jwellbelove, rlindeman
 
@@ -33,14 +33,10 @@ SOFTWARE.
 
 #include <stddef.h>
 
-#include <new>
-
 #include "platform.h"
-
 #include "algorithm.h"
 #include "iterator.h"
 #include "functional.h"
-
 #include "parameter_type.h"
 #include "container.h"
 #include "pool.h"
@@ -50,8 +46,9 @@ SOFTWARE.
 #include "nullptr.h"
 #include "type_traits.h"
 #include "utility.h"
+#include "placement_new.h"
 
-#if ETL_CPP11_SUPPORTED && !defined(ETL_STLPORT) && !defined(ETL_NO_STL)
+#if ETL_CPP11_SUPPORTED && ETL_NOT_USING_STLPORT && ETL_USING_STL
   #include <initializer_list>
 #endif
 
@@ -2079,7 +2076,7 @@ namespace etl
       this->assign(first, last);
     }
 
-#if ETL_CPP11_SUPPORTED && !defined(ETL_STLPORT) && !defined(ETL_NO_STL)
+#if ETL_CPP11_SUPPORTED && ETL_NOT_USING_STLPORT && ETL_USING_STL
     //*************************************************************************
     /// Constructor, from an initializer_list.
     //*************************************************************************
@@ -2139,6 +2136,15 @@ namespace etl
     /// The pool of data nodes used for the multiset.
     etl::pool<typename etl::imultiset<TKey, TCompare>::Data_Node, MAX_SIZE> node_pool;
   };
+
+  //*************************************************************************
+  /// Template deduction guides.
+  //*************************************************************************
+#if ETL_CPP17_SUPPORTED && ETL_NOT_USING_STLPORT && ETL_USING_STL
+  template <typename T, typename... Ts>
+  multiset(T, Ts...)
+    ->multiset<etl::enable_if_t<(etl::is_same_v<T, Ts> && ...), T>, 1U + sizeof...(Ts)>;
+#endif 
 
   //***************************************************************************
   /// Equal operator.
