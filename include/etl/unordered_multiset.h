@@ -236,7 +236,7 @@ namespace etl
       }
 
       //*********************************
-      iterator operator =(const iterator& other)
+      iterator& operator =(const iterator& other)
       {
         pbuckets_end = other.pbuckets_end;
         pbucket = other.pbucket;
@@ -405,7 +405,7 @@ namespace etl
       }
 
       //*********************************
-      const_iterator operator =(const const_iterator& other)
+      const_iterator& operator =(const const_iterator& other)
       {
         pbuckets_end = other.pbuckets_end;
         pbucket = other.pbucket;
@@ -1481,7 +1481,7 @@ namespace etl
     ///\param first The iterator to the first element.
     ///\param last  The iterator to the last element + 1.
     //*************************************************************************
-    template <typename TIterator>
+    template <typename TIterator, typename = typename etl::enable_if<!etl::is_integral<TIterator>::value, void>::type>
     unordered_multiset(TIterator first_, TIterator last_)
       : base(node_pool, buckets, MAX_BUCKETS)
     {

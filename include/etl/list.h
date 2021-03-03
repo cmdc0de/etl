@@ -48,6 +48,7 @@ SOFTWARE.
 #include "memory.h"
 #include "iterator.h"
 #include "static_assert.h"
+#include "parameter_type.h"
 #include "placement_new.h"
 
 #if ETL_CPP11_SUPPORTED && ETL_NOT_USING_STLPORT && ETL_USING_STL
@@ -529,7 +530,7 @@ namespace etl
         return temp;
       }
 
-      iterator operator =(const iterator& other)
+      iterator& operator =(const iterator& other)
       {
         p_node = other.p_node;
         return *this;
@@ -640,7 +641,7 @@ namespace etl
         return temp;
       }
 
-      const_iterator operator =(const const_iterator& other)
+      const_iterator& operator =(const const_iterator& other)
       {
         p_node = other.p_node;
         return *this;
@@ -2117,7 +2118,7 @@ namespace etl
     //*************************************************************************
     /// Construct from range.
     //*************************************************************************
-    template <typename TIterator>
+    template <typename TIterator, typename = typename etl::enable_if<!etl::is_integral<TIterator>::value, void>::type>
     list(TIterator first, TIterator last)
       : ilist<T>(node_pool, MAX_SIZE, false)
     {
@@ -2281,7 +2282,7 @@ namespace etl
     //*************************************************************************
     /// Construct from range.
     //*************************************************************************
-    template <typename TIterator>
+    template <typename TIterator, typename = typename etl::enable_if<!etl::is_integral<TIterator>::value, void>::type>
     list_ext(TIterator first, TIterator last, etl::ipool& node_pool)
       : ilist<T>(node_pool, node_pool.max_size(), true)
     {

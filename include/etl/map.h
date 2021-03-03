@@ -637,7 +637,7 @@ namespace etl
         return temp;
       }
 
-      iterator operator =(const iterator& other)
+      iterator& operator =(const iterator& other)
       {
         p_map = other.p_map;
         p_node = other.p_node;
@@ -764,7 +764,7 @@ namespace etl
         return temp;
       }
 
-      const_iterator operator =(const const_iterator& other)
+      const_iterator& operator =(const const_iterator& other)
       {
         p_map = other.p_map;
         p_node = other.p_node;
@@ -2226,7 +2226,7 @@ namespace etl
     ///\param first The iterator to the first element.
     ///\param last  The iterator to the last element + 1.
     //*************************************************************************
-    template <typename TIterator>
+    template <typename TIterator, typename = typename etl::enable_if<!etl::is_integral<TIterator>::value, void>::type>
     map(TIterator first, TIterator last)
       : etl::imap<TKey, TValue, TCompare>(node_pool, MAX_SIZE)
     {

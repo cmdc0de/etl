@@ -435,7 +435,7 @@ namespace etl
         return temp;
       }
 
-      iterator operator =(const iterator& other)
+      iterator& operator =(const iterator& other)
       {
         p_value = other.p_value;
         return *this;
@@ -545,7 +545,7 @@ namespace etl
         return temp;
       }
 
-      const_iterator operator =(const const_iterator& other)
+      const_iterator& operator =(const const_iterator& other)
       {
         p_value = other.p_value;
         return *this;
@@ -602,7 +602,7 @@ namespace etl
     //*************************************************************************
     /// Constructor from range
     //*************************************************************************
-    template <typename TIterator>
+    template <typename TIterator, typename = typename etl::enable_if<!etl::is_integral<TIterator>::value, void>::type>
     intrusive_list(TIterator first, TIterator last)
     {
       this->assign(first, last);
