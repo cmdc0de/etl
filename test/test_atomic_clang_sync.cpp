@@ -26,7 +26,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ******************************************************************************/
 
-#include "UnitTest++/UnitTest++.h"
+#include "unit_test_framework.h"
 
 #include "etl/platform.h"
 
@@ -41,7 +41,7 @@ SOFTWARE.
   #include <Windows.h>
 #endif
 
-#define REALTIME_TEST 1
+#define REALTIME_TEST 0
 
 namespace
 {
@@ -66,6 +66,15 @@ namespace
     }
 
     //*************************************************************************
+    TEST(test_atomic_bool_is_lock_free)
+    {
+      std::atomic<bool> compare;
+      etl::atomic<bool> test;
+
+      CHECK_EQUAL(compare.is_lock_free(), test.is_lock_free());
+    }
+
+    //*************************************************************************
     TEST(test_atomic_integer_load)
     {
       std::atomic<int> compare(1);
@@ -77,12 +86,23 @@ namespace
     //*************************************************************************
     TEST(test_atomic_pointer_load)
     {
-      int i;
+      int i = 1;
 
       std::atomic<int*> compare(&i);
       etl::atomic<int*> test(&i);
 
       CHECK_EQUAL((int*)compare.load(), (int*)test.load());
+    }
+
+    //*************************************************************************
+    TEST(test_atomic_bool_load)
+    {
+      bool i = true;
+
+      std::atomic<bool> compare(i);
+      etl::atomic<bool> test(i);
+
+      CHECK_EQUAL((bool)compare.load(), (bool)test.load());
     }
 
     //*************************************************************************
@@ -111,6 +131,20 @@ namespace
     }
 
     //*************************************************************************
+    TEST(test_atomic_bool_store)
+    {
+      bool i = true;
+      bool j = false;
+
+      std::atomic<bool> compare(i);
+      etl::atomic<bool> test(i);
+
+      compare.store(j);
+      test.store(j);
+      CHECK_EQUAL((bool)compare.load(), (bool)test.load());
+    }
+
+    //*************************************************************************
     TEST(test_atomic_integer_assignment)
     {
       std::atomic<int> compare(1);
@@ -133,6 +167,20 @@ namespace
       compare = &j;
       test = &j;
       CHECK_EQUAL((int*)compare.load(), (int*)test.load());
+    }
+
+    //*************************************************************************
+    TEST(test_atomic_bool_assignment)
+    {
+      bool i = true;
+      bool j = false;
+
+      std::atomic<bool> compare(i);
+      etl::atomic<bool> test(i);
+
+      compare = j;
+      test = j;
+      CHECK_EQUAL((bool)compare.load(), (bool)test.load());
     }
 
     //*************************************************************************
@@ -298,11 +346,11 @@ namespace
     //*************************************************************************
     TEST(test_atomic_operator_integer_and_equals)
     {
-      std::atomic<int> compare(0x0000FFFF);
-      etl::atomic<int> test(0x0000FFFF);
+      std::atomic<int> compare(0x0000FFFFUL);
+      etl::atomic<int> test(0x0000FFFFUL);
 
-      compare &= 0x55AA55AA;
-      test &= 0x55AA55AA;
+      compare &= 0x55AA55AAUL;
+      test &= 0x55AA55AAUL;
 
       CHECK_EQUAL((int)compare, (int)test);
     }
@@ -310,11 +358,11 @@ namespace
     //*************************************************************************
     TEST(test_atomic_operator_integer_or_equals)
     {
-      std::atomic<int> compare(0x0000FFFF);
-      etl::atomic<int> test(0x0000FFFF);
+      std::atomic<int> compare(0x0000FFFFUL);
+      etl::atomic<int> test(0x0000FFFFUL);
 
-      compare |= 0x55AA55AA;
-      test |= 0x55AA55AA;
+      compare |= 0x55AA55AAUL;
+      test |= 0x55AA55AAUL;
 
       CHECK_EQUAL((int)compare, (int)test);
     }
@@ -322,11 +370,11 @@ namespace
     //*************************************************************************
     TEST(test_atomic_operator_integer_xor_equals)
     {
-      std::atomic<int> compare(0x0000FFFF);
-      etl::atomic<int> test(0x0000FFFF);
+      std::atomic<int> compare(0x0000FFFFUL);
+      etl::atomic<int> test(0x0000FFFFUL);
 
-      compare ^= 0x55AA55AA;
-      test ^= 0x55AA55AA;
+      compare ^= 0x55AA55AAUL;
+      test ^= 0x55AA55AAUL;
 
       CHECK_EQUAL((int)compare, (int)test);
     }
@@ -354,28 +402,28 @@ namespace
     //*************************************************************************
     TEST(test_atomic_operator_fetch_and)
     {
-      std::atomic<int> compare(0xFFFFFFFF);
-      etl::atomic<int> test(0xFFFFFFFF);
+      std::atomic<int> compare(0xFFFFFFFFUL);
+      etl::atomic<int> test(0xFFFFFFFFUL);
 
-      CHECK_EQUAL((int)compare.fetch_and(0x55AA55AA), (int)test.fetch_and(0x55AA55AA));
+      CHECK_EQUAL((int)compare.fetch_and(0x55AA55AAUL), (int)test.fetch_and(0x55AA55AAUL));
     }
 
     //*************************************************************************
     TEST(test_atomic_operator_fetch_or)
     {
-      std::atomic<int> compare(0x0000FFFF);
-      etl::atomic<int> test(0x0000FFFF);
+      std::atomic<int> compare(0x0000FFFFUL);
+      etl::atomic<int> test(0x0000FFFFUL);
 
-      CHECK_EQUAL((int)compare.fetch_or(0x55AA55AA), (int)test.fetch_or(0x55AA55AA));
+      CHECK_EQUAL((int)compare.fetch_or(0x55AA55AAUL), (int)test.fetch_or(0x55AA55AAUL));
     }
 
     //*************************************************************************
     TEST(test_atomic_operator_fetch_xor)
     {
-      std::atomic<int> compare(0x0000FFFF);
-      etl::atomic<int> test(0x0000FFFF);
+      std::atomic<int> compare(0x0000FFFFUL);
+      etl::atomic<int> test(0x0000FFFFUL);
 
-      CHECK_EQUAL((int)compare.fetch_xor(0x55AA55AA), (int)test.fetch_xor(0x55AA55AA));
+      CHECK_EQUAL((int)compare.fetch_xor(0x55AA55AAUL), (int)test.fetch_xor(0x55AA55AAUL));
     }
 
     //*************************************************************************
@@ -400,19 +448,31 @@ namespace
     }
 
     //*************************************************************************
+    TEST(test_atomic_bool_exchange)
+    {
+      bool i = true;
+      bool j = false;
+
+      std::atomic<bool> compare(i);
+      etl::atomic<bool> test(i);
+
+      CHECK_EQUAL((bool)compare.exchange(j), (bool)test.exchange(j));
+    }
+
+    //*************************************************************************
     TEST(test_atomic_compare_exchange_weak_fail)
     {
       std::atomic<int> compare;
       etl::atomic<int> test;
 
-      int actual = 1U;
+      int actual = 1;
 
       compare = actual;
       test    = actual;
 
-      int compare_expected = 2U;
-      int test_expected    = 2U;
-      int desired  = 3U;
+      int compare_expected = 2;
+      int test_expected    = 2;
+      int desired  = 3;
 
       bool compare_result = compare.compare_exchange_weak(compare_expected, desired);
       bool test_result    = test.compare_exchange_weak(test_expected, desired);
@@ -428,14 +488,14 @@ namespace
       std::atomic<int> compare;
       etl::atomic<int> test;
 
-      int actual = 1U;
+      int actual = 1;
 
       compare = actual;
       test    = actual;
 
       int compare_expected = actual;
       int test_expected    = actual;
-      int desired  = 3U;
+      int desired  = 3;
 
       bool compare_result = compare.compare_exchange_weak(compare_expected, desired);
       bool test_result    = test.compare_exchange_weak(test_expected, desired);
@@ -451,14 +511,14 @@ namespace
       std::atomic<int> compare;
       etl::atomic<int> test;
 
-      int actual = 1U;
+      int actual = 1;
 
       compare = actual;
       test = actual;
 
-      int compare_expected = 2U;
-      int test_expected = 2U;
-      int desired = 3U;
+      int compare_expected = 2;
+      int test_expected = 2;
+      int desired = 3;
 
       bool compare_result = compare.compare_exchange_strong(compare_expected, desired);
       bool test_result = test.compare_exchange_strong(test_expected, desired);
@@ -474,14 +534,14 @@ namespace
       std::atomic<int> compare;
       etl::atomic<int> test;
 
-      int actual = 1U;
+      int actual = 1;
 
       compare = actual;
       test = actual;
 
       int compare_expected = actual;
       int test_expected = actual;
-      int desired = 3U;
+      int desired = 3;
 
       bool compare_result = compare.compare_exchange_strong(compare_expected, desired);
       bool test_result = test.compare_exchange_strong(test_expected, desired);
@@ -490,7 +550,7 @@ namespace
       CHECK_EQUAL(compare_expected, test_expected);
       CHECK_EQUAL(compare.load(), test.load());
     }
-    
+
     //*************************************************************************
 #if REALTIME_TEST
 

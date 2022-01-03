@@ -48,9 +48,6 @@ SOFTWARE.
 /// A wrapper for arrays
 ///\ingroup containers
 
-#undef ETL_FILE
-#define ETL_FILE "42"
-
 #include "private/minmax_push.h"
 
 namespace etl
@@ -77,7 +74,7 @@ namespace etl
   public:
 
     string_view_bounds(string_type file_name_, numeric_type line_number_)
-      : string_view_exception(ETL_ERROR_TEXT("basic_string_view:bounds", ETL_FILE"A"), file_name_, line_number_)
+      : string_view_exception(ETL_ERROR_TEXT("basic_string_view:bounds", ETL_STRING_VIEW_FILE_ID"A"), file_name_, line_number_)
     {
     }
   };
@@ -91,7 +88,7 @@ namespace etl
   public:
 
     string_view_uninitialised(string_type file_name_, numeric_type line_number_)
-      : string_view_exception(ETL_ERROR_TEXT("basic_string_view:uninitialised", ETL_FILE"B"), file_name_, line_number_)
+      : string_view_exception(ETL_ERROR_TEXT("basic_string_view:uninitialised", ETL_STRING_VIEW_FILE_ID"B"), file_name_, line_number_)
     {
     }
   };
@@ -308,8 +305,8 @@ namespace etl
     //*************************************************************************
     /// Assign from iterators
     //*************************************************************************
-    template <typename TIterator, typename = typename etl::enable_if<!etl::is_integral<TIterator>::value, void>::type>
-      void assign(TIterator begin_, TIterator end_)
+    template <typename TIterator>
+      void assign(TIterator begin_, TIterator end_, typename etl::enable_if<!etl::is_integral<TIterator>::value, int>::type = 0)
     {
       mbegin = etl::addressof(*begin_);
       mend   = etl::addressof(*begin_) + etl::distance(begin_, end_);
@@ -359,7 +356,7 @@ namespace etl
     //*************************************************************************
     size_type copy(T* destination, size_type count, size_type position = 0) const
     {
-      size_t n = 0;
+      size_t n = 0UL;
 
       if (position < size())
       {
@@ -576,7 +573,7 @@ namespace etl
         {
           const size_t lengthview = view.size();
 
-          for (size_t j = 0; j < lengthview; ++j)
+          for (size_t j = 0UL; j < lengthview; ++j)
           {
             if (mbegin[i] == view[j])
             {
@@ -622,7 +619,7 @@ namespace etl
       {
         const size_t viewlength = view.size();
 
-        for (size_t j = 0; j < viewlength; ++j)
+        for (size_t j = 0UL; j < viewlength; ++j)
         {
           if (mbegin[position] == view[j])
           {
@@ -667,7 +664,7 @@ namespace etl
 
           const size_t viewlength = view.size();
 
-          for (size_t j = 0; j < viewlength; ++j)
+          for (size_t j = 0UL; j < viewlength; ++j)
           {
             if (mbegin[i] == view[j])
             {
@@ -720,7 +717,7 @@ namespace etl
 
         const size_t viewlength = view.size();
 
-        for (size_t j = 0; j < viewlength; ++j)
+        for (size_t j = 0UL; j < viewlength; ++j)
         {
           if (mbegin[position] == view[j])
           {
@@ -904,8 +901,6 @@ void swap(etl::basic_string_view<T, etl::char_traits<T> >& lhs, etl::basic_strin
 }
 
 #include "private/minmax_pop.h"
-
-#undef ETL_FILE
 
 #endif
 

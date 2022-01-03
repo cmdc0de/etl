@@ -48,9 +48,6 @@ SOFTWARE.
 #pragma GCC diagnostic ignored "-Wunused-variable"
 #endif
 
-#undef ETL_FILE
-#define ETL_FILE "53"
-
 //*****************************************************************************
 ///\defgroup indirect_vector indirect_vector
 /// A indirect_vector with the capacity defined at compile time. Objects are allocated from a pool and stored as pointers.
@@ -68,7 +65,7 @@ namespace etl
   public:
 
     indirect_vector_buffer_missmatch(string_type file_name_, numeric_type line_number_)
-      : vector_exception(ETL_ERROR_TEXT("indirect_vector:buffer_missmatch", ETL_FILE"A"), file_name_, line_number_)
+      : vector_exception(ETL_ERROR_TEXT("indirect_vector:buffer_missmatch", ETL_INDIRECT_VECTOR_FILE_ID"A"), file_name_, line_number_)
     {
     }
   };
@@ -243,32 +240,17 @@ namespace etl
         return *this;
       }
 
-      reference operator *()
+      reference operator *() const
       {
         return **lookup_itr;
       }
 
-      const_reference operator *() const
-      {
-        return **lookup_itr;
-      }
-
-      pointer operator &()
+      pointer operator &() const
       {
         return &(**lookup_itr);
       }
 
-      const_pointer operator &() const
-      {
-        return &(**lookup_itr);
-      }
-
-      pointer operator ->()
-      {
-        return &(**lookup_itr);
-      }
-
-      const_pointer operator ->() const
+      pointer operator ->() const
       {
         return &(**lookup_itr);
       }
@@ -792,7 +774,7 @@ namespace etl
     }
 #endif
 
-#if ETL_CPP11_SUPPORTED && ETL_NOT_USING_STLPORT && !defined(ETL_VECTOR_FORCE_CPP03)
+#if ETL_CPP11_SUPPORTED && ETL_NOT_USING_STLPORT && !defined(ETL_VECTOR_FORCE_CPP03_IMPLEMENTATION)
     //*********************************************************************
     /// Constructs a value at the end of the indirect_vector.
     /// If asserts or exceptions are enabled, emits vector_full if the indirect_vector is already full.
@@ -872,14 +854,14 @@ namespace etl
     ///\param position The position to insert before.
     ///\param value    The value to insert.
     //*********************************************************************
-    iterator insert(iterator position, const_reference value)
+    iterator insert(const_iterator position, const_reference value)
     {
-      ETL_ASSERT(size() + 1 <= capacity(), ETL_ERROR(vector_full));
+      ETL_ASSERT(size() != capacity(), ETL_ERROR(vector_full));
 
       T* p = storage.create<T>(T(value));
       position = iterator(lookup.insert(position.lookup_itr, p));
 
-      return position;
+      return to_iterator(position);
     }
 
 #if ETL_CPP11_SUPPORTED
@@ -889,14 +871,14 @@ namespace etl
     ///\param position The position to insert before.
     ///\param value    The value to insert.
     //*********************************************************************
-    iterator insert(iterator position, rvalue_reference value)
+    iterator insert(const_iterator position, rvalue_reference value)
     {
-      ETL_ASSERT(size() + 1 <= capacity(), ETL_ERROR(vector_full));
+      ETL_ASSERT(size() != capacity(), ETL_ERROR(vector_full));
 
       T* p = storage.create<T>(T(etl::move(value)));
       position = iterator(lookup.insert(position.lookup_itr, p));
 
-      return position;
+      return to_iterator(position);
     }
 #endif
 
@@ -967,12 +949,14 @@ namespace etl
     ///\param n        The number of elements to add.
     ///\param value    The value to insert.
     //*********************************************************************
-    void insert(iterator position, size_t n, parameter_t value)
+    iterator insert(const_iterator position, size_t n, parameter_t value)
     {
       ETL_ASSERT((size() + n) <= capacity(), ETL_ERROR(vector_full));
 
+      iterator position_ = to_iterator(position);
+
       // Make space for the new lookup pointers.
-      typename etl::ivector<T*>::iterator lookup_itr = position.lookup_itr;
+      typename etl::ivector<T*>::iterator lookup_itr = position_.lookup_itr;
       lookup.insert(lookup_itr, n, ETL_NULLPTR);
 
       while (n-- != 0U)
@@ -980,6 +964,8 @@ namespace etl
         T* p = storage.create<T>(value);
         *lookup_itr++ = p;
       }
+
+      return position_;
     }
 
     //*********************************************************************
@@ -990,14 +976,14 @@ namespace etl
     ///\param last     The last + 1 element to add.
     //*********************************************************************
     template <class TIterator>
-    void insert(iterator position, TIterator first, TIterator last)
+    iterator insert(const_iterator position, TIterator first, TIterator last)
     {
       size_t count = size_t(etl::distance(first, last));
 
       ETL_ASSERT((size() + count) <= capacity(), ETL_ERROR(vector_full));
 
       // Make space for the new lookup pointers.
-      typename etl::ivector<T*>::iterator lookup_itr = position.lookup_itr;
+      typename etl::ivector<T*>::iterator lookup_itr = to_iterator(position).lookup_itr;
       lookup.insert(lookup_itr, count, ETL_NULLPTR);
 
       while (first != last)
@@ -1006,6 +992,8 @@ namespace etl
         *lookup_itr++ =  p;
         ++first;
       }
+
+      return to_iterator(position);
     }
 
     //*********************************************************************
@@ -1021,6 +1009,18 @@ namespace etl
     }
 
     //*********************************************************************
+    /// Erases an element.
+    ///\param i_element Iterator to the element.
+    ///\return An iterator pointing to the element that followed the erased element.
+    //*********************************************************************
+    iterator erase(const_iterator i_element)
+    {
+      storage.destroy<T>(etl::addressof(*i_element));
+
+      return iterator(lookup.erase(i_element.lookup_itr));
+    }
+
+    //*********************************************************************
     /// Erases a range of elements.
     /// The range includes all the elements between first and last, including the
     /// element pointed by first, but not the one pointed by last.
@@ -1028,9 +1028,9 @@ namespace etl
     ///\param last  Iterator to the last element.
     ///\return An iterator pointing to the element that followed the erased element.
     //*********************************************************************
-    iterator erase(iterator first, iterator last)
+    iterator erase(const_iterator first, const_iterator last)
     {
-      iterator element = first;
+      iterator element = to_iterator(first);
 
       while (element != last)
       {
@@ -1040,7 +1040,7 @@ namespace etl
 
       lookup.erase(first.lookup_itr, last.lookup_itr);
 
-      return last;
+      return to_iterator(last);
     }
 
     //*************************************************************************
@@ -1160,6 +1160,7 @@ namespace etl
       lookup.clear();
     }
 
+#if ETL_CPP11_SUPPORTED
     //*********************************************************************
     /// Move from a container.
     //*********************************************************************
@@ -1180,6 +1181,7 @@ namespace etl
         other.initialise();
       }
     }
+#endif
 
     etl::ivector<T*>& lookup;
     etl::ipool&       storage;
@@ -1201,6 +1203,16 @@ namespace etl
     ~iindirect_vector()
     {
       initialise();
+    }
+
+  protected:
+
+    //*************************************************************************
+    /// Convert from const_iterator to iterator.
+    //*************************************************************************
+    iterator to_iterator(const_iterator itr) const
+    {
+      return iterator(const_cast<indirect_iterator>(itr.lookup_itr));
     }
   };
 
@@ -1295,7 +1307,7 @@ namespace etl
 
     ETL_STATIC_ASSERT((MAX_SIZE_ > 0U), "Zero capacity etl::indirect_vector is not valid");
 
-    static const size_t MAX_SIZE = MAX_SIZE_;
+    static ETL_CONSTANT size_t MAX_SIZE = MAX_SIZE_;
 
     //*************************************************************************
     /// Constructor.
@@ -1339,7 +1351,7 @@ namespace etl
       this->assign(first, last);
     }
 
-#if ETL_CPP11_SUPPORTED && ETL_NOT_USING_STLPORT && ETL_USING_STL
+#if ETL_USING_INITIALIZER_LIST
     //*************************************************************************
     /// Constructor, from an initializer_list.
     //*************************************************************************
@@ -1410,11 +1422,22 @@ namespace etl
   //*************************************************************************
   /// Template deduction guides.
   //*************************************************************************
-#if ETL_CPP17_SUPPORTED && ETL_NOT_USING_STLPORT && ETL_USING_STL
+#if ETL_CPP17_SUPPORTED && ETL_USING_INITIALIZER_LIST
   template <typename T, typename... Ts>
   indirect_vector(T, Ts...)
     ->indirect_vector<etl::enable_if_t<(etl::is_same_v<T, Ts> && ...), T>, 1U + sizeof...(Ts)>;
 #endif 
+
+  //*************************************************************************
+  /// Make
+  //*************************************************************************
+#if ETL_CPP11_SUPPORTED && ETL_USING_INITIALIZER_LIST
+  template <typename... T>
+  constexpr auto make_indirect_vector(T... t) -> etl::indirect_vector<typename etl::common_type_t<T...>, sizeof...(T)>
+  {
+    return { { etl::forward<T>(t)... } };
+  }
+#endif
 
   //***************************************************************************
   /// A indirect_vector implementation that uses a fixed size buffer.
@@ -1473,7 +1496,7 @@ namespace etl
       this->assign(first, last);
     }
 
-#if ETL_CPP11_SUPPORTED && ETL_NOT_USING_STLPORT && ETL_USING_STL
+#if ETL_USING_INITIALIZER_LIST
     //*************************************************************************
     /// Constructor, from an initializer_list.
     //*************************************************************************
@@ -1543,8 +1566,6 @@ namespace etl
 #ifdef ETL_COMPILER_GCC
 #pragma GCC diagnostic pop
 #endif
-
-#undef ETL_FILE
 
 #endif
 

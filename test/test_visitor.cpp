@@ -26,7 +26,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ******************************************************************************/
 
-#include "UnitTest++/UnitTest++.h"
+#include "unit_test_framework.h"
 
 #include "etl/visitor.h"
 
@@ -89,7 +89,7 @@ public:
     visitor.visit(*this);
   }
 
-  void accept(LogVisitorType& visitor)
+  void accept(LogVisitorType&)
   {
   }
 };

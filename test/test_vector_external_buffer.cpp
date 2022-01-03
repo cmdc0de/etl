@@ -26,7 +26,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ******************************************************************************/
 
-#include "UnitTest++/UnitTest++.h"
+#include "unit_test_framework.h"
 
 #include <vector>
 #include <array>
@@ -154,7 +154,7 @@ namespace
       CHECK(!data.empty());
     }
 
-#if ETL_USING_STL
+#if ETL_USING_INITIALIZER_LIST
     //*************************************************************************
     TEST(test_constructor_initializer_list)
     {
@@ -349,7 +349,7 @@ namespace
       int* pend = &data.back() + 1;
       int* pmax = pbegin + data.max_size();
 
-      constexpr int Pattern = 0x12345678;
+      constexpr int Pattern = 0x12345678UL;
 
       // Fill free space with a pattern.
       std::fill(pend, pmax, Pattern);
@@ -392,7 +392,7 @@ namespace
       int* pend = &data.back() + 1;
       int* pmax = pbegin + data.max_size();
 
-      constexpr int Pattern = 0x12345678;
+      constexpr int Pattern = 0x12345678UL;
 
       // Fill free space with a pattern.
       std::fill(pend, pmax, Pattern);
@@ -435,7 +435,7 @@ namespace
 
       Data data(compare_data.begin(), compare_data.end(), buffer1, SIZE);
 
-      for (size_t i = 0; i < data.size(); ++i)
+      for (size_t i = 0UL; i < data.size(); ++i)
       {
         CHECK_EQUAL(data[i], compare_data[i]);
       }
@@ -448,7 +448,7 @@ namespace
 
       const Data data(compare_data.begin(), compare_data.end(), buffer1, SIZE);
 
-      for (size_t i = 0; i < data.size(); ++i)
+      for (size_t i = 0UL; i < data.size(); ++i)
       {
         CHECK_EQUAL(data[i], compare_data[i]);
       }
@@ -460,7 +460,7 @@ namespace
       Compare_Data compare_data(initial_data.begin(), initial_data.end());
       Data data(initial_data.begin(), initial_data.end(), buffer1, SIZE);
 
-      for (size_t i = 0; i < data.size(); ++i)
+      for (size_t i = 0UL; i < data.size(); ++i)
       {
         CHECK_EQUAL(data.at(i), compare_data.at(i));
       }
@@ -474,7 +474,7 @@ namespace
       const Compare_Data compare_data(initial_data.begin(), initial_data.end());
       const Data data(initial_data.begin(), initial_data.end(), buffer1, SIZE);
 
-      for (size_t i = 0; i < data.size(); ++i)
+      for (size_t i = 0UL; i < data.size(); ++i)
       {
         CHECK_EQUAL(data.at(i), compare_data.at(i));
       }
@@ -1149,7 +1149,7 @@ namespace
 
       const S raw[6] = { 1, 2, 3, 4, 5, 6 };
 
-      etl::vector_ext<S> dest(etl::begin(raw), etl::end(raw), sbuffer1, SIZE);
+      etl::vector_ext<S> dest(std::begin(raw), std::end(raw), sbuffer1, SIZE);
       etl::vector_ext<S> src((size_t) 2, S(8), sbuffer2, SIZE);
 
       dest.insert(dest.begin(), src.begin(), src.end());
@@ -1184,7 +1184,7 @@ namespace
 
       const S raw[6] = { 1, 2, 3, 4, 5, 6 };
 
-      etl::vector_ext<S> dest(etl::begin(raw), etl::end(raw), sbuffer1, SIZE);
+      etl::vector_ext<S> dest(ETL_OR_STD11::begin(raw), ETL_OR_STD11::end(raw), sbuffer1, SIZE);
 
       dest.insert(dest.begin(), 2, S(8));
 

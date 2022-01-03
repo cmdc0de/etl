@@ -35,9 +35,8 @@ SOFTWARE.
 #include "error_handler.h"
 #include "exception.h"
 #include "message_types.h"
-
-#undef ETL_FILE
-#define ETL_FILE "38"
+#include "type_traits.h"
+#include "static_assert.h"
 
 namespace etl
 {
@@ -58,7 +57,7 @@ namespace etl
   public:
 
     unhandled_message_exception(string_type file_name_, numeric_type line_number_)
-      : message_exception(ETL_ERROR_TEXT("message:unknown", ETL_FILE"A"), file_name_, line_number_)
+      : message_exception(ETL_ERROR_TEXT("message:unknown", ETL_MESSAGE_FILE_ID"A"), file_name_, line_number_)
     {
     }
   };
@@ -80,9 +79,11 @@ namespace etl
   //***************************************************************************
   // Message type.
   //***************************************************************************
-  template <etl::message_id_t ID_>
-  class message : public imessage
+  template <etl::message_id_t ID_, typename TParent = etl::imessage>
+  class message : public TParent
   {
+    ETL_STATIC_ASSERT((etl::is_base_of<etl::imessage, TParent>::value), "TParent is not derived from etl::imessage");
+
   public:
 
     enum
@@ -96,7 +97,5 @@ namespace etl
     }
   };
 }
-
-#undef ETL_FILE
 
 #endif

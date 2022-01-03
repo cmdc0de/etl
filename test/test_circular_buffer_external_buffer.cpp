@@ -26,7 +26,7 @@
 //SOFTWARE.
 //******************************************************************************/
 
-#include "UnitTest++/UnitTest++.h"
+#include "unit_test_framework.h"
 
 #include "etl/circular_buffer.h"
 #include "etl/integral_limits.h"
@@ -42,7 +42,7 @@ namespace
 {
   SUITE(test_circular_buffer)
   {
-    static const size_t SIZE = 10;
+    static const size_t SIZE = 10UL;
 
     using ItemM    = TestDataM<std::string>;
     using DataM    = etl::circular_buffer_ext<ItemM>;
@@ -107,7 +107,7 @@ namespace
     }
 #endif
 
-#if !defined(ETL_TEMPLATE_DEDUCTION_GUIDE_TESTS_DISABLED) && ETL_USING_STL
+#if ETL_CPP17_SUPPORTED && ETL_USING_INITIALIZER_LIST && !defined(ETL_TEMPLATE_DEDUCTION_GUIDE_TESTS_DISABLED)
     //*************************************************************************
     TEST(test_cpp17_deduced_constructor)
     {
@@ -121,8 +121,10 @@ namespace
       bool isEqual = std::equal(data.begin(), data.end(), compare.begin());
       CHECK(isEqual);
     }
+#endif
 
     //*************************************************************************
+#if ETL_CPP17_SUPPORTED && ETL_USING_INITIALIZER_LIST && !defined(ETL_TEMPLATE_DEDUCTION_GUIDE_TESTS_DISABLED)
     TEST(test_cpp17_deduced_constructor_excess)
     {
       Data data({ Ndc("0"), Ndc("1"), Ndc("2"), Ndc("3"), Ndc("4"), Ndc("5"), Ndc("6"), Ndc("7"), Ndc("8"), Ndc("9"), Ndc("10"), Ndc("11"), Ndc("12") }, buffer1.raw, SIZE);
@@ -164,7 +166,7 @@ namespace
       DataM data(bufferm1.raw, SIZE);
       CompareM compare;
 
-      for (uint32_t i = 0; i < SIZE; ++i)
+      for (uint32_t i = 0UL; i < SIZE; ++i)
       {
         data.push(ItemM(std::to_string(i)));
         compare.push_back(ItemM(std::to_string(i)));
@@ -721,7 +723,7 @@ namespace
       CompareM input2;
       CompareM compare;
 
-      for (uint32_t i = 0; i < SIZE; ++i)
+      for (uint32_t i = 0UL; i < SIZE; ++i)
       {
         input1.push_back(ItemM(std::to_string(i)));
         input2.push_back(ItemM(std::to_string(SIZE - i)));
@@ -755,15 +757,42 @@ namespace
     //*************************************************************************
     TEST(test_assignment)
     {
-      Compare input1{ Ndc("0"), Ndc("1"), Ndc("2"), Ndc("3"), Ndc("4"), Ndc("5"), Ndc("6"), Ndc("7"), Ndc("8"), Ndc("9") };
-      Compare input2{ Ndc("9"), Ndc("8"), Ndc("7"), Ndc("6"), Ndc("5"), Ndc("4"), Ndc("3"), Ndc("2"), Ndc("1"), Ndc("0") };
+      Compare input1{ Ndc("0"), Ndc("1"), Ndc("2"), Ndc("3"), Ndc("4"), Ndc("5"), Ndc("6"), Ndc("7"), Ndc("8") };
+      Compare input2{ Ndc("8"), Ndc("7"), Ndc("6"), Ndc("5"), Ndc("4"), Ndc("3"), Ndc("2"), Ndc("1"), Ndc("0") };
       Data data1(buffer1.raw, SIZE);
       data1.push(input1.begin(), input1.end());
 
       // Copy construct from data1
       Data data2(buffer2.raw, SIZE);
-      
+      data2.push(Ndc("0"));
+
       data2 = data1;
+
+      // Now change data1
+      data1.clear();
+      data1.push(input2.begin(), input2.end());
+
+      CHECK(data2.begin() != data2.end());
+      CHECK(data2.cbegin() != data2.cend());
+      CHECK_EQUAL(input1.size(), data2.size());
+
+      bool isEqual = std::equal(input1.begin(), input1.end(), data2.begin());
+      CHECK(isEqual);
+    }
+
+    //*************************************************************************
+    TEST(test_move_assignment)
+    {
+      Compare input1{ Ndc("0"), Ndc("1"), Ndc("2"), Ndc("3"), Ndc("4"), Ndc("5"), Ndc("6"), Ndc("7"), Ndc("8") };
+      Compare input2{ Ndc("8"), Ndc("7"), Ndc("6"), Ndc("5"), Ndc("4"), Ndc("3"), Ndc("2"), Ndc("1"), Ndc("0") };
+      Data data1(buffer1.raw, SIZE);
+      data1.push(input1.begin(), input1.end());
+
+      // Copy construct from data1
+      Data data2(buffer2.raw, SIZE);
+      data2.push(Ndc("0"));
+
+      data2 = etl::move(data1);
 
       // Now change data1
       data1.clear();
@@ -831,14 +860,14 @@ namespace
       Data::iterator begin = data.begin();
       Data::iterator end   = data.begin();
 
-      for (uint32_t i = 0; i < data.size(); ++i)
+      for (uint32_t i = 0UL; i < data.size(); ++i)
       {
         CHECK_EQUAL(i, end - begin);
         CHECK_EQUAL(i, -(begin - end));
         ++end;
       }
 
-      for (uint32_t i = 0; i < data.size(); ++i)
+      for (uint32_t i = 0UL; i < data.size(); ++i)
       {
         CHECK_EQUAL(data.size() - i, end - begin);
         CHECK_EQUAL(data.size() - i, -(begin - end));
@@ -856,14 +885,14 @@ namespace
       Data::const_iterator begin = data.begin();
       Data::const_iterator end   = data.begin();
 
-      for (uint32_t i = 0; i < data.size(); ++i)
+      for (uint32_t i = 0UL; i < data.size(); ++i)
       {
         CHECK_EQUAL(i, end - begin);
         CHECK_EQUAL(i, -(begin - end));
         ++end;
       }
 
-      for (uint32_t i = 0; i < data.size(); ++i)
+      for (uint32_t i = 0UL; i < data.size(); ++i)
       {
         CHECK_EQUAL(data.size() - i, end - begin);
         CHECK_EQUAL(data.size() - i, -(begin - end));
@@ -881,7 +910,7 @@ namespace
       Data data2(buffer2.raw, SIZE);
       data1.push(input.begin(), input.end());
       data2.push(input.rbegin(), input.rend());
-      
+
       swap(data1, data2);
 
       CHECK(std::equal(output.rbegin() + 3, output.rend(), data1.begin()));

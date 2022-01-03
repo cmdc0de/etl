@@ -26,7 +26,7 @@
 //SOFTWARE.
 //******************************************************************************/
 
-#include "UnitTest++/UnitTest++.h"
+#include "unit_test_framework.h"
 
 #include <vector>
 #include <array>
@@ -92,7 +92,7 @@ namespace
       CHECK_EQUAL(data.max_size(), SIZE);
     }
 
-#if ETL_USING_STL && !defined(ETL_TEMPLATE_DEDUCTION_GUIDE_TESTS_DISABLED)
+#if ETL_CPP17_SUPPORTED && ETL_USING_INITIALIZER_LIST && !defined(ETL_TEMPLATE_DEDUCTION_GUIDE_TESTS_DISABLED)
     //*************************************************************************
     TEST(test_cpp17_deduced_constructor)
     {
@@ -186,7 +186,7 @@ namespace
       CHECK(!data.empty());
     }
 
-#if ETL_USING_STL
+#if ETL_USING_INITIALIZER_LIST
     //*************************************************************************
     TEST(test_constructor_initializer_list)
     {
@@ -461,7 +461,7 @@ namespace
 
       DataNDC data(compare_data.begin(), compare_data.end());
 
-      for (size_t i = 0; i < data.size(); ++i)
+      for (size_t i = 0UL; i < data.size(); ++i)
       {
         CHECK_EQUAL(data[i], compare_data[i]);
       }
@@ -474,7 +474,7 @@ namespace
 
       const DataNDC data(compare_data.begin(), compare_data.end());
 
-      for (size_t i = 0; i < data.size(); ++i)
+      for (size_t i = 0UL; i < data.size(); ++i)
       {
         CHECK_EQUAL(data[i], compare_data[i]);
       }
@@ -486,7 +486,7 @@ namespace
       CompareDataNDC compare_data(initial_data.begin(), initial_data.end());
       DataNDC data(initial_data.begin(), initial_data.end());
 
-      for (size_t i = 0; i < data.size(); ++i)
+      for (size_t i = 0UL; i < data.size(); ++i)
       {
         CHECK_EQUAL(data.at(i), compare_data.at(i));
       }
@@ -500,7 +500,7 @@ namespace
       const CompareDataNDC compare_data(initial_data.begin(), initial_data.end());
       const DataNDC data(initial_data.begin(), initial_data.end());
 
-      for (size_t i = 0; i < data.size(); ++i)
+      for (size_t i = 0UL; i < data.size(); ++i)
       {
         CHECK_EQUAL(data.at(i), compare_data.at(i));
       }
@@ -628,7 +628,7 @@ namespace
       CompareDataNDC compare_data;
       DataNDC data;
 
-      for (size_t i = 0; i < SIZE; ++i)
+      for (size_t i = 0UL; i < SIZE; ++i)
       {
         std::string value(" ");
         value[0] = char('A' + i);
@@ -650,7 +650,7 @@ namespace
     {
       DataNDC data;
 
-      for (size_t i = 0; i < SIZE; ++i)
+      for (size_t i = 0UL; i < SIZE; ++i)
       {
         std::string value(" ");
         value[0] = char('A' + i);
@@ -666,7 +666,7 @@ namespace
       CompareDataNDC compare_data;
       DataNDC data;
 
-      for (size_t i = 0; i < SIZE; ++i)
+      for (size_t i = 0UL; i < SIZE; ++i)
       {
         std::string value(" ");
         value[0] = char('A' + i);
@@ -730,6 +730,7 @@ namespace
       CHECK_EQUAL(1, data[3]);
     }
 
+#if (!(defined(ETL_COMPILER_GCC) && defined(ETL_USE_TYPE_TRAITS_BUILTINS)))
     //*************************************************************************
     TEST_FIXTURE(SetupFixture, test_insert_unique_ptr)
     {
@@ -754,8 +755,8 @@ namespace
       CHECK_EQUAL(4, *data[0]);
       CHECK_EQUAL(3, *data[1]);
       CHECK_EQUAL(2, *data[2]);
-
     }
+#endif
 
     //*************************************************************************
     // To test the CPP03 versions then ETL_TEST_VECTOR_CPP11 must be set to 0 in vector.h
@@ -785,7 +786,7 @@ namespace
       etl::vector<Data, SIZE * 4> data;
 
       std::string s;
-      for (size_t i = 0; i < SIZE; ++i)
+      for (size_t i = 0UL; i < SIZE; ++i)
       {
         s += "x";
 
@@ -823,7 +824,7 @@ namespace
     // So this is only tested on C++11 onwards
     TEST_FIXTURE(SetupFixture, test_emplace_back_non_const_references)
     {
-#if ETL_CPP11_SUPPORTED && ETL_NOT_USING_STLPORT && !defined(ETL_VECTOR_FORCE_CPP03)
+#if ETL_CPP11_SUPPORTED && ETL_NOT_USING_STLPORT && !defined(ETL_VECTOR_FORCE_CPP03_IMPLEMENTATION)
       class Data
       {
       public:
@@ -845,7 +846,7 @@ namespace
       size_t b = 9999;
       double c = 123.456;
       const char *d = "abcdefghijklmnopqrstuvwxyz";
-      for (size_t i = 0; i < SIZE; ++i)
+      for (size_t i = 0UL; i < SIZE; ++i)
       {
         data.emplace_back(a, b, c, d);
         compare_data.emplace_back(a, b, c, d);

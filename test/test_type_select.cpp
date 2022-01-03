@@ -26,8 +26,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ******************************************************************************/
 
-#include "UnitTest++/UnitTest++.h"
-#include "ExtraCheckMacros.h"
+#include "unit_test_framework.h"
 
 #include "etl/type_select.h"
 #include "etl/null_type.h"
@@ -55,12 +54,14 @@ namespace
       CHECK(!(etl::is_same<etl::null_type<99>, typename Types1::select<0>::type>::value));
     }
 
+#if !defined(ETL_TYPE_SELECT_FORCE_CPP03_IMPLEMENTATION)
     //*************************************************************************
     TEST(test_type_select_t_1)
     {
       CHECK((etl::is_same<etl::null_type<0>, typename Types1::select_t<0>>::value));
       CHECK(!(etl::is_same<etl::null_type<99>, typename Types1::select_t<0>>::value));
     }
+#endif
 
     //*************************************************************************
     TEST(test_type_select_8)
@@ -83,6 +84,7 @@ namespace
       CHECK(!(etl::is_same<etl::null_type<99>, typename Types8::select<7>::type>::value));
     }
 
+#if !defined(ETL_TYPE_SELECT_FORCE_CPP03_IMPLEMENTATION)
     //*************************************************************************
     TEST(test_type_select_t_8)
     {
@@ -103,6 +105,7 @@ namespace
       CHECK((etl::is_same<etl::null_type<7>, typename Types8::select_t<7>>::value));
       CHECK(!(etl::is_same<etl::null_type<99>, typename Types8::select_t<7>>::value));
     }
+#endif
 
     //*************************************************************************
     TEST(test_type_select_16)
@@ -141,6 +144,7 @@ namespace
       CHECK(!(etl::is_same<etl::null_type<99>, typename Types16::select<15>::type>::value));
     }
 
+#if !defined(ETL_TYPE_SELECT_FORCE_CPP03_IMPLEMENTATION)
     //*************************************************************************
     TEST(test_type_select_t_16)
     {
@@ -177,5 +181,6 @@ namespace
       CHECK((etl::is_same<etl::null_type<15>, typename Types16::select_t<15>>::value));
       CHECK(!(etl::is_same<etl::null_type<99>, typename Types16::select_t<15>>::value));
     }
+#endif
   };
 }

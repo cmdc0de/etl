@@ -26,7 +26,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ******************************************************************************/
 
-#include "UnitTest++/UnitTest++.h"
+#include "unit_test_framework.h"
 
 #include "etl/algorithm.h"
 #include "etl/container.h"
@@ -37,6 +37,7 @@ SOFTWARE.
 #include <vector>
 #include <array>
 #include <list>
+#include <forward_list>
 #include <algorithm>
 #include <functional>
 #include <numeric>
@@ -273,7 +274,7 @@ namespace
 
       int* p1 = std::is_sorted_until(std::begin(data), std::end(data), std::greater<int>());
       int* p2 = etl::is_sorted_until(std::begin(data), std::end(data), std::greater<int>());
-      CHECK_EQUAL(std::distance(etl::begin(data), p1), std::distance(std::begin(data), p2));
+      CHECK_EQUAL(std::distance(std::begin(data), p1), std::distance(std::begin(data), p2));
     }
 
     //*************************************************************************
@@ -667,8 +668,8 @@ namespace
       int data1[10];
       int data2[10];
 
-      std::fill(std::begin(data1), std::end(data1), 0x12345678);
-      etl::fill(std::begin(data2), std::end(data2), 0x12345678);
+      std::fill(std::begin(data1), std::end(data1), 0x12345678UL);
+      etl::fill(std::begin(data2), std::end(data2), 0x12345678UL);
 
       bool isEqual = std::equal(std::begin(data1), std::end(data1), std::begin(data2));
       CHECK(isEqual);
@@ -680,8 +681,8 @@ namespace
       unsigned char data1[10];
       unsigned char data2[10];
 
-      std::fill(std::begin(data1), std::end(data1), char(0x12));
-      etl::fill(std::begin(data2), std::end(data2), char(0x12));
+      std::fill(std::begin(data1), std::end(data1), char(0x12U));
+      etl::fill(std::begin(data2), std::end(data2), char(0x12U));
 
       bool isEqual = std::equal(std::begin(data1), std::end(data1), std::begin(data2));
       CHECK(isEqual);
@@ -1107,7 +1108,7 @@ namespace
     {
       std::vector<int> initial_data = { 1, 2, 3, 4, 5, 6, 7 };
 
-      for (size_t i = 0; i < initial_data.size(); ++i)
+      for (size_t i = 0UL; i < initial_data.size(); ++i)
       {
         std::vector<int> data1(initial_data);
         std::vector<int> data2(initial_data);
@@ -1126,7 +1127,7 @@ namespace
     {
       std::vector<NDC> initial_data = { NDC(1), NDC(2), NDC(3), NDC(4), NDC(5), NDC(6), NDC(7) };
 
-      for (size_t i = 0; i < initial_data.size(); ++i)
+      for (size_t i = 0UL; i < initial_data.size(); ++i)
       {
         std::vector<NDC> data1(initial_data);
         std::vector<NDC> data2(initial_data);
@@ -1600,7 +1601,7 @@ namespace
       etl::transform_s(std::begin(input),
                        std::end(input),
                        std::begin(output),
-                       std::begin(output) + (etl::size(output) / 2),
+                       std::begin(output) + (std::size(output) / 2),
                        std::bind(std::multiplies<int>(), std::placeholders::_1, 2));
 
       bool is_same = std::equal(std::begin(output), std::end(output), std::begin(compare));
@@ -1609,7 +1610,7 @@ namespace
       std::fill(std::begin(output), std::end(output), 0);
 
       etl::transform_s(std::begin(input),
-                       std::begin(input) + (etl::size(input) / 2),
+                       std::begin(input) + (std::size(input) / 2),
                        std::begin(output),
                        std::end(output),
                        std::bind(std::multiplies<int>(), std::placeholders::_1, 2));
@@ -1960,6 +1961,90 @@ namespace
     }
 
     //*************************************************************************
+    TEST(selection_sort_default_forward_iterators)
+    {
+      std::vector<int> data(100, 0);
+      std::iota(data.begin(), data.end(), 1);
+
+      for (int i = 0; i < 100; ++i)
+      {
+        std::shuffle(data.begin(), data.end(), urng);
+
+        std::forward_list<int> data1(data.begin(), data.end());
+        std::forward_list<int> data2(data.begin(), data.end());
+
+        data1.sort();
+        etl::selection_sort(data2.begin(), data2.end());
+
+        bool is_same = std::equal(data1.begin(), data1.end(), data2.begin());
+        CHECK(is_same);
+      }
+    }
+
+    //*************************************************************************
+    TEST(selection_sort_default_bidirectional_iterators)
+    {
+      std::vector<int> data(100, 0);
+      std::iota(data.begin(), data.end(), 1);
+
+      for (int i = 0; i < 100; ++i)
+      {
+        std::shuffle(data.begin(), data.end(), urng);
+
+        std::list<int> data1(data.begin(), data.end());
+        std::list<int> data2(data.begin(), data.end());
+
+        data1.sort();
+        etl::selection_sort(data2.begin(), data2.end());
+
+        bool is_same = std::equal(data1.begin(), data1.end(), data2.begin());
+        CHECK(is_same);
+      }
+    }
+
+    //*************************************************************************
+    TEST(selection_sort_default_random_access_iterators)
+    {
+      std::vector<int> data(100, 0);
+      std::iota(data.begin(), data.end(), 1);
+
+      for (int i = 0; i < 100; ++i)
+      {
+        std::shuffle(data.begin(), data.end(), urng);
+
+        std::vector<int> data1 = data;
+        std::vector<int> data2 = data;
+
+        std::sort(data1.begin(), data1.end());
+        etl::selection_sort(data2.begin(), data2.end());
+
+        bool is_same = std::equal(data1.begin(), data1.end(), data2.begin());
+        CHECK(is_same);
+      }
+    }
+
+    //*************************************************************************
+    TEST(selection_sort_greater)
+    {
+      std::vector<int> data(100, 0);
+      std::iota(data.begin(), data.end(), 1);
+
+      for (int i = 0; i < 100; ++i)
+      {
+        std::shuffle(data.begin(), data.end(), urng);
+
+        std::vector<int> data1 = data;
+        std::vector<int> data2 = data;
+
+        std::sort(data1.begin(), data1.end(), std::greater<int>());
+        etl::selection_sort(data2.begin(), data2.end(), std::greater<int>());
+
+        bool is_same = std::equal(data1.begin(), data1.end(), data2.begin());
+        CHECK(is_same);
+      }
+    }
+
+    //*************************************************************************
     TEST(heap_sort_default)
     {
       std::vector<NDC> initial_data = { NDC(1, 1), NDC(2, 1), NDC(3, 1), NDC(2, 2), NDC(3, 2), NDC(4, 1), NDC(2, 3), NDC(3, 3), NDC(5, 1) };
@@ -2077,6 +2162,30 @@ namespace
       Sum sum;
       sum = etl::for_each(std::begin(data), std::end(data), sum);
       CHECK_EQUAL(std::accumulate(std::begin(data), std::end(data), 0), sum.value);
+    }
+
+    //*************************************************************************
+    TEST(remove)
+    {
+      std::array<int, 10> data     = { 1, 8, 2, 7, 7, 7, 4, 5, 10, 9 };
+      std::array<int, 7>  expected = { 1, 8, 2, 4, 5, 10, 9 };
+
+      etl::remove(data.begin(), data.end(), 7);
+
+      bool is_same = std::equal(expected.begin(), expected.end(), data.begin());
+      CHECK(is_same);
+    }
+
+    //*************************************************************************
+    TEST(remove_if)
+    {
+      std::array<int, 10> data     = { 1, 8, 2, 7, 7, 7, 4, 5, 10, 9 };
+      std::array<int, 4>  expected = { 1, 2, 4, 5 };
+
+      etl::remove_if(data.begin(), data.end(), [](int value) { return value >= 7; });
+
+      bool is_same = std::equal(expected.begin(), expected.end(), data.begin());
+      CHECK(is_same);
     }
   };
 }

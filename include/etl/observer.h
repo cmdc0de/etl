@@ -57,9 +57,7 @@ SOFTWARE.
 #include "vector.h"
 #include "exception.h"
 #include "error_handler.h"
-
-#undef ETL_FILE
-#define ETL_FILE "18"
+#include "utility.h"
 
 namespace etl
 {
@@ -86,7 +84,7 @@ namespace etl
   public:
 
     observer_list_full(string_type file_name_, numeric_type line_number_)
-      : observer_exception(ETL_ERROR_TEXT("observer:full", ETL_FILE"A"), file_name_, line_number_)
+      : observer_exception(ETL_ERROR_TEXT("observer:full", ETL_OBSERVER_FILE_ID"A"), file_name_, line_number_)
     {
     }
   };
@@ -156,7 +154,7 @@ namespace etl
       if (i_observer_item == observer_list.end())
       {
         // Is there enough room?
-        ETL_ASSERT(!observer_list.full(), ETL_ERROR(etl::observer_list_full));
+        ETL_ASSERT_AND_RETURN(!observer_list.full(), ETL_ERROR(etl::observer_list_full));
 
         // Add it.
         observer_list.push_back(observer_item(observer));
@@ -234,6 +232,28 @@ namespace etl
       return observer_list.size();
     }
 
+#if ETL_CPP11_SUPPORTED && !defined(ETL_OBSERVER_FORCE_CPP03_IMPLEMENTATION)
+    //*****************************************************************
+    /// Notify all of the observers, sending them the notification.
+    ///\tparam TNotification the notification type.
+    ///\param n The notification.
+    //*****************************************************************
+    template <typename TNotification>
+    void notify_observers(TNotification&& n)
+    {
+      typename Observer_List::iterator i_observer_item = observer_list.begin();
+
+      while (i_observer_item != observer_list.end())
+      {
+        if (i_observer_item->enabled)
+        {
+          i_observer_item->p_observer->notification(etl::forward<TNotification>(n));
+        }
+
+        ++i_observer_item;
+      }
+    }
+#else
     //*****************************************************************
     /// Notify all of the observers, sending them the notification.
     ///\tparam TNotification the notification type.
@@ -254,6 +274,7 @@ namespace etl
         ++i_observer_item;
       }
     }
+#endif
 
   protected:
 
@@ -276,7 +297,7 @@ namespace etl
     Observer_List observer_list;
   };
 
-#if ETL_CPP11_SUPPORTED && !defined(ETL_OBSERVER_FORCE_CPP03)
+#if ETL_CPP11_SUPPORTED && !defined(ETL_OBSERVER_FORCE_CPP03_IMPLEMENTATION)
 
   //*****************************************************************
   /// The observer class for N types.
@@ -468,7 +489,5 @@ namespace etl
 
 #endif
 }
-
-#undef ETL_FILE
 
 #endif

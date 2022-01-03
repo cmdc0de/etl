@@ -26,7 +26,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ******************************************************************************/
 
-#include "UnitTest++/UnitTest++.h"
+#include "unit_test_framework.h"
 
 #include <ostream>
 #include <sstream>
@@ -81,7 +81,7 @@ namespace
   SUITE(test_string_stream)
   {
     //*************************************************************************
-    TEST(test_default_format)
+    TEST(test_default_format_from_const_char)
     {
       String str;
 
@@ -90,6 +90,22 @@ namespace
       int value = 123;
       String hello(STR("Hello"));
       ss << hello << STR(" World ") << value;
+
+      String result = ss.str();
+
+      CHECK_EQUAL(String(STR("Hello World 123")), result);
+    }
+
+    //*************************************************************************
+    TEST(test_default_format_from_char)
+    {
+      String str;
+
+      Stream ss(str);
+
+      int value = 123;
+      String hello(STR("Hello"));
+      ss << hello << const_cast<wchar_t*>(STR(" World ")) << value;
 
       String result = ss.str();
 

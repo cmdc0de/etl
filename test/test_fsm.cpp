@@ -26,7 +26,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ******************************************************************************/
 
-#include "UnitTest++/UnitTest++.h"
+#include "unit_test_framework.h"
 
 #include "etl/fsm.h"
 #include "etl/enum_type.h"
@@ -224,7 +224,7 @@ namespace
     etl::fsm_state_id_t on_event_unknown(const etl::imessage&)
     {
       ++get_fsm_context().unknownCount;
-      return STATE_ID;
+      return StateId::IDLE; //No_State_Change;
     }
 
     //***********************************
@@ -341,7 +341,7 @@ namespace
       CHECK(motorControl.is_producer());
       CHECK(motorControl.is_consumer());
 
-      motorControl.Initialise(stateList, etl::size(stateList));
+      motorControl.Initialise(stateList, std::size(stateList));
       motorControl.reset();
       motorControl.ClearStatistics();
 
@@ -480,7 +480,7 @@ namespace
     {
       etl::null_message_router nmr;
 
-      motorControl.Initialise(stateList, etl::size(stateList)); 
+      motorControl.Initialise(stateList, std::size(stateList)); 
       motorControl.reset();
       motorControl.ClearStatistics();
 
@@ -529,7 +529,7 @@ namespace
     {
       etl::null_message_router nmr;
 
-      motorControl.Initialise(stateList, etl::size(stateList));
+      motorControl.Initialise(stateList, std::size(stateList));
       motorControl.reset();
       motorControl.ClearStatistics();
 

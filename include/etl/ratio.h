@@ -31,14 +31,17 @@ SOFTWARE.
 #ifndef ETL_RATIO_INCLUDED
 #define ETL_RATIO_INCLUDED
 
+#include <stddef.h>
 #include <stdint.h>
+
+#include "platform.h"
 
 ///\defgroup ratio ratio
 ///\ingroup maths
 
 namespace etl
 {
-  template <const size_t NUM, const size_t DEN = 1>
+  template <const size_t NUM, const size_t DEN = 1UL>
   struct ratio
   {
     static ETL_CONSTANT intmax_t num = NUM;

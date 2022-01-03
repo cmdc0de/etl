@@ -51,9 +51,6 @@ SOFTWARE.
 #include "iterator.h"
 #include "functional.h"
 
-#undef ETL_FILE
-#define ETL_FILE "21"
-
 namespace etl
 {
   //***************************************************************************
@@ -79,7 +76,7 @@ namespace etl
   public:
 
     intrusive_list_empty(string_type file_name_, numeric_type line_number_)
-      : intrusive_list_exception(ETL_ERROR_TEXT("intrusive_list:empty", ETL_FILE"A"), file_name_, line_number_)
+      : intrusive_list_exception(ETL_ERROR_TEXT("intrusive_list:empty", ETL_INTRUSIVE_LIST_FILE_ID"A"), file_name_, line_number_)
     {
     }
   };
@@ -93,7 +90,7 @@ namespace etl
   public:
 
     intrusive_list_iterator_exception(string_type file_name_, numeric_type line_number_)
-      : intrusive_list_exception(ETL_ERROR_TEXT("intrusive_list:iterator", ETL_FILE"B"), file_name_, line_number_)
+      : intrusive_list_exception(ETL_ERROR_TEXT("intrusive_list:iterator", ETL_INTRUSIVE_LIST_FILE_ID"B"), file_name_, line_number_)
     {
     }
   };
@@ -107,7 +104,7 @@ namespace etl
   public:
 
     intrusive_list_unsorted(string_type file_name_, numeric_type line_number_)
-      : intrusive_list_exception(ETL_ERROR_TEXT("intrusive_list:unsorted", ETL_FILE"C"), file_name_, line_number_)
+      : intrusive_list_exception(ETL_ERROR_TEXT("intrusive_list:unsorted", ETL_INTRUSIVE_LIST_FILE_ID"C"), file_name_, line_number_)
     {
     }
   };
@@ -441,32 +438,17 @@ namespace etl
         return *this;
       }
 
-      reference operator *()
+      reference operator *() const
       {
         return *p_value;
       }
 
-      const_reference operator *() const
-      {
-        return *p_value;
-      }
-
-      pointer operator &()
+      pointer operator &() const
       {
         return p_value;
       }
 
-      const_pointer operator &() const
-      {
-        return p_value;
-      }
-
-      pointer operator ->()
-      {
-        return p_value;
-      }
-
-      const_pointer operator ->() const
+      pointer operator ->() const
       {
         return p_value;
       }
@@ -602,8 +584,8 @@ namespace etl
     //*************************************************************************
     /// Constructor from range
     //*************************************************************************
-    template <typename TIterator, typename = typename etl::enable_if<!etl::is_integral<TIterator>::value, void>::type>
-    intrusive_list(TIterator first, TIterator last)
+    template <typename TIterator>
+    intrusive_list(TIterator first, TIterator last, typename etl::enable_if<!etl::is_integral<TIterator>::value, int>::type = 0)
     {
       this->assign(first, last);
     }
@@ -691,7 +673,7 @@ namespace etl
     //*************************************************************************
     /// Inserts a value to the intrusive_list before the specified position.
     //*************************************************************************
-    iterator insert(iterator position, value_type& value)
+    iterator insert(const_iterator position, value_type& value)
     {
       this->insert_link(position.p_value->link_type::etl_previous, value);
       return iterator(value);
@@ -701,7 +683,7 @@ namespace etl
     /// Inserts a range of values to the intrusive_list after the specified position.
     //*************************************************************************
     template <typename TIterator>
-    void insert(iterator position, TIterator first, TIterator last)
+    void insert(const_iterator position, TIterator first, TIterator last)
     {
       while (first != last)
       {
@@ -724,13 +706,29 @@ namespace etl
     }
 
     //*************************************************************************
+    /// Erases the value at the specified position.
+    //*************************************************************************
+    iterator erase(const_iterator position)
+    {
+      iterator next(position);
+      ++next;
+
+      this->remove_link(*position.p_value);
+
+      return next;
+    }
+
+    //*************************************************************************
     /// Erases a range of elements.
     /// Clears the links after erasing if AUTO or CHECKED.
     //*************************************************************************
-    iterator erase(iterator first, iterator last)
+    iterator erase(const_iterator first, const_iterator last)
     {
-      link_type* p_first = first.p_value;
-      link_type* p_last  = last.p_value;
+      const link_type* cp_first = first.p_value;
+      const link_type* cp_last  = last.p_value;
+
+      link_type* p_first = const_cast<link_type*>(cp_first);
+      link_type* p_last  = const_cast<link_type*>(cp_last);
 
       // Join the ends.
       etl::link<link_type>(p_first->etl_previous, p_last);
@@ -1100,7 +1098,5 @@ namespace etl
 }
 
 #include "private/minmax_pop.h"
-
-#undef ETL_FILE
 
 #endif

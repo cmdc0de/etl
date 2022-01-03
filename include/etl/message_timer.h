@@ -42,9 +42,6 @@ SOFTWARE.
 #include "timer.h"
 #include "atomic.h"
 
-#undef ETL_FILE
-#define ETL_FILE "44"
-
 #if defined(ETL_IN_UNIT_TEST) && ETL_NOT_USING_STL
   #define ETL_DISABLE_TIMER_UPDATES
   #define ETL_ENABLE_TIMER_UPDATES
@@ -72,8 +69,8 @@ SOFTWARE.
       #error ETL_MESSAGE_TIMER_DISABLE_INTERRUPTS and/or ETL_MESSAGE_TIMER_ENABLE_INTERRUPTS not defined
     #endif
 
-    #define ETL_DISABLE_TIMER_UPDATES (ETL_MESSAGE_TIMER_DISABLE_INTERRUPTS)
-    #define ETL_ENABLE_TIMER_UPDATES  (ETL_MESSAGE_TIMER_ENABLE_INTERRUPTS)
+    #define ETL_DISABLE_TIMER_UPDATES ETL_MESSAGE_TIMER_DISABLE_INTERRUPTS
+    #define ETL_ENABLE_TIMER_UPDATES  ETL_MESSAGE_TIMER_ENABLE_INTERRUPTS
     #define ETL_TIMER_UPDATES_ENABLED true
   #endif
 #endif
@@ -357,7 +354,7 @@ namespace etl
         if (!router_.is_null_router())
         {
           // Search for the free space.
-          for (uint_least8_t i = 0; i < MAX_TIMERS; ++i)
+          for (uint_least8_t i = 0U; i < MAX_TIMERS; ++i)
           {
             etl::message_timer_data& timer = timer_array[i];
 
@@ -657,7 +654,5 @@ namespace etl
 #undef ETL_DISABLE_TIMER_UPDATES
 #undef ETL_ENABLE_TIMER_UPDATES
 #undef ETL_TIMER_UPDATES_ENABLED
-
-#undef ETL_FILE
 
 #endif

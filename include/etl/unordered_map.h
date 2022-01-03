@@ -38,12 +38,12 @@ SOFTWARE.
 #include "iterator.h"
 #include "functional.h"
 #include "utility.h"
-#include "container.h"
 #include "pool.h"
 #include "array.h"
 #include "intrusive_forward_list.h"
 #include "hash.h"
 #include "type_traits.h"
+#include "nth_type.h"
 #include "parameter_type.h"
 #include "nullptr.h"
 #include "vector.h"
@@ -56,9 +56,6 @@ SOFTWARE.
 #if ETL_CPP11_SUPPORTED && ETL_NOT_USING_STLPORT && ETL_USING_STL
   #include <initializer_list>
 #endif
-
-#undef ETL_FILE
-#define ETL_FILE "16"
 
 //*****************************************************************************
 ///\defgroup unordered_map unordered_map
@@ -91,7 +88,7 @@ namespace etl
   public:
 
     unordered_map_full(string_type file_name_, numeric_type line_number_)
-      : etl::unordered_map_exception(ETL_ERROR_TEXT("unordered_map:full", ETL_FILE"A"), file_name_, line_number_)
+      : etl::unordered_map_exception(ETL_ERROR_TEXT("unordered_map:full", ETL_UNORDERED_MAP_FILE_ID"A"), file_name_, line_number_)
     {
     }
   };
@@ -105,7 +102,7 @@ namespace etl
   public:
 
     unordered_map_out_of_range(string_type file_name_, numeric_type line_number_)
-      : etl::unordered_map_exception(ETL_ERROR_TEXT("unordered_map:range", ETL_FILE"B"), file_name_, line_number_)
+      : etl::unordered_map_exception(ETL_ERROR_TEXT("unordered_map:range", ETL_UNORDERED_MAP_FILE_ID"B"), file_name_, line_number_)
     {}
   };
 
@@ -118,7 +115,7 @@ namespace etl
   public:
 
     unordered_map_iterator(string_type file_name_, numeric_type line_number_)
-      : etl::unordered_map_exception(ETL_ERROR_TEXT("unordered_map:iterator", ETL_FILE"C"), file_name_, line_number_)
+      : etl::unordered_map_exception(ETL_ERROR_TEXT("unordered_map:iterator", ETL_UNORDERED_MAP_FILE_ID"C"), file_name_, line_number_)
     {
     }
   };
@@ -149,7 +146,7 @@ namespace etl
     typedef size_t            size_type;
 
 
-    typedef typename etl::parameter_type<TKey>::type key_parameter_t;
+    typedef const TKey& key_parameter_t;
 
     typedef etl::forward_link<0> link_t; // Default link.
 
@@ -250,37 +247,19 @@ namespace etl
       }
 
       //*********************************
-      reference operator *()
+      reference operator *() const
       {
         return inode->key_value_pair;
       }
 
       //*********************************
-      const_reference operator *() const
-      {
-        return inode->key_value_pair;
-      }
-
-      //*********************************
-      pointer operator &()
+      pointer operator &() const
       {
         return &(inode->key_value_pair);
       }
 
       //*********************************
-      const_pointer operator &() const
-      {
-        return &(inode->key_value_pair);
-      }
-
-      //*********************************
-      pointer operator ->()
-      {
-        return &(inode->key_value_pair);
-      }
-
-      //*********************************
-      const_pointer operator ->() const
+      pointer operator ->() const
       {
         return &(inode->key_value_pair);
       }
@@ -969,7 +948,7 @@ namespace etl
     //*********************************************************************
     size_t erase(key_parameter_t key)
     {
-      size_t n = 0;
+      size_t n = 0UL;
       size_t index = get_bucket_index(key);
 
       bucket_t& bucket = pbuckets[index];
@@ -1341,7 +1320,7 @@ namespace etl
       if (!empty())
       {
         // For each bucket...
-        for (size_t i = 0; i < number_of_buckets; ++i)
+        for (size_t i = 0UL; i < number_of_buckets; ++i)
         {
           bucket_t& bucket = pbuckets[i];
 
@@ -1442,19 +1421,19 @@ namespace etl
         else if (pbucket == last)
         {
           // We erased the last, so we need to search again. Start from the first, go no further than the current last.
-          bucket_t* pbucket = first;
+          bucket_t* pcurrent = first;
           bucket_t* pend = last;
 
           last = first;
 
-          while (pbucket != pend)
+          while (pcurrent != pend)
           {
-            if (!pbucket->empty())
+            if (!pcurrent->empty())
             {
-              last = pbucket;
+              last = pcurrent;
             }
 
-            ++pbucket;
+            ++pcurrent;
           }
         }
         else
@@ -1512,8 +1491,8 @@ namespace etl
   ///\return <b>true</b> if the arrays are equal, otherwise <b>false</b>
   ///\ingroup unordered_map
   //***************************************************************************
-  template <typename TKey, typename TMapped, typename TKeyCompare>
-  bool operator ==(const etl::iunordered_map<TKey, TMapped, TKeyCompare>& lhs, const etl::iunordered_map<TKey, TMapped, TKeyCompare>& rhs)
+  template <typename TKey, typename T, typename TKeyCompare>
+  bool operator ==(const etl::iunordered_map<TKey, T, TKeyCompare>& lhs, const etl::iunordered_map<TKey, T, TKeyCompare>& rhs)
   {
     return (lhs.size() == rhs.size()) && etl::equal(lhs.begin(), lhs.end(), rhs.begin());
   }
@@ -1525,8 +1504,8 @@ namespace etl
   ///\return <b>true</b> if the arrays are not equal, otherwise <b>false</b>
   ///\ingroup unordered_map
   //***************************************************************************
-  template <typename TKey, typename TMapped, typename TKeyCompare>
-  bool operator !=(const etl::iunordered_map<TKey, TMapped, TKeyCompare>& lhs, const etl::iunordered_map<TKey, TMapped, TKeyCompare>& rhs)
+  template <typename TKey, typename T, typename TKeyCompare>
+  bool operator !=(const etl::iunordered_map<TKey, T, TKeyCompare>& lhs, const etl::iunordered_map<TKey, T, TKeyCompare>& rhs)
   {
     return !(lhs == rhs);
   }
@@ -1543,8 +1522,8 @@ namespace etl
 
   public:
 
-    static const size_t MAX_SIZE    = MAX_SIZE_;
-    static const size_t MAX_BUCKETS = MAX_BUCKETS_;
+    static ETL_CONSTANT size_t MAX_SIZE    = MAX_SIZE_;
+    static ETL_CONSTANT size_t MAX_BUCKETS = MAX_BUCKETS_;
 
     //*************************************************************************
     /// Default constructor.
@@ -1584,14 +1563,14 @@ namespace etl
     ///\param first The iterator to the first element.
     ///\param last  The iterator to the last element + 1.
     //*************************************************************************
-    template <typename TIterator, typename = typename etl::enable_if<!etl::is_integral<TIterator>::value, void>::type>
+    template <typename TIterator>
     unordered_map(TIterator first_, TIterator last_)
       : base(node_pool, buckets, MAX_BUCKETS_)
     {
       base::assign(first_, last_);
     }
 
-#if ETL_CPP11_SUPPORTED && ETL_NOT_USING_STLPORT && ETL_USING_STL
+#if ETL_USING_INITIALIZER_LIST
     //*************************************************************************
     /// Construct from initializer_list.
     //*************************************************************************
@@ -1653,15 +1632,23 @@ namespace etl
   //*************************************************************************
   /// Template deduction guides.
   //*************************************************************************
-#if ETL_CPP17_SUPPORTED && ETL_NOT_USING_STLPORT && ETL_USING_STL
-  template <typename T, typename... Ts>
-  unordered_map(T, Ts...)
-    ->unordered_map<etl::enable_if_t<(etl::is_same_v<T, Ts> && ...), typename T::first_type>,
-                    typename T::second_type,
-                    1U + sizeof...(Ts)>;
-#endif 
-}
+#if ETL_CPP17_SUPPORTED && ETL_USING_INITIALIZER_LIST
+  template <typename... TPairs>
+  unordered_map(TPairs...) -> unordered_map<typename etl::nth_type_t<0, TPairs...>::first_type,
+                                            typename etl::nth_type_t<0, TPairs...>::second_type,
+                                            sizeof...(TPairs)>;
+#endif
 
-#undef ETL_FILE
+  //*************************************************************************
+  /// Make
+  //*************************************************************************
+#if ETL_CPP11_SUPPORTED && ETL_USING_INITIALIZER_LIST
+  template <typename TKey, typename T, typename THash = etl::hash<TKey>, typename TKeyEqual = etl::equal_to<TKey>, typename... TPairs>
+  constexpr auto make_unordered_map(TPairs&&... pairs) -> etl::unordered_map<TKey, T, sizeof...(TPairs), sizeof...(TPairs), THash, TKeyEqual>
+  {
+    return { {etl::forward<TPairs>(pairs)...} };
+  }
+#endif
+}
 
 #endif

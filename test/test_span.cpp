@@ -26,7 +26,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ******************************************************************************/
 
-#include "UnitTest++/UnitTest++.h"
+#include "unit_test_framework.h"
 
 #include "etl/span.h"
 #include "etl/array.h"
@@ -40,7 +40,7 @@ namespace
 {
   SUITE(test_span)
   {
-    static const size_t SIZE = 10;
+    static const size_t SIZE = 10UL;
 
     typedef etl::array<int, SIZE> EtlData;
     typedef std::array<int, SIZE> StlData;
@@ -260,7 +260,7 @@ namespace
       CHECK(isEqual);
     }
 
-#if ETL_USING_STL && !defined(ETL_TEMPLATE_DEDUCTION_GUIDE_TESTS_DISABLED)
+#if ETL_CPP17_SUPPORTED && ETL_USING_INITIALIZER_LIST && !defined(ETL_TEMPLATE_DEDUCTION_GUIDE_TESTS_DISABLED)
     //*************************************************************************
     TEST(test_cpp17_deduced_constructor)
     {
@@ -399,7 +399,7 @@ namespace
       View  view(etldata.begin(), etldata.end());
       CView cview(etldata.begin(), etldata.end());
 
-      for (size_t i = 0; i < etldata.size(); ++i)
+      for (size_t i = 0UL; i < etldata.size(); ++i)
       {
         CHECK_EQUAL(etldata[i], view[i]);
         CHECK_EQUAL(etldata[i], cview[i]);
@@ -628,6 +628,70 @@ namespace
 
       CHECK_EQUAL(hashdata, hashview);
       CHECK_EQUAL(hashdata, hashcview);
+    }
+
+    //*************************************************************************
+    void f_issue_481(etl::span<const char, 10> value)
+    {
+    }
+
+    TEST(test_issue_481)
+    {
+      // Should compile.
+      char c[10];
+      f_issue_481(c);
+    }
+
+    //*************************************************************************
+    struct C_issue_482 {};
+
+    void f_issue_482(etl::span<char>)
+    {
+    }
+
+    void f_issue_482(etl::span<C_issue_482>)
+    {
+    }
+
+    TEST(test_issue_482)
+    {
+      etl::array<C_issue_482, 10> c;
+
+      // Should compile without ambiguous function error.
+      f_issue_482(c);
+    }
+
+    //*************************************************************************
+    void f_issue_482_2(etl::span<char, 10>)
+    {
+    }
+
+    void f_issue_482_2(etl::span<C_issue_482, 10>)
+    {
+    }
+
+    TEST(test_issue_482_2)
+    {
+      etl::array<C_issue_482, 10> c;
+
+      // Should compile without ambiguous function error.
+      f_issue_482(c);
+    }
+
+    //*************************************************************************
+    void f_issue_486(etl::span<const char, 11> value)
+    {
+    }
+
+    TEST(test_issue_486)
+    {
+      //std::array<char, 10> c;
+
+      // Should not compile.
+      //etl::span<char, 11> value(c);
+
+      // Should not compile.
+      //f_issue_486(c);
     }
   };
 }

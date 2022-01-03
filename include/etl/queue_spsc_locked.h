@@ -43,9 +43,6 @@ SOFTWARE.
 #include "utility.h"
 #include "placement_new.h"
 
-#undef ETL_FILE
-#define ETL_FILE ETL_QUEUE_SPSC_LOCKED_ID
-
 namespace etl
 {
   template <size_t MEMORY_MODEL = etl::memory_model::MEMORY_MODEL_LARGE>
@@ -230,7 +227,7 @@ namespace etl
       return result;
     }
 
-#if ETL_CPP11_SUPPORTED && ETL_NOT_USING_STLPORT && !defined(ETL_QUEUE_LOCKED_FORCE_CPP03)
+#if ETL_CPP11_SUPPORTED && ETL_NOT_USING_STLPORT && !defined(ETL_QUEUE_LOCKED_FORCE_CPP03_IMPLEMENTATION)
     //*************************************************************************
     /// Push a value to the queue.
     /// Unlocked.
@@ -256,7 +253,7 @@ namespace etl
     }
 #endif
 
-#if ETL_CPP11_SUPPORTED && ETL_NOT_USING_STLPORT && !defined(ETL_QUEUE_LOCKED_FORCE_CPP03)
+#if ETL_CPP11_SUPPORTED && ETL_NOT_USING_STLPORT && !defined(ETL_QUEUE_LOCKED_FORCE_CPP03_IMPLEMENTATION)
     //*************************************************************************
     /// Constructs a value in the queue 'in place'.
     /// Unlocked.
@@ -290,7 +287,7 @@ namespace etl
     template <typename T1>
     bool emplace_from_unlocked(const T1& value1)
     {
-      return emplace_implementation(valie1);
+      return emplace_implementation(value1);
     }
 
     //*************************************************************************
@@ -300,7 +297,7 @@ namespace etl
     template <typename T1, typename T2>
     bool emplace_from_unlocked(const T1& value1, const T2& value2)
     {
-      return emplace_implementation(valie1, value2);
+      return emplace_implementation(value1, value2);
     }
 
     //*************************************************************************
@@ -310,7 +307,7 @@ namespace etl
     template <typename T1, typename T2, typename T3>
     bool emplace_from_unlocked(const T1& value1, const T2& value2, const T3& value3)
     {
-      return emplace_implementation(valie1, value2, value3);
+      return emplace_implementation(value1, value2, value3);
     }
 
     //*************************************************************************
@@ -320,7 +317,7 @@ namespace etl
     template <typename T1, typename T2, typename T3, typename T4>
     bool emplace_from_unlocked(const T1& value1, const T2& value2, const T3& value3, const T4& value4)
     {
-      return emplace_implementation(valie1, value2, value3, value4);
+      return emplace_implementation(value1, value2, value3, value4);
     }
 
     //*************************************************************************
@@ -428,6 +425,52 @@ namespace etl
       lock();
 
       bool result = pop_implementation();
+
+      unlock();
+
+      return result;
+    }
+
+    //*************************************************************************
+    /// Peek a value from the front of the queue.
+    /// Unlocked
+    //*************************************************************************
+    reference front_from_unlocked()
+    {
+      return front_implementation();
+    }
+
+    //*************************************************************************
+    /// Peek a value from the front of the queue.
+    /// Unlocked
+    //*************************************************************************
+    const_reference front_from_unlocked() const
+    {
+      return front_implementation();
+    }
+
+    //*************************************************************************
+    /// Peek a value from the front of the queue.
+    //*************************************************************************
+    reference front()
+    {
+      lock();
+
+      reference result = front_implementation();
+
+      unlock();
+
+      return result;
+    }
+
+    //*************************************************************************
+    /// Peek a value from the front of the queue.
+    //*************************************************************************
+    const_reference front() const
+    {
+      lock();
+
+      const_reference result = front_implementation();
 
       unlock();
 
@@ -551,7 +594,7 @@ namespace etl
       return false;
     }
 
-#if ETL_CPP11_SUPPORTED && ETL_NOT_USING_STLPORT && !defined(ETL_QUEUE_LOCKED_FORCE_CPP03)
+#if ETL_CPP11_SUPPORTED && ETL_NOT_USING_STLPORT && !defined(ETL_QUEUE_LOCKED_FORCE_CPP03_IMPLEMENTATION)
     //*************************************************************************
     /// Push a value to the queue.
     /// Unlocked.
@@ -574,7 +617,7 @@ namespace etl
     }
 #endif
 
-#if ETL_CPP11_SUPPORTED && ETL_NOT_USING_STLPORT && !defined(ETL_QUEUE_LOCKED_FORCE_CPP03)
+#if ETL_CPP11_SUPPORTED && ETL_NOT_USING_STLPORT && !defined(ETL_QUEUE_LOCKED_FORCE_CPP03_IMPLEMENTATION)
     //*************************************************************************
     /// Constructs a value in the queue 'in place'.
     /// Unlocked.
@@ -694,7 +737,7 @@ namespace etl
         return false;
       }
 
-#if ETL_CPP11_SUPPORTED && ETL_NOT_USING_STLPORT && !defined(ETL_QUEUE_LOCKABLE_FORCE_CPP03)
+#if ETL_CPP11_SUPPORTED && ETL_NOT_USING_STLPORT && !defined(ETL_QUEUE_LOCKABLE_FORCE_CPP03_IMPLEMENTATION)
       value = etl::move(p_buffer[this->read_index]);
 #else
       value = p_buffer[this->read_index];
@@ -707,6 +750,24 @@ namespace etl
       --this->current_size;
 
       return true;
+    }
+
+    //*************************************************************************
+    /// Peek a value from the front of the queue.
+    /// Unlocked
+    //*************************************************************************
+    reference front_implementation()
+    {
+      return p_buffer[this->read_index];
+    }
+
+    //*************************************************************************
+    /// Peek a value from the front of the queue.
+    /// Unlocked
+    //*************************************************************************
+    const_reference front_implementation() const
+    {
+      return p_buffer[this->read_index];
     }
 
     //*************************************************************************
@@ -766,7 +827,7 @@ namespace etl
 
     ETL_STATIC_ASSERT((SIZE <= etl::integral_limits<size_type>::max), "Size too large for memory model");
 
-    static const size_type MAX_SIZE = size_type(SIZE);
+    static ETL_CONSTANT size_type MAX_SIZE = size_type(SIZE);
 
     //*************************************************************************
     /// Default constructor.
@@ -800,7 +861,5 @@ namespace etl
     etl::uninitialized_buffer_of<T, MAX_SIZE> buffer;
   };
 }
-
-#undef ETL_FILE
 
 #endif

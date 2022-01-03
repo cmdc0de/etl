@@ -37,9 +37,6 @@ SOFTWARE.
 #include "integral_limits.h"
 #include "null_type.h"
 
-#undef ETL_FILE
-#define ETL_FILE "45"
-
 /*[[[cog
 import cog
 cog.outl("#if 0")
@@ -86,7 +83,7 @@ namespace etl
     typedef T2 type2;
   };
 
-#if ETL_CPP11_SUPPORTED && !defined(ETL_TYPE_SELECT_FORCE_CPP03)
+#if ETL_CPP11_SUPPORTED && !defined(ETL_TYPE_SELECT_FORCE_CPP03_IMPLEMENTATION)
   //***************************************************************************
   // type_id_lookup 
   //***************************************************************************
@@ -340,7 +337,5 @@ namespace etl
 
 #endif
 }
-
-#undef ETL_FILE
 
 #endif

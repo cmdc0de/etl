@@ -42,9 +42,6 @@ SOFTWARE.
 #include "message.h"
 #include "message_router.h"
 
-#undef ETL_FILE
-#define ETL_FILE "39"
-
 namespace etl
 {
   //***************************************************************************
@@ -68,7 +65,7 @@ namespace etl
   public:
 
     message_bus_too_many_subscribers(string_type file_name_, numeric_type line_number_)
-      : message_bus_exception(ETL_ERROR_TEXT("message bus:too many subscribers", ETL_FILE"A"), file_name_, line_number_)
+      : message_bus_exception(ETL_ERROR_TEXT("message bus:too many subscribers", ETL_MESSAGE_BUS_FILE_ID"A"), file_name_, line_number_)
     {
     }
   };
@@ -228,6 +225,16 @@ namespace etl
           break;
         }
       }
+
+      if (has_successor())
+      {
+        etl::imessage_router& successor = get_successor();
+
+        if (successor.accepts(shared_msg.get_message().get_message_id()))
+        {
+          successor.receive(destination_router_id, shared_msg);
+        }
+      }
     }
 
     //*******************************************
@@ -297,6 +304,16 @@ namespace etl
           }
 
           break;
+        }
+      }
+
+      if (has_successor())
+      {
+        etl::imessage_router& successor = get_successor();
+
+        if (successor.accepts(message.get_message_id()))
+        {
+          successor.receive(destination_router_id, message);
         }
       }
     }
@@ -413,29 +430,6 @@ namespace etl
   {
     bus.receive(id, message);
   }
-
-  //***************************************************************************
-  /// Send a message to a bus.
-  //***************************************************************************
-  inline static void send_message(etl::imessage_router& source,
-                                  etl::imessage_bus&    bus,
-                                  const etl::imessage&  message)
-  {
-    bus.receive(message);
-  }
-
-  //***************************************************************************
-  /// Send a message to a bus.
-  //***************************************************************************
-  inline static void send_message(etl::imessage_router&    source,
-                                  etl::imessage_bus&       bus,
-                                  etl::message_router_id_t id,
-                                  const etl::imessage&     message)
-  {
-    bus.receive(id, message);
-  }
 }
-
-#undef ETL_FILE
 
 #endif

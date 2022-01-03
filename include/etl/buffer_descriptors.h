@@ -41,6 +41,8 @@ SOFTWARE.
 
 #include <cstring>
 
+#if ETL_CPP11_SUPPORTED
+
 namespace etl
 {
   //***************************************************************************
@@ -59,7 +61,7 @@ namespace etl
     typedef value_type* pointer;
     typedef size_t      size_type;
     typedef TFlag       flag_type;
-    
+
     static ETL_CONSTANT size_type N_BUFFERS   = N_BUFFERS_;
     static ETL_CONSTANT size_type BUFFER_SIZE = BUFFER_SIZE_;
 
@@ -72,7 +74,7 @@ namespace etl
 
       friend class buffer_descriptors;
 
-      static ETL_CONSTANT const size_type MAX_SIZE = buffer_descriptors::BUFFER_SIZE;
+      static ETL_CONSTANT size_type MAX_SIZE = buffer_descriptors::BUFFER_SIZE;
 
       //*********************************
       descriptor()
@@ -96,13 +98,13 @@ namespace etl
       //*********************************
       pointer data() const
       {
-        assert(pdesc_item != nullptr);
+        assert(pdesc_item != ETL_NULLPTR);
         return pdesc_item->pbuffer;
       }
 
       //*********************************
       ETL_NODISCARD
-      constexpr size_type max_size() const
+      ETL_CONSTEXPR size_type max_size() const
       {
         return BUFFER_SIZE;
       }
@@ -194,13 +196,17 @@ namespace etl
     };
 
     // The type of the callback function.
+//#if ETL_CPP11_SUPPORTED & !defined(ETL_DELEGATE_FORCE_CPP03_IMPLEMENTATION)
     typedef etl::delegate<void(notification)> callback_type;
+//#else
+//    typedef etl::delegate<void, notification> callback_type;
+//#endif
 
     //*********************************
     buffer_descriptors(TBuffer* pbuffers_, callback_type callback_ = callback_type())
       : callback(callback_)
     {
-      for (size_t i = 0U; i < N_BUFFERS; ++i)
+      for (size_t i = 0UL; i < N_BUFFERS; ++i)
       {
         descriptor_items[i].pbuffer = pbuffers_ + (i * BUFFER_SIZE);
         descriptor_items[i].in_use  = false;
@@ -216,7 +222,7 @@ namespace etl
     //*********************************
     void clear()
     {
-      for (size_t i = 0U; i < N_BUFFERS; ++i)
+      for (size_t i = 0UL; i < N_BUFFERS; ++i)
       {
         descriptor_items[i].in_use = false;
       }
@@ -244,13 +250,13 @@ namespace etl
     //*********************************
     ETL_NODISCARD
     descriptor allocate()
-    {    
+    {
       descriptor desc(&descriptor_items[next]);
 
       if (desc.is_released())
       {
         ++next;
-        
+
         desc.allocate();
 
         return desc;
@@ -289,5 +295,5 @@ namespace etl
     etl::cyclic_value<uint_least8_t, 0U, N_BUFFERS - 1> next;
   };
 }
-
+#endif
 #endif

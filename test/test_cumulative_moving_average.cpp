@@ -26,7 +26,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ******************************************************************************/
 
-#include "UnitTest++/UnitTest++.h"
+#include "unit_test_framework.h"
 
 #include <array>
 #include <algorithm>
@@ -36,8 +36,8 @@ SOFTWARE.
 
 namespace
 {
-  const size_t SAMPLE_SIZE = 10U;
-  const size_t SCALING = 100U;
+  const size_t SAMPLE_SIZE = 10UL;
+  const size_t SCALING = 100UL;
 
   SUITE(test_cumulative_moving_average)
   {

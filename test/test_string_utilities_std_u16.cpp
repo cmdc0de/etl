@@ -26,7 +26,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ******************************************************************************/
 
-#include "UnitTest++/UnitTest++.h"
+#include "unit_test_framework.h"
 
 #include <string>
 #include <string_view>
@@ -909,7 +909,7 @@ namespace
         { STR(':'), STR('_') }
       };
 
-      etl::replace_characters(text, etl::begin(lookup), etl::end(lookup));
+      etl::replace_characters(text, ETL_OR_STD11::begin(lookup), ETL_OR_STD11::end(lookup));
 
       CHECK(expected == text);
     }
@@ -929,7 +929,7 @@ namespace
         { STR(':'), STR('_') }
       };
 
-      etl::replace_characters(text, etl::begin(lookup), etl::end(lookup));
+      etl::replace_characters(text, ETL_OR_STD11::begin(lookup), ETL_OR_STD11::end(lookup));
 
       CHECK(expected == text);
     }
@@ -949,7 +949,7 @@ namespace
         { STR(":"),   STR(".txt") }
       };
 
-      etl::replace_strings(text, etl::begin(lookup), etl::end(lookup));
+      etl::replace_strings(text, ETL_OR_STD11::begin(lookup), ETL_OR_STD11::end(lookup));
 
       CHECK(expected == text);
     }
@@ -969,7 +969,7 @@ namespace
         { STR(":"),   STR(".txt") }
       };
 
-      etl::replace_strings(text, etl::begin(lookup), etl::end(lookup));
+      etl::replace_strings(text, ETL_OR_STD11::begin(lookup), ETL_OR_STD11::end(lookup));
 
       CHECK(expected == text);
     }

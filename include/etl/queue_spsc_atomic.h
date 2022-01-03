@@ -43,9 +43,6 @@ SOFTWARE.
 #include "utility.h"
 #include "placement_new.h"
 
-#undef ETL_FILE
-#define ETL_FILE ETL_QUEUE_SPSC_ATOMIC_ID
-
 #if ETL_HAS_ATOMIC
 
 namespace etl
@@ -228,7 +225,7 @@ namespace etl
       return false;
     }
 
-#if ETL_CPP11_SUPPORTED && ETL_NOT_USING_STLPORT && !defined(ETL_QUEUE_ATOMIC_FORCE_CPP03)
+#if ETL_CPP11_SUPPORTED && ETL_NOT_USING_STLPORT && !defined(ETL_QUEUE_ATOMIC_FORCE_CPP03_IMPLEMENTATION)
     //*************************************************************************
     /// Push a value to the queue.
     //*************************************************************************
@@ -251,7 +248,7 @@ namespace etl
     }
 #endif
 
-#if ETL_CPP11_SUPPORTED && ETL_NOT_USING_STLPORT && !defined(ETL_QUEUE_ATOMIC_FORCE_CPP03)
+#if ETL_CPP11_SUPPORTED && ETL_NOT_USING_STLPORT && !defined(ETL_QUEUE_ATOMIC_FORCE_CPP03_IMPLEMENTATION)
     //*************************************************************************
     /// Constructs a value in the queue 'in place'.
     /// If asserts or exceptions are enabled, throws an etl::queue_full if the queue if already full.
@@ -369,6 +366,24 @@ namespace etl
 #endif
 
     //*************************************************************************
+    /// Peek the next value in the queue without removing it.
+    //*************************************************************************
+    bool front(reference value)
+    {
+      size_type read_index = read.load(etl::memory_order_relaxed);
+
+      if (read_index == write.load(etl::memory_order_acquire))
+      {
+        // Queue is empty
+        return false;
+      }
+
+      value = p_buffer[read_index];
+
+      return true;
+    }
+
+    //*************************************************************************
     /// Pop a value from the queue.
     //*************************************************************************
     bool pop(reference value)
@@ -383,7 +398,7 @@ namespace etl
 
       size_type next_index = get_next_index(read_index, RESERVED);
 
-#if ETL_CPP11_SUPPORTED && ETL_NOT_USING_STLPORT && !defined(ETL_QUEUE_LOCKABLE_FORCE_CPP03)
+#if ETL_CPP11_SUPPORTED && ETL_NOT_USING_STLPORT && !defined(ETL_QUEUE_LOCKABLE_FORCE_CPP03_IMPLEMENTATION)
       value = etl::move(p_buffer[read_index]);
 #else
       value = p_buffer[read_index];
@@ -416,6 +431,26 @@ namespace etl
       read.store(next_index, etl::memory_order_release);
 
       return true;
+    }
+
+    //*************************************************************************
+    /// Peek a value from the front of the queue.
+    //*************************************************************************
+    reference front()
+    {
+      size_type read_index = read.load(etl::memory_order_relaxed);
+
+      return p_buffer[read_index];
+    }
+
+    //*************************************************************************
+    /// Peek a value from the front of the queue.
+    //*************************************************************************
+    const_reference front() const
+    {
+      size_type read_index = read.load(etl::memory_order_relaxed);
+
+      return p_buffer[read_index];
     }
 
     //*************************************************************************
@@ -477,13 +512,13 @@ namespace etl
 
   private:
 
-    static const size_type RESERVED_SIZE = size_type(SIZE + 1);
+    static ETL_CONSTANT size_type RESERVED_SIZE = size_type(SIZE + 1);
 
   public:
 
     ETL_STATIC_ASSERT((SIZE <= (etl::integral_limits<size_type>::max - 1)), "Size too large for memory model");
 
-    static const size_type MAX_SIZE = size_type(SIZE);
+    static ETL_CONSTANT size_type MAX_SIZE = size_type(SIZE);
 
     //*************************************************************************
     /// Default constructor.
@@ -509,7 +544,5 @@ namespace etl
 }
 
 #endif
-
-#undef ETL_FILE
 
 #endif

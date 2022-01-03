@@ -43,9 +43,6 @@ SOFTWARE.
 #include "utility.h"
 #include "placement_new.h"
 
-#undef ETL_FILE
-#define ETL_FILE ETL_QUEUE_SPSC_LOCKABLE
-
 namespace etl
 {
   template <size_t VMemory_Model = etl::memory_model::MEMORY_MODEL_LARGE>
@@ -287,7 +284,7 @@ namespace etl
       return result;
     }
 
-#if ETL_CPP11_SUPPORTED && ETL_NOT_USING_STLPORT && !defined(ETL_QUEUE_LOCKABLE_FORCE_CPP03)
+#if ETL_CPP11_SUPPORTED && ETL_NOT_USING_STLPORT && !defined(ETL_QUEUE_LOCKABLE_FORCE_CPP03_IMPLEMENTATION)
     //*************************************************************************
     /// Push a value to the queue without locking.
     //*************************************************************************
@@ -311,7 +308,7 @@ namespace etl
     }
 #endif
 
-#if ETL_CPP11_SUPPORTED && ETL_NOT_USING_STLPORT && !defined(ETL_QUEUE_LOCKABLE_FORCE_CPP03)
+#if ETL_CPP11_SUPPORTED && ETL_NOT_USING_STLPORT && !defined(ETL_QUEUE_LOCKABLE_FORCE_CPP03_IMPLEMENTATION)
     //*************************************************************************
     /// Constructs a value in the queue 'in place'.
     //*************************************************************************
@@ -479,6 +476,50 @@ namespace etl
     }
 
     //*************************************************************************
+    /// Peek a value at the front of the queue without locking.
+    //*************************************************************************
+    reference front_unlocked()
+    {
+      return front_implementation();
+    }
+
+    //*************************************************************************
+    /// Peek a value at the front of the queue without locking.
+    //*************************************************************************
+    const_reference front_unlocked() const
+    {
+      return front_implementation();
+    }
+
+    //*************************************************************************
+    /// Peek a value at the front of the queue.
+    //*************************************************************************
+    reference front()
+    {
+      this->lock();
+
+      reference result = front_implementation();
+
+      this->unlock();
+
+      return result;
+    }
+
+    //*************************************************************************
+    /// Peek a value at the front of the queue.
+    //*************************************************************************
+    const_reference front() const
+    {
+      this->lock();
+
+      const_reference result = front_implementation();
+
+      this->unlock();
+
+      return result;
+    }
+
+    //*************************************************************************
     /// Clear the queue, unlocked.
     //*************************************************************************
     void clear_unlocked()
@@ -537,7 +578,7 @@ namespace etl
       return false;
     }
 
-#if ETL_CPP11_SUPPORTED && ETL_NOT_USING_STLPORT && !defined(ETL_QUEUE_LOCKABLE_FORCE_CPP03)
+#if ETL_CPP11_SUPPORTED && ETL_NOT_USING_STLPORT && !defined(ETL_QUEUE_LOCKABLE_FORCE_CPP03_IMPLEMENTATION)
     //*************************************************************************
     /// Push a value to the queue without locking.
     //*************************************************************************
@@ -559,7 +600,7 @@ namespace etl
     }
 #endif
 
-#if ETL_CPP11_SUPPORTED && ETL_NOT_USING_STLPORT && !defined(ETL_QUEUE_LOCKABLE_FORCE_CPP03)
+#if ETL_CPP11_SUPPORTED && ETL_NOT_USING_STLPORT && !defined(ETL_QUEUE_LOCKABLE_FORCE_CPP03_IMPLEMENTATION)
     //*************************************************************************
     /// Constructs a value in the queue 'in place'.
     //*************************************************************************
@@ -697,7 +738,7 @@ namespace etl
         return false;
       }
 
-#if ETL_CPP11_SUPPORTED && ETL_NOT_USING_STLPORT && !defined(ETL_QUEUE_LOCKABLE_FORCE_CPP03)
+#if ETL_CPP11_SUPPORTED && ETL_NOT_USING_STLPORT && !defined(ETL_QUEUE_LOCKABLE_FORCE_CPP03_IMPLEMENTATION)
       value = etl::move(p_buffer[this->read_index]);
 #else
       value = p_buffer[this->read_index];
@@ -710,6 +751,22 @@ namespace etl
       --this->current_size;
 
       return true;
+    }
+
+    //*************************************************************************
+    /// Peek a value at the front of the queue without locking
+    //*************************************************************************
+    reference front_implementation()
+    {
+      return p_buffer[this->read_index];;
+    }
+
+    //*************************************************************************
+    /// Peek a value at the front of the queue without locking
+    //*************************************************************************
+    const_reference front_implementation() const
+    {
+      return p_buffer[this->read_index];;
     }
 
     // Disable copy construction and assignment.
@@ -781,7 +838,5 @@ namespace etl
     etl::uninitialized_buffer_of<T, Max_Size> buffer;
   };
 }
-
-#undef ETL_FILE
 
 #endif

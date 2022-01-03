@@ -112,7 +112,8 @@ namespace etl
     /// Constructor.
     //***************************************************************************
     optional()
-      : valid(false)
+      : storage()
+      , valid(false)
     {
     }
 
@@ -120,7 +121,8 @@ namespace etl
     /// Constructor with nullopt.
     //***************************************************************************
     optional(etl::nullopt_t)
-      : valid(false)
+      : storage()
+      , valid(false)
     {
     }
 
@@ -412,7 +414,7 @@ namespace etl
       }
     }
 
-#if ETL_CPP11_SUPPORTED  && ETL_NOT_USING_STLPORT && !defined(ETL_OPTIONAL_FORCE_CPP03)
+#if ETL_CPP11_SUPPORTED  && ETL_NOT_USING_STLPORT && !defined(ETL_OPTIONAL_FORCE_CPP03_IMPLEMENTATION)
     //*************************************************************************
     /// Emplaces a value.
     ///\param args The arguments to construct with.

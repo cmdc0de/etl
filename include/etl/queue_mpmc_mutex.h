@@ -46,9 +46,6 @@ SOFTWARE.
 #include "utility.h"
 #include "placement_new.h"
 
-#undef ETL_FILE
-#define ETL_FILE ETL_QUEUE_MPMC_MUTEX_ID
-
 namespace etl
 {
   template <const size_t MEMORY_MODEL = etl::memory_model::MEMORY_MODEL_LARGE>
@@ -185,7 +182,7 @@ namespace etl
     }
 #endif
 
-#if ETL_CPP11_SUPPORTED && ETL_NOT_USING_STLPORT && !defined(ETL_QUEUE_MPMC_MUTEX_FORCE_CPP03)
+#if ETL_CPP11_SUPPORTED && ETL_NOT_USING_STLPORT && !defined(ETL_QUEUE_MPMC_MUTEX_FORCE_CPP03_IMPLEMENTATION)
     //*************************************************************************
     /// Constructs a value in the queue 'in place'.
     /// If asserts or exceptions are enabled, throws an etl::queue_full if the queue if already full.
@@ -296,6 +293,34 @@ namespace etl
     }
 
     //*************************************************************************
+    /// Peek a value at the front of the queue.
+    //*************************************************************************
+    reference front()
+    {
+      access.lock();
+
+      reference result = front_implementation();
+
+      access.unlock();
+
+      return result;
+    }
+
+    //*************************************************************************
+    /// Peek a value at the front of the queue.
+    //*************************************************************************
+    const_reference front() const
+    {
+      access.lock();
+
+      const_reference result = front_implementation();
+
+      access.unlock();
+
+      return result;
+    }
+
+    //*************************************************************************
     /// Clear the queue.
     //*************************************************************************
     void clear()
@@ -399,7 +424,7 @@ namespace etl
       return false;
     }
 
-#if ETL_CPP11_SUPPORTED && ETL_NOT_USING_STLPORT && !defined(ETL_QUEUE_MPMC_MUTEX_FORCE_CPP03)
+#if ETL_CPP11_SUPPORTED && ETL_NOT_USING_STLPORT && !defined(ETL_QUEUE_MPMC_MUTEX_FORCE_CPP03_IMPLEMENTATION)
     //*************************************************************************
     /// Push a value to the queue.
     //*************************************************************************
@@ -421,7 +446,7 @@ namespace etl
     }
 #endif
 
-#if ETL_CPP11_SUPPORTED && ETL_NOT_USING_STLPORT && !defined(ETL_QUEUE_MPMC_MUTEX_FORCE_CPP03)
+#if ETL_CPP11_SUPPORTED && ETL_NOT_USING_STLPORT && !defined(ETL_QUEUE_MPMC_MUTEX_FORCE_CPP03_IMPLEMENTATION)
     //*************************************************************************
     /// Constructs a value in the queue 'in place'.
     //*************************************************************************
@@ -539,7 +564,7 @@ namespace etl
         return false;
       }
 
-#if ETL_CPP11_SUPPORTED && ETL_NOT_USING_STLPORT && !defined(ETL_QUEUE_LOCKABLE_FORCE_CPP03)
+#if ETL_CPP11_SUPPORTED && ETL_NOT_USING_STLPORT && !defined(ETL_QUEUE_LOCKABLE_FORCE_CPP03_IMPLEMENTATION)
       value = etl::move(p_buffer[read_index]);
 #else
       value = p_buffer[read_index];
@@ -574,6 +599,22 @@ namespace etl
       return true;
     }
 
+    //*************************************************************************
+    /// Peek a value at the front of the queue.
+    //*************************************************************************
+    reference front_implementation()
+    {
+      return p_buffer[read_index];
+    }
+
+    //*************************************************************************
+    /// Peek a value at the front of the queue.
+    //*************************************************************************
+    const_reference front_implementation() const
+    {
+      return p_buffer[read_index];
+    }
+
     // Disable copy construction and assignment.
     iqueue_mpmc_mutex(const iqueue_mpmc_mutex&);
     iqueue_mpmc_mutex& operator =(const iqueue_mpmc_mutex&);
@@ -604,7 +645,7 @@ namespace etl
 
     ETL_STATIC_ASSERT((SIZE <= etl::integral_limits<size_type>::max), "Size too large for memory model");
 
-    static const size_type MAX_SIZE = size_type(SIZE);
+    static ETL_CONSTANT size_type MAX_SIZE = size_type(SIZE);
 
     //*************************************************************************
     /// Default constructor.
@@ -636,8 +677,6 @@ namespace etl
     typename etl::aligned_storage<sizeof(T), etl::alignment_of<T>::value>::type buffer[MAX_SIZE];
   };
 }
-
-#undef ETL_FILE
 
 #endif
 #endif

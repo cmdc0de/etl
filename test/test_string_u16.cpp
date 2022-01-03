@@ -26,7 +26,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ******************************************************************************/
 
-#include "UnitTest++/UnitTest++.h"
+#include "unit_test_framework.h"
 
 #include <string>
 #include <array>
@@ -376,7 +376,7 @@ namespace
 #endif
     }
 
-#if ETL_USING_STL
+#if ETL_USING_INITIALIZER_LIST
     //*************************************************************************
     TEST_FIXTURE(SetupFixture, test_construct_initializer_list)
     {
@@ -825,7 +825,7 @@ namespace
       Compare_Text compare_text(initial_text.c_str());
       Text text(initial_text.c_str());
 
-      for (size_t i = 0; i < text.size(); ++i)
+      for (size_t i = 0UL; i < text.size(); ++i)
       {
         CHECK_EQUAL(text[i], compare_text[i]);
       }
@@ -841,7 +841,7 @@ namespace
       const Compare_Text compare_text(initial_text.c_str());
       const Text text(initial_text.c_str());
 
-      for (size_t i = 0; i < text.size(); ++i)
+      for (size_t i = 0UL; i < text.size(); ++i)
       {
         CHECK_EQUAL(text[i], compare_text[i]);
       }
@@ -857,7 +857,7 @@ namespace
       Compare_Text compare_text(initial_text.c_str());
       Text text(initial_text.c_str());
 
-      for (size_t i = 0; i < text.size(); ++i)
+      for (size_t i = 0UL; i < text.size(); ++i)
       {
         CHECK_EQUAL(text.at(i), compare_text.at(i));
       }
@@ -875,7 +875,7 @@ namespace
       const Compare_Text compare_text(initial_text.c_str());
       const Text text(initial_text.c_str());
 
-      for (size_t i = 0; i < text.size(); ++i)
+      for (size_t i = 0UL; i < text.size(); ++i)
       {
         CHECK_EQUAL(text.at(i), compare_text.at(i));
       }
@@ -1147,12 +1147,12 @@ namespace
       Compare_Text compare_text;
       Text text;
 
-      for (size_t i = 0; i < SIZE; ++i)
+      for (size_t i = 0UL; i < SIZE; ++i)
       {
         compare_text.push_back(STR('A') + value_t(i));
       }
 
-      for (size_t i = 0; i < SIZE; ++i)
+      for (size_t i = 0UL; i < SIZE; ++i)
       {
         text.push_back(STR('A') + value_t(i));
       }
@@ -1173,12 +1173,12 @@ namespace
       Compare_Text compare_text;
       Text text;
 
-      for (size_t i = 0; i < SIZE; ++i)
+      for (size_t i = 0UL; i < SIZE; ++i)
       {
         compare_text.push_back(STR('A') + value_t(i));
       }
 
-      for (size_t i = 0; i < SIZE; ++i)
+      for (size_t i = 0UL; i < SIZE; ++i)
       {
         text.push_back(STR('A') + value_t(i));
 #if ETL_STRING_TRUNCATION_CHECKS_ENABLED
@@ -2704,13 +2704,31 @@ namespace
     }
 
     //*************************************************************************
-    TEST_FIXTURE(SetupFixture, test_erase_single)
+    TEST_FIXTURE(SetupFixture, test_erase_single_iterator)
     {
       Compare_Text compare_text(initial_text.c_str());
       Text text(initial_text.c_str());
 
-      compare_text.erase(compare_text.begin() + 2);
-      text.erase(text.begin() + 2);
+      Compare_Text::iterator citr = compare_text.erase(compare_text.begin() + 2);
+      Text::iterator ditr = text.erase(text.begin() + 2);
+      CHECK(*citr == *ditr);
+
+      bool is_equal = Equal(compare_text, text);
+      CHECK(is_equal);
+#if ETL_STRING_TRUNCATION_CHECKS_ENABLED
+      CHECK(!text.is_truncated());
+#endif
+    }
+
+    //*************************************************************************
+    TEST_FIXTURE(SetupFixture, test_erase_single_const_iterator)
+    {
+      Compare_Text compare_text(initial_text.c_str());
+      Text text(initial_text.c_str());
+
+      Compare_Text::iterator citr = compare_text.erase(compare_text.cbegin() + 2);
+      Text::iterator ditr = text.erase(text.cbegin() + 2);
+      CHECK(*citr == *ditr);
 
       bool is_equal = Equal(compare_text, text);
       CHECK(is_equal);
@@ -2725,9 +2743,9 @@ namespace
       Compare_Text compare_text(initial_text.c_str());
       Text text(initial_text.c_str());
 
-      compare_text.erase(compare_text.begin() + 2, compare_text.begin() + 4);
-
-      text.erase(text.begin() + 2, text.begin() + 4);
+      Compare_Text::iterator citr = compare_text.erase(compare_text.cbegin() + 2, compare_text.cbegin() + 4);
+      Text::iterator ditr = text.erase(text.cbegin() + 2, text.cbegin() + 4);
+      CHECK(*citr == *ditr);
 
       bool is_equal = Equal(compare_text, text);
       CHECK(is_equal);
@@ -2995,8 +3013,75 @@ namespace
 #endif
 
       bool is_equal = std::equal(buffer1,
-        buffer1 + length1,
-        buffer2);
+                                 buffer1 + length1,
+                                 buffer2);
+      CHECK(is_equal);
+    }
+
+    //*************************************************************************
+    TEST_FIXTURE(SetupFixture, test_copy_start_pos_too_large)
+    {
+      Text text(initial_text.c_str());
+
+      value_t buffer1[SIZE];
+
+      size_t length1 = text.copy(buffer1, 5, SIZE);
+
+      CHECK_EQUAL(0U, length1);
+#if ETL_STRING_TRUNCATION_CHECKS_ENABLED
+      CHECK(!text.is_truncated());
+#endif
+    }
+
+    //*************************************************************************
+    TEST_FIXTURE(SetupFixture, test_copy_count_equals_npos)
+    {
+      Compare_Text compare_text(initial_text.c_str());
+      Text text(initial_text.c_str());
+
+      value_t buffer1[SIZE];
+      value_t buffer2[SIZE];
+
+      size_t length1 = compare_text.copy(buffer1, Compare_Text::npos, 2);
+      buffer1[length1] = STR('\0');
+
+      size_t length2 = text.copy(buffer2, Text::npos, 2);
+      buffer2[length2] = STR('\0');
+
+      CHECK_EQUAL(length1, length2);
+#if ETL_STRING_TRUNCATION_CHECKS_ENABLED
+      CHECK(!text.is_truncated());
+#endif
+
+      bool is_equal = std::equal(buffer1,
+                                 buffer1 + length1,
+                                 buffer2);
+      CHECK(is_equal);
+    }
+
+    //*************************************************************************
+    TEST_FIXTURE(SetupFixture, test_copy_count_too_large)
+    {
+      Compare_Text compare_text(initial_text.c_str());
+      Text text(initial_text.c_str());
+
+      value_t buffer1[SIZE];
+      value_t buffer2[SIZE];
+
+      size_t length1 = compare_text.copy(buffer1, SIZE, 2);
+      buffer1[length1] = STR('\0');
+
+      size_t length2 = text.copy(buffer2, SIZE, 2);
+      buffer2[length2] = STR('\0');
+
+      CHECK_EQUAL(length1, length2);
+#if ETL_STRING_TRUNCATION_CHECKS_ENABLED
+      CHECK(!text.is_truncated());
+#endif
+
+      bool is_equal = std::equal(buffer1,
+                                 buffer1 + length1,
+                                 buffer2);
       CHECK(is_equal);
     }
 
@@ -4271,7 +4356,9 @@ namespace
       std::fill(text.data(), text.data() + text.max_size(), STR('A'));
       text.trim_to_terminator();
 
+#if ETL_STRING_TRUNCATION_CHECKS_ENABLED
       CHECK(!text.is_truncated());
+#endif
       CHECK_EQUAL(text.max_size(), text.size());
     }
 
@@ -4284,7 +4371,9 @@ namespace
       std::fill(text.data(), text.data() + text.max_size() - 1, STR('A'));
       text.trim_to_terminator();
 
+#if ETL_STRING_TRUNCATION_CHECKS_ENABLED
       CHECK(!text.is_truncated());
+#endif
       CHECK_EQUAL(text.max_size() - 1, text.size());
     }
 
@@ -4297,7 +4386,9 @@ namespace
       std::fill(text.data(), text.data() + text.max_size() + 1, STR('A')); // Overwrites to terminating null.
       text.trim_to_terminator();
 
+#if ETL_STRING_TRUNCATION_CHECKS_ENABLED
       CHECK(text.is_truncated());
+#endif
       CHECK_EQUAL(text.max_size(), text.size());
     }
   };

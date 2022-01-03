@@ -35,9 +35,10 @@ SOFTWARE.
 #include "type_traits.h"
 
 #if ETL_CPP11_NOT_SUPPORTED
-  #error NOT SUPPORTED FOR C++03 OR BELOW
+  #if !defined(ETL_IN_UNIT_TEST)
+    #error NOT SUPPORTED FOR C++03 OR BELOW
+  #endif
 #else
-
 namespace etl
 {
   //***************************************************************************
@@ -62,7 +63,7 @@ namespace etl
       template <typename Type, typename T1, typename... TRest>
       struct index_of_type_helper
       {
-        static constexpr size_t value = std::is_same<Type, T1>::value ? 1 : 1 + index_of_type_helper<Type, TRest...>::value;
+        static constexpr size_t value = etl::is_same<Type, T1>::value ? 1 : 1 + index_of_type_helper<Type, TRest...>::value;
       };
 
       //***********************************
@@ -76,7 +77,7 @@ namespace etl
 
       static_assert(etl::is_one_of<T, TTypes...>::value, "T is not in parameter pack");
 
-      /// The idex value.
+      /// The index value.
       static constexpr size_t value = index_of_type_helper<T, TTypes...>::value - 1;
     };
 
@@ -97,7 +98,7 @@ namespace etl
       template <size_t II, size_t N, typename T1, typename... TRest>
       struct type_from_index_helper
       {
-        using type = typename std::conditional<II == N, T1, typename type_from_index_helper<II, N + 1, TRest...>::type>::type;
+        using type = typename etl::conditional<II == N, T1, typename type_from_index_helper<II, N + 1, TRest...>::type>::type;
       };
 
       //***********************************
@@ -119,6 +120,14 @@ namespace etl
     template <size_t I>
     using type_from_index_t = typename type_from_index<I>::type;
   };
+
+  template <size_t Index, typename... TTypes>
+  using parameter_pack_t = typename etl::parameter_pack<TTypes...>::template type_from_index_t<Index>;
+
+#if ETL_CPP17_SUPPORTED
+  template <typename T, typename... TTypes>
+  inline constexpr size_t parameter_pack_v = etl::parameter_pack<TTypes...>::template index_of_type<T>::value;
+#endif
 }
 #endif
 #endif

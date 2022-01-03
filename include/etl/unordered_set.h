@@ -38,12 +38,12 @@ SOFTWARE.
 #include "iterator.h"
 #include "functional.h"
 #include "utility.h"
-#include "container.h"
 #include "pool.h"
 #include "vector.h"
 #include "intrusive_forward_list.h"
 #include "hash.h"
 #include "type_traits.h"
+#include "nth_type.h"
 #include "parameter_type.h"
 #include "nullptr.h"
 #include "error_handler.h"
@@ -56,9 +56,6 @@ SOFTWARE.
 #if ETL_CPP11_SUPPORTED && ETL_NOT_USING_STLPORT && ETL_USING_STL
   #include <initializer_list>
 #endif
-
-#undef ETL_FILE
-#define ETL_FILE "23"
 
 //*****************************************************************************
 ///\defgroup unordered_set unordered_set
@@ -91,7 +88,7 @@ namespace etl
   public:
 
     unordered_set_full(string_type file_name_, numeric_type line_number_)
-      : etl::unordered_set_exception(ETL_ERROR_TEXT("unordered_set:full", ETL_FILE"A"), file_name_, line_number_)
+      : etl::unordered_set_exception(ETL_ERROR_TEXT("unordered_set:full", ETL_UNORDERED_SET_FILE_ID"A"), file_name_, line_number_)
     {
     }
   };
@@ -105,7 +102,7 @@ namespace etl
   public:
 
     unordered_set_out_of_range(string_type file_name_, numeric_type line_number_)
-      : etl::unordered_set_exception(ETL_ERROR_TEXT("unordered_set:range", ETL_FILE"B"), file_name_, line_number_)
+      : etl::unordered_set_exception(ETL_ERROR_TEXT("unordered_set:range", ETL_UNORDERED_SET_FILE_ID"B"), file_name_, line_number_)
     {}
   };
 
@@ -118,7 +115,7 @@ namespace etl
   public:
 
     unordered_set_iterator(string_type file_name_, numeric_type line_number_)
-      : etl::unordered_set_exception(ETL_ERROR_TEXT("unordered_set:iterator", ETL_FILE"C"), file_name_, line_number_)
+      : etl::unordered_set_exception(ETL_ERROR_TEXT("unordered_set:iterator", ETL_UNORDERED_SET_FILE_ID"C"), file_name_, line_number_)
     {
     }
   };
@@ -146,7 +143,7 @@ namespace etl
     typedef const value_type* const_pointer;
     typedef size_t            size_type;
 
-    typedef typename etl::parameter_type<TKey>::type key_parameter_t;
+    typedef const TKey& key_parameter_t;
 
     typedef etl::forward_link<0> link_t;
 
@@ -246,37 +243,19 @@ namespace etl
       }
 
       //*********************************
-      reference operator *()
+      reference operator *() const
       {
         return inode->key;
       }
 
       //*********************************
-      const_reference operator *() const
-      {
-        return inode->key;
-      }
-
-      //*********************************
-      pointer operator &()
+      pointer operator &() const
       {
         return &(inode->key);
       }
 
       //*********************************
-      const_pointer operator &() const
-      {
-        return &(inode->key);
-      }
-
-      //*********************************
-      pointer operator ->()
-      {
-        return &(inode->key);
-      }
-
-      //*********************************
-      const_pointer operator ->() const
+      pointer operator ->() const
       {
         return &(inode->key);
       }
@@ -848,7 +827,7 @@ namespace etl
     //*********************************************************************
     size_t erase(key_parameter_t key)
     {
-      size_t n = 0;
+      size_t n = 0UL;
       size_t index = get_bucket_index(key);
 
       bucket_t& bucket = pbuckets[index];
@@ -1226,7 +1205,7 @@ namespace etl
       if (!empty())
       {
         // For each bucket...
-        for (size_t i = 0; i < number_of_buckets; ++i)
+        for (size_t i = 0UL; i < number_of_buckets; ++i)
         {
           bucket_t& bucket = pbuckets[i];
 
@@ -1312,7 +1291,7 @@ namespace etl
     //*********************************************************************
     /// Adjust the first and last markers according to the erased entry.
     //*********************************************************************
-    void adjust_first_last_markers_after_erase(bucket_t* pbucket)
+    void adjust_first_last_markers_after_erase(bucket_t* pcurrent)
     {
       if (empty())
       {
@@ -1321,7 +1300,7 @@ namespace etl
       }
       else
       {
-        if (pbucket == first)
+        if (pcurrent == first)
         {
           // We erased the first so, we need to search again from where we erased.
           while (first->empty())
@@ -1329,22 +1308,22 @@ namespace etl
             ++first;
           }
         }
-        else if (pbucket == last)
+        else if (pcurrent == last)
         {
           // We erased the last, so we need to search again. Start from the first, go no further than the current last.
-          bucket_t* pbucket = first;
+          bucket_t* pcurrent = first;
           bucket_t* pend = last;
 
           last = first;
 
-          while (pbucket != pend)
+          while (pcurrent != pend)
           {
-            if (!pbucket->empty())
+            if (!pcurrent->empty())
             {
-              last = pbucket;
+              last = pcurrent;
             }
 
-            ++pbucket;
+            ++pcurrent;
           }
         }
         else
@@ -1433,8 +1412,8 @@ namespace etl
 
   public:
 
-    static const size_t MAX_SIZE    = MAX_SIZE_;
-    static const size_t MAX_BUCKETS = MAX_BUCKETS_;
+    static ETL_CONSTANT size_t MAX_SIZE    = MAX_SIZE_;
+    static ETL_CONSTANT size_t MAX_BUCKETS = MAX_BUCKETS_;
 
     //*************************************************************************
     /// Default constructor.
@@ -1479,14 +1458,14 @@ namespace etl
     ///\param first The iterator to the first element.
     ///\param last  The iterator to the last element + 1.
     //*************************************************************************
-    template <typename TIterator, typename = typename etl::enable_if<!etl::is_integral<TIterator>::value, void>::type>
+    template <typename TIterator>
     unordered_set(TIterator first_, TIterator last_)
       : base(node_pool, buckets, MAX_BUCKETS)
     {
       base::assign(first_, last_);
     }
 
-#if ETL_CPP11_SUPPORTED && ETL_NOT_USING_STLPORT && ETL_USING_STL
+#if ETL_USING_INITIALIZER_LIST
     //*************************************************************************
     /// Construct from initializer_list.
     //*************************************************************************
@@ -1548,13 +1527,21 @@ namespace etl
   //*************************************************************************
   /// Template deduction guides.
   //*************************************************************************
-#if ETL_CPP17_SUPPORTED && ETL_NOT_USING_STLPORT && ETL_USING_STL
-  template <typename T, typename... Ts>
-  unordered_set(T, Ts...)
-    ->unordered_set<etl::enable_if_t<(etl::is_same_v<T, Ts> && ...), T>, 1U + sizeof...(Ts)>;
-#endif 
-}
+#if ETL_CPP17_SUPPORTED && ETL_USING_INITIALIZER_LIST
+  template <typename... T>
+  unordered_set(T...) -> unordered_set<etl::nth_type_t<0, T...>, sizeof...(T)>;
+#endif
 
-#undef ETL_FILE
+  //*************************************************************************
+  /// Make
+  //*************************************************************************
+#if ETL_CPP11_SUPPORTED && ETL_USING_INITIALIZER_LIST
+  template <typename TKey, typename THash = etl::hash<TKey>, typename TKeyEqual = etl::equal_to<TKey>, typename... T>
+  constexpr auto make_unordered_set(T&&... keys) -> etl::unordered_set<TKey, sizeof...(T), sizeof...(T), THash, TKeyEqual>
+  {
+    return { {etl::forward<T>(keys)...} };
+  }
+#endif
+}
 
 #endif

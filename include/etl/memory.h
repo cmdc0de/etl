@@ -43,7 +43,7 @@ SOFTWARE.
 #include <assert.h>
 #include <string.h>
 
-#if ETL_USING_STL
+#if defined(ETL_IN_UNIT_TEST) || ETL_USING_STL
   #include <memory>
 #endif
 
@@ -58,7 +58,7 @@ namespace etl
   ///\ingroup memory
   //*****************************************************************************
   template <typename T>
-  T* addressof(T& t)
+  ETL_CONSTEXPR T* addressof(T& t)
   {
 #if ETL_CPP11_SUPPORTED && ETL_USING_STL
     return std::addressof(t);
@@ -1542,9 +1542,8 @@ namespace etl
     unique_ptr(const unique_ptr&) ETL_DELETE;
     unique_ptr&	operator =(const unique_ptr&) ETL_DELETE;
 
+    pointer	p; 
     TDeleter deleter;
-
-    pointer	p;
   };
 }
 
@@ -1988,7 +1987,7 @@ namespace etl
       return reinterpret_cast<const T*>(raw);
     }
 
-#if ETL_CPP11_SUPPORTED && !defined(ETL_COMPILER_ARM5) && !defined(ETL_UNINITIALIZED_BUFFER_FORCE_CPP03)
+#if ETL_CPP11_SUPPORTED && !defined(ETL_COMPILER_ARM5) && !defined(ETL_UNINITIALIZED_BUFFER_FORCE_CPP03_IMPLEMENTATION)
     alignas(VAlignment) char raw[Object_Size * N_Objects];
 #else
     union
@@ -2077,7 +2076,7 @@ namespace etl
       return reinterpret_cast<const T*>(raw + (sizeof(T) * N_Objects));
     }
 
-#if ETL_CPP11_SUPPORTED && !defined(ETL_COMPILER_ARM5) && !defined(ETL_UNINITIALIZED_BUFFER_FORCE_CPP03)
+#if ETL_CPP11_SUPPORTED && !defined(ETL_COMPILER_ARM5) && !defined(ETL_UNINITIALIZED_BUFFER_FORCE_CPP03_IMPLEMENTATION)
     alignas(Alignment) char raw[sizeof(T) * N_Objects];
 #else
     union

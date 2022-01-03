@@ -26,7 +26,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ******************************************************************************/
 
-#include "UnitTest++/UnitTest++.h"
+#include "unit_test_framework.h"
 
 #include "etl/largest.h"
 
@@ -55,6 +55,7 @@ namespace
       CHECK(type);
     }
 
+#if !defined(ETL_LARGEST_TYPE_FORCE_CPP03_IMPLEMENTATION)
     //*************************************************************************
     TEST(test_pod_type_vt)
     {
@@ -73,6 +74,7 @@ namespace
       CHECK_EQUAL(sizeof(int), size);
       CHECK(type);
     }
+#endif
 
     //*************************************************************************
     TEST(test_non_pod_type)
@@ -97,6 +99,7 @@ namespace
       CHECK(type);
     }
 
+#if !defined(ETL_LARGEST_TYPE_FORCE_CPP03_IMPLEMENTATION)
     //*************************************************************************
     TEST(test_non_pod_type_vt)
     {
@@ -119,6 +122,7 @@ namespace
       CHECK_EQUAL(sizeof(S3), size);
       CHECK(type);
     }
+#endif
 
     //*************************************************************************
     TEST(test_pod_alignment)

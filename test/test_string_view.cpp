@@ -26,7 +26,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ******************************************************************************/
 
-#include "UnitTest++/UnitTest++.h"
+#include "unit_test_framework.h"
 
 #include "etl/string_view.h"
 #include "etl/string.h"
@@ -144,6 +144,7 @@ namespace
     }
 
     //*************************************************************************
+#if ETL_CPP17_SUPPORTED && ETL_USING_INITIALIZER_LIST && !defined(ETL_TEMPLATE_DEDUCTION_GUIDE_TESTS_DISABLED)
     TEST(test_template_deduction)
     {
       etl::basic_string_view cview{ "Hello World" };
@@ -156,6 +157,7 @@ namespace
       CHECK(std::equal(u16view.begin(), u16view.end(), text.begin()));
       CHECK(std::equal(u32view.begin(), u32view.end(), text.begin()));
     }
+#endif
 
     //*************************************************************************
     TEST(test_assign_from_string_view)
@@ -223,7 +225,7 @@ namespace
     {
       View  view(text.c_str(), text.size());
 
-      for (size_t i = 0; i < text.size(); ++i)
+      for (size_t i = 0UL; i < text.size(); ++i)
       {
         CHECK(text[i] == view[i]);
       }
@@ -234,7 +236,7 @@ namespace
     {
       View  view(text.c_str(), text.size());
 
-      for (size_t i = 0; i < text.size(); ++i)
+      for (size_t i = 0UL; i < text.size(); ++i)
       {
         CHECK(text[i] == view.at(i));
       }

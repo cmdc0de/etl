@@ -32,8 +32,10 @@ SOFTWARE.
  * The header include guard has been intentionally omitted.
  * This file is intended to evaluated multiple times by design.
  */
+#if !defined(ETL_COMPILER_ARM5) && !defined(ETL_COMPILER_GREEN_HILLS)
+  #pragma push_macro("min")
+  #pragma push_macro("max")
+#endif
 
-#pragma push_macro("min")
-#pragma push_macro("max")
 #undef min
 #undef max

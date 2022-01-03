@@ -26,7 +26,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ******************************************************************************/
 
-#include "UnitTest++/UnitTest++.h"
+#include "unit_test_framework.h"
 
 #include "etl/queue_spsc_isr.h"
 
@@ -454,6 +454,46 @@ namespace
     }
 
     //*************************************************************************
+    TEST(test_size_push_front_pop)
+    {
+      Access::clear();
+
+      etl::queue_spsc_isr<int, 4, Access> queue;
+
+      CHECK_EQUAL(0U, queue.size());
+
+      queue.push(1);
+      queue.push(2);
+      queue.push(3);
+      queue.push(4);
+      CHECK_EQUAL(4U, queue.size());
+
+      CHECK_EQUAL(1, queue.front());
+      CHECK_EQUAL(4U, queue.size());
+
+      CHECK_EQUAL(1, queue.front());
+      CHECK_EQUAL(4U, queue.size());
+
+      CHECK(queue.pop());
+      CHECK_EQUAL(3U, queue.size());
+
+      CHECK(queue.pop());
+      CHECK_EQUAL(2U, queue.size());
+
+      CHECK(queue.pop());
+      CHECK_EQUAL(1U, queue.size());
+
+      CHECK_EQUAL(4, queue.front());
+      CHECK_EQUAL(1U, queue.size());
+
+      CHECK_EQUAL(4, queue.front());
+      CHECK_EQUAL(1U, queue.size());
+
+      CHECK(queue.pop());
+      CHECK_EQUAL(0U, queue.size());
+    }
+
+    //*************************************************************************
     TEST(test_multiple_emplace)
     {
       etl::queue_spsc_isr<Data, 4, Access> queue;
@@ -591,7 +631,7 @@ namespace
     #define FIX_PROCESSOR_AFFINITY
   #endif
 
-    size_t ticks = 0;
+    size_t ticks = 0UL;
 
     struct ThreadLock
     {
@@ -612,14 +652,14 @@ namespace
 
     etl::queue_spsc_isr<int, 10, ThreadLock> queue;
 
-    const size_t LENGTH = 1000;
+    const size_t LENGTH = 1000UL;
 
     void timer_thread()
     {
       RAISE_THREAD_PRIORITY;
       FIX_PROCESSOR_AFFINITY;
 
-      const size_t TICK = 1;
+      const size_t TICK = 1UL;
       size_t tick = TICK;
       ticks = 1;
 
@@ -663,7 +703,7 @@ namespace
 
       CHECK_EQUAL(LENGTH, tick_list.size());
 
-      for (size_t i = 0; i < LENGTH; ++i)
+      for (size_t i = 0UL; i < LENGTH; ++i)
       {
         CHECK_EQUAL(i + 1, tick_list[i]);
       }

@@ -37,7 +37,7 @@ SOFTWARE.
 #include "platform.h"
 #include "algorithm.h"
 #include "utility.h"
-#include "container.h"
+#include "iterator.h"
 #include "alignment.h"
 #include "array.h"
 #include "exception.h"
@@ -45,9 +45,6 @@ SOFTWARE.
 #include "debug_count.h"
 #include "type_traits.h"
 #include "placement_new.h"
-
-#undef ETL_FILE
-#define ETL_FILE "15"
 
 //*****************************************************************************
 ///\defgroup stack stack
@@ -81,7 +78,7 @@ namespace etl
   public:
 
     stack_full(string_type file_name_, numeric_type line_number_)
-      : stack_exception(ETL_ERROR_TEXT("stack:full", ETL_FILE"A"), file_name_, line_number_)
+      : stack_exception(ETL_ERROR_TEXT("stack:full", ETL_STACK_FILE_ID"A"), file_name_, line_number_)
     {
     }
   };
@@ -95,7 +92,7 @@ namespace etl
   public:
 
     stack_empty(string_type file_name_, numeric_type line_number_)
-      : stack_exception(ETL_ERROR_TEXT("stack:empty", ETL_FILE"B"), file_name_, line_number_)
+      : stack_exception(ETL_ERROR_TEXT("stack:empty", ETL_STACK_FILE_ID"B"), file_name_, line_number_)
     {
     }
   };
@@ -401,7 +398,7 @@ namespace etl
     //*************************************************************************
     void pop_into(reference destination)
     {
-      destination = top();
+      destination = ETL_MOVE(top());
       pop();
     }
 
@@ -413,7 +410,7 @@ namespace etl
     template <typename TContainer>
     void pop_into(TContainer& destination)
     {
-      destination.push(top());
+      destination.push(ETL_MOVE(top()));
       pop();
     }
 
@@ -446,7 +443,7 @@ namespace etl
     istack& operator = (istack&& rhs)
     {
       if (&rhs != this)
-      {        
+      {
         clone(etl::move(rhs));
       }
 
@@ -463,9 +460,9 @@ namespace etl
     {
       clear();
 
-      size_t index = 0;
+      size_t index = 0UL;
 
-      for (size_t i = 0; i < other.size(); ++i)
+      for (size_t i = 0UL; i < other.size(); ++i)
       {
         push(other.p_buffer[index++]);
       }
@@ -479,9 +476,9 @@ namespace etl
     {
       clear();
 
-      size_t index = 0;
+      size_t index = 0UL;
 
-      for (size_t i = 0; i < other.size(); ++i)
+      for (size_t i = 0UL; i < other.size(); ++i)
       {
         push(etl::move(other.p_buffer[index++]));
       }
@@ -531,8 +528,9 @@ namespace etl
   class stack : public etl::istack<T>
   {
   public:
+    typedef typename etl::aligned_storage<sizeof(T), etl::alignment_of<T>::value>::type container_type;
 
-    static const size_t MAX_SIZE = SIZE;
+    static ETL_CONSTANT size_t MAX_SIZE = SIZE;
 
     //*************************************************************************
     /// Default constructor.
@@ -601,10 +599,8 @@ namespace etl
   private:
 
     /// The unintitialised buffer of T used in the stack.
-    typename etl::aligned_storage<sizeof(T), etl::alignment_of<T>::value>::type buffer[SIZE];
+    container_type buffer[SIZE];
   };
 }
-
-#undef ETL_FILE
 
 #endif
