@@ -62,7 +62,7 @@ SOFTWARE.
 
 namespace etl
 {
-#if ETL_CPP17_SUPPORTED && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION)
+#if ETL_USING_CPP17 && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION)
   //***************************************************************************
   // The definition for all message types.
   //***************************************************************************
@@ -266,11 +266,7 @@ namespace etl
       {
         etl::imessage* pmsg = static_cast<etl::imessage*>(data);
 
-#if defined(ETL_MESSAGES_ARE_VIRTUAL) || defined(ETL_POLYMORPHIC_MESSAGES)
         pmsg->~imessage();
-#else
-        (delete_current_message_type<TMessageTypes>(pmsg->get_message_id()) || ...);
-#endif
       }
     }
 
@@ -297,21 +293,6 @@ namespace etl
     bool valid;
 
   private:
-
-    //********************************************
-    template <typename TType>
-    bool delete_current_message_type(etl::message_id_t Id)
-    {
-      if (TType::ID == Id)
-      {
-        static_cast<TType*>(data)->~TType();
-        return true;
-      }
-      else
-      {
-        return false;
-      }
-    }
 
     //********************************************
     template <typename TType>
@@ -415,7 +396,7 @@ namespace etl
       ETL_ASSERT(valid, ETL_ERROR(unhandled_message_exception));
     }
 
-  #if ETL_CPP11_SUPPORTED && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION)
+  #if ETL_USING_CPP11 && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION)
     //********************************************
     explicit message_packet(etl::imessage&& msg)
       : data()
@@ -434,7 +415,7 @@ namespace etl
     }
   #endif
 
-  #if ETL_CPP11_SUPPORTED && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION)
+  #if ETL_USING_CPP11 && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION) && !defined(ETL_COMPILER_GREEN_HILLS)
     //********************************************
     template <typename TMessage, typename = typename etl::enable_if<!etl::is_same<typename etl::remove_reference<TMessage>::type, etl::message_packet<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16> >::value &&
                                                                     !etl::is_same<typename etl::remove_reference<TMessage>::type, etl::imessage>::value &&
@@ -479,7 +460,7 @@ namespace etl
       }
     }
 
-  #if ETL_CPP11_SUPPORTED && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION)
+  #if ETL_USING_CPP11 && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION)
     //**********************************************
     message_packet(message_packet&& other)
       : data()
@@ -505,7 +486,7 @@ namespace etl
       return *this;
     }
 
-  #if ETL_CPP11_SUPPORTED && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION)
+  #if ETL_USING_CPP11 && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION)
     //**********************************************
     message_packet& operator =(message_packet&& rhs)
     {
@@ -598,32 +579,7 @@ namespace etl
       {
         etl::imessage* pmsg = static_cast<etl::imessage*>(data);
 
-  #if defined(ETL_MESSAGES_ARE_VIRTUAL) || defined(ETL_POLYMORPHIC_MESSAGES)
         pmsg->~imessage();
-  #else
-        size_t id = pmsg->get_message_id();
-
-        switch (id)
-        {
-          case T1::ID: static_cast<T1*>(pmsg)->~T1(); break;
-          case T2::ID: static_cast<T2*>(pmsg)->~T2(); break;
-          case T3::ID: static_cast<T3*>(pmsg)->~T3(); break;
-          case T4::ID: static_cast<T4*>(pmsg)->~T4(); break;
-          case T5::ID: static_cast<T5*>(pmsg)->~T5(); break;
-          case T6::ID: static_cast<T6*>(pmsg)->~T6(); break;
-          case T7::ID: static_cast<T7*>(pmsg)->~T7(); break;
-          case T8::ID: static_cast<T8*>(pmsg)->~T8(); break;
-          case T9::ID: static_cast<T9*>(pmsg)->~T9(); break;
-          case T10::ID: static_cast<T10*>(pmsg)->~T10(); break;
-          case T11::ID: static_cast<T11*>(pmsg)->~T11(); break;
-          case T12::ID: static_cast<T12*>(pmsg)->~T12(); break;
-          case T13::ID: static_cast<T13*>(pmsg)->~T13(); break;
-          case T14::ID: static_cast<T14*>(pmsg)->~T14(); break;
-          case T15::ID: static_cast<T15*>(pmsg)->~T15(); break;
-          case T16::ID: static_cast<T16*>(pmsg)->~T16(); break;
-          default: assert(false); break;
-        }
-    #endif
       }
     }
 
@@ -655,7 +611,7 @@ namespace etl
       }
     }
 
-  #if ETL_CPP11_SUPPORTED && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION)
+  #if ETL_USING_CPP11 && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION)
     //********************************************
     void add_new_message(etl::imessage&& msg)
     {
@@ -724,7 +680,7 @@ namespace etl
       ETL_ASSERT(valid, ETL_ERROR(unhandled_message_exception));
     }
 
-  #if ETL_CPP11_SUPPORTED && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION)
+  #if ETL_USING_CPP11 && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION)
     //********************************************
     explicit message_packet(etl::imessage&& msg)
       : data()
@@ -743,7 +699,7 @@ namespace etl
     }
   #endif
 
-  #if ETL_CPP11_SUPPORTED && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION)
+  #if ETL_USING_CPP11 && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION) && !defined(ETL_COMPILER_GREEN_HILLS)
     //********************************************
     template <typename TMessage, typename = typename etl::enable_if<!etl::is_same<typename etl::remove_reference<TMessage>::type, etl::message_packet<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15> >::value &&
                                                                     !etl::is_same<typename etl::remove_reference<TMessage>::type, etl::imessage>::value &&
@@ -777,7 +733,6 @@ namespace etl
     }
   #endif
 
-
     //**********************************************
     message_packet(const message_packet& other)
       : data()
@@ -789,7 +744,7 @@ namespace etl
       }
     }
 
-  #if ETL_CPP11_SUPPORTED && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION)
+  #if ETL_USING_CPP11 && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION)
     //**********************************************
     message_packet(message_packet&& other)
       : data()
@@ -815,7 +770,7 @@ namespace etl
       return *this;
     }
 
-  #if ETL_CPP11_SUPPORTED && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION)
+  #if ETL_USING_CPP11 && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION)
     //**********************************************
     message_packet& operator =(message_packet&& rhs)
     {
@@ -908,31 +863,7 @@ namespace etl
       {
         etl::imessage* pmsg = static_cast<etl::imessage*>(data);
 
-  #if defined(ETL_MESSAGES_ARE_VIRTUAL) || defined(ETL_POLYMORPHIC_MESSAGES)
         pmsg->~imessage();
-  #else
-        size_t id = pmsg->get_message_id();
-
-        switch (id)
-        {
-          case T1::ID: static_cast<T1*>(pmsg)->~T1(); break;
-          case T2::ID: static_cast<T2*>(pmsg)->~T2(); break;
-          case T3::ID: static_cast<T3*>(pmsg)->~T3(); break;
-          case T4::ID: static_cast<T4*>(pmsg)->~T4(); break;
-          case T5::ID: static_cast<T5*>(pmsg)->~T5(); break;
-          case T6::ID: static_cast<T6*>(pmsg)->~T6(); break;
-          case T7::ID: static_cast<T7*>(pmsg)->~T7(); break;
-          case T8::ID: static_cast<T8*>(pmsg)->~T8(); break;
-          case T9::ID: static_cast<T9*>(pmsg)->~T9(); break;
-          case T10::ID: static_cast<T10*>(pmsg)->~T10(); break;
-          case T11::ID: static_cast<T11*>(pmsg)->~T11(); break;
-          case T12::ID: static_cast<T12*>(pmsg)->~T12(); break;
-          case T13::ID: static_cast<T13*>(pmsg)->~T13(); break;
-          case T14::ID: static_cast<T14*>(pmsg)->~T14(); break;
-          case T15::ID: static_cast<T15*>(pmsg)->~T15(); break;
-          default: assert(false); break;
-        }
-    #endif
       }
     }
 
@@ -963,7 +894,7 @@ namespace etl
       }
     }
 
-  #if ETL_CPP11_SUPPORTED && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION)
+  #if ETL_USING_CPP11 && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION)
     //********************************************
     void add_new_message(etl::imessage&& msg)
     {
@@ -1031,7 +962,7 @@ namespace etl
       ETL_ASSERT(valid, ETL_ERROR(unhandled_message_exception));
     }
 
-  #if ETL_CPP11_SUPPORTED && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION)
+  #if ETL_USING_CPP11 && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION)
     //********************************************
     explicit message_packet(etl::imessage&& msg)
       : data()
@@ -1050,7 +981,7 @@ namespace etl
     }
   #endif
 
-  #if ETL_CPP11_SUPPORTED && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION)
+  #if ETL_USING_CPP11 && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION) && !defined(ETL_COMPILER_GREEN_HILLS)
     //********************************************
     template <typename TMessage, typename = typename etl::enable_if<!etl::is_same<typename etl::remove_reference<TMessage>::type, etl::message_packet<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14> >::value &&
                                                                     !etl::is_same<typename etl::remove_reference<TMessage>::type, etl::imessage>::value &&
@@ -1084,7 +1015,6 @@ namespace etl
     }
   #endif
 
-
     //**********************************************
     message_packet(const message_packet& other)
       : data()
@@ -1096,7 +1026,7 @@ namespace etl
       }
     }
 
-  #if ETL_CPP11_SUPPORTED && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION)
+  #if ETL_USING_CPP11 && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION)
     //**********************************************
     message_packet(message_packet&& other)
       : data()
@@ -1122,7 +1052,7 @@ namespace etl
       return *this;
     }
 
-  #if ETL_CPP11_SUPPORTED && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION)
+  #if ETL_USING_CPP11 && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION)
     //**********************************************
     message_packet& operator =(message_packet&& rhs)
     {
@@ -1215,30 +1145,7 @@ namespace etl
       {
         etl::imessage* pmsg = static_cast<etl::imessage*>(data);
 
-  #if defined(ETL_MESSAGES_ARE_VIRTUAL) || defined(ETL_POLYMORPHIC_MESSAGES)
         pmsg->~imessage();
-  #else
-        size_t id = pmsg->get_message_id();
-
-        switch (id)
-        {
-          case T1::ID: static_cast<T1*>(pmsg)->~T1(); break;
-          case T2::ID: static_cast<T2*>(pmsg)->~T2(); break;
-          case T3::ID: static_cast<T3*>(pmsg)->~T3(); break;
-          case T4::ID: static_cast<T4*>(pmsg)->~T4(); break;
-          case T5::ID: static_cast<T5*>(pmsg)->~T5(); break;
-          case T6::ID: static_cast<T6*>(pmsg)->~T6(); break;
-          case T7::ID: static_cast<T7*>(pmsg)->~T7(); break;
-          case T8::ID: static_cast<T8*>(pmsg)->~T8(); break;
-          case T9::ID: static_cast<T9*>(pmsg)->~T9(); break;
-          case T10::ID: static_cast<T10*>(pmsg)->~T10(); break;
-          case T11::ID: static_cast<T11*>(pmsg)->~T11(); break;
-          case T12::ID: static_cast<T12*>(pmsg)->~T12(); break;
-          case T13::ID: static_cast<T13*>(pmsg)->~T13(); break;
-          case T14::ID: static_cast<T14*>(pmsg)->~T14(); break;
-          default: assert(false); break;
-        }
-    #endif
       }
     }
 
@@ -1268,7 +1175,7 @@ namespace etl
       }
     }
 
-  #if ETL_CPP11_SUPPORTED && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION)
+  #if ETL_USING_CPP11 && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION)
     //********************************************
     void add_new_message(etl::imessage&& msg)
     {
@@ -1335,7 +1242,7 @@ namespace etl
       ETL_ASSERT(valid, ETL_ERROR(unhandled_message_exception));
     }
 
-  #if ETL_CPP11_SUPPORTED && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION)
+  #if ETL_USING_CPP11 && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION)
     //********************************************
     explicit message_packet(etl::imessage&& msg)
       : data()
@@ -1354,7 +1261,7 @@ namespace etl
     }
   #endif
 
-  #if ETL_CPP11_SUPPORTED && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION)
+  #if ETL_USING_CPP11 && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION) && !defined(ETL_COMPILER_GREEN_HILLS)
     //********************************************
     template <typename TMessage, typename = typename etl::enable_if<!etl::is_same<typename etl::remove_reference<TMessage>::type, etl::message_packet<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13> >::value &&
                                                                     !etl::is_same<typename etl::remove_reference<TMessage>::type, etl::imessage>::value &&
@@ -1388,7 +1295,6 @@ namespace etl
     }
   #endif
 
-
     //**********************************************
     message_packet(const message_packet& other)
       : data()
@@ -1400,7 +1306,7 @@ namespace etl
       }
     }
 
-  #if ETL_CPP11_SUPPORTED && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION)
+  #if ETL_USING_CPP11 && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION)
     //**********************************************
     message_packet(message_packet&& other)
       : data()
@@ -1426,7 +1332,7 @@ namespace etl
       return *this;
     }
 
-  #if ETL_CPP11_SUPPORTED && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION)
+  #if ETL_USING_CPP11 && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION)
     //**********************************************
     message_packet& operator =(message_packet&& rhs)
     {
@@ -1519,29 +1425,7 @@ namespace etl
       {
         etl::imessage* pmsg = static_cast<etl::imessage*>(data);
 
-  #if defined(ETL_MESSAGES_ARE_VIRTUAL) || defined(ETL_POLYMORPHIC_MESSAGES)
         pmsg->~imessage();
-  #else
-        size_t id = pmsg->get_message_id();
-
-        switch (id)
-        {
-          case T1::ID: static_cast<T1*>(pmsg)->~T1(); break;
-          case T2::ID: static_cast<T2*>(pmsg)->~T2(); break;
-          case T3::ID: static_cast<T3*>(pmsg)->~T3(); break;
-          case T4::ID: static_cast<T4*>(pmsg)->~T4(); break;
-          case T5::ID: static_cast<T5*>(pmsg)->~T5(); break;
-          case T6::ID: static_cast<T6*>(pmsg)->~T6(); break;
-          case T7::ID: static_cast<T7*>(pmsg)->~T7(); break;
-          case T8::ID: static_cast<T8*>(pmsg)->~T8(); break;
-          case T9::ID: static_cast<T9*>(pmsg)->~T9(); break;
-          case T10::ID: static_cast<T10*>(pmsg)->~T10(); break;
-          case T11::ID: static_cast<T11*>(pmsg)->~T11(); break;
-          case T12::ID: static_cast<T12*>(pmsg)->~T12(); break;
-          case T13::ID: static_cast<T13*>(pmsg)->~T13(); break;
-          default: assert(false); break;
-        }
-    #endif
       }
     }
 
@@ -1570,7 +1454,7 @@ namespace etl
       }
     }
 
-  #if ETL_CPP11_SUPPORTED && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION)
+  #if ETL_USING_CPP11 && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION)
     //********************************************
     void add_new_message(etl::imessage&& msg)
     {
@@ -1635,7 +1519,7 @@ namespace etl
       ETL_ASSERT(valid, ETL_ERROR(unhandled_message_exception));
     }
 
-  #if ETL_CPP11_SUPPORTED && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION)
+  #if ETL_USING_CPP11 && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION)
     //********************************************
     explicit message_packet(etl::imessage&& msg)
       : data()
@@ -1654,7 +1538,7 @@ namespace etl
     }
   #endif
 
-  #if ETL_CPP11_SUPPORTED && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION)
+  #if ETL_USING_CPP11 && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION) && !defined(ETL_COMPILER_GREEN_HILLS)
     //********************************************
     template <typename TMessage, typename = typename etl::enable_if<!etl::is_same<typename etl::remove_reference<TMessage>::type, etl::message_packet<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12> >::value &&
                                                                     !etl::is_same<typename etl::remove_reference<TMessage>::type, etl::imessage>::value &&
@@ -1688,7 +1572,6 @@ namespace etl
     }
   #endif
 
-
     //**********************************************
     message_packet(const message_packet& other)
       : data()
@@ -1700,7 +1583,7 @@ namespace etl
       }
     }
 
-  #if ETL_CPP11_SUPPORTED && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION)
+  #if ETL_USING_CPP11 && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION)
     //**********************************************
     message_packet(message_packet&& other)
       : data()
@@ -1726,7 +1609,7 @@ namespace etl
       return *this;
     }
 
-  #if ETL_CPP11_SUPPORTED && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION)
+  #if ETL_USING_CPP11 && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION)
     //**********************************************
     message_packet& operator =(message_packet&& rhs)
     {
@@ -1816,28 +1699,7 @@ namespace etl
       {
         etl::imessage* pmsg = static_cast<etl::imessage*>(data);
 
-  #if defined(ETL_MESSAGES_ARE_VIRTUAL) || defined(ETL_POLYMORPHIC_MESSAGES)
         pmsg->~imessage();
-  #else
-        size_t id = pmsg->get_message_id();
-
-        switch (id)
-        {
-          case T1::ID: static_cast<T1*>(pmsg)->~T1(); break;
-          case T2::ID: static_cast<T2*>(pmsg)->~T2(); break;
-          case T3::ID: static_cast<T3*>(pmsg)->~T3(); break;
-          case T4::ID: static_cast<T4*>(pmsg)->~T4(); break;
-          case T5::ID: static_cast<T5*>(pmsg)->~T5(); break;
-          case T6::ID: static_cast<T6*>(pmsg)->~T6(); break;
-          case T7::ID: static_cast<T7*>(pmsg)->~T7(); break;
-          case T8::ID: static_cast<T8*>(pmsg)->~T8(); break;
-          case T9::ID: static_cast<T9*>(pmsg)->~T9(); break;
-          case T10::ID: static_cast<T10*>(pmsg)->~T10(); break;
-          case T11::ID: static_cast<T11*>(pmsg)->~T11(); break;
-          case T12::ID: static_cast<T12*>(pmsg)->~T12(); break;
-          default: assert(false); break;
-        }
-    #endif
       }
     }
 
@@ -1865,7 +1727,7 @@ namespace etl
       }
     }
 
-  #if ETL_CPP11_SUPPORTED && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION)
+  #if ETL_USING_CPP11 && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION)
     //********************************************
     void add_new_message(etl::imessage&& msg)
     {
@@ -1929,7 +1791,7 @@ namespace etl
       ETL_ASSERT(valid, ETL_ERROR(unhandled_message_exception));
     }
 
-  #if ETL_CPP11_SUPPORTED && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION)
+  #if ETL_USING_CPP11 && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION)
     //********************************************
     explicit message_packet(etl::imessage&& msg)
       : data()
@@ -1948,7 +1810,7 @@ namespace etl
     }
   #endif
 
-  #if ETL_CPP11_SUPPORTED && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION)
+  #if ETL_USING_CPP11 && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION) && !defined(ETL_COMPILER_GREEN_HILLS)
     //********************************************
     template <typename TMessage, typename = typename etl::enable_if<!etl::is_same<typename etl::remove_reference<TMessage>::type, etl::message_packet<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11> >::value &&
                                                                     !etl::is_same<typename etl::remove_reference<TMessage>::type, etl::imessage>::value &&
@@ -1982,7 +1844,6 @@ namespace etl
     }
   #endif
 
-
     //**********************************************
     message_packet(const message_packet& other)
       : data()
@@ -1994,7 +1855,7 @@ namespace etl
       }
     }
 
-  #if ETL_CPP11_SUPPORTED && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION)
+  #if ETL_USING_CPP11 && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION)
     //**********************************************
     message_packet(message_packet&& other)
       : data()
@@ -2020,7 +1881,7 @@ namespace etl
       return *this;
     }
 
-  #if ETL_CPP11_SUPPORTED && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION)
+  #if ETL_USING_CPP11 && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION)
     //**********************************************
     message_packet& operator =(message_packet&& rhs)
     {
@@ -2110,27 +1971,7 @@ namespace etl
       {
         etl::imessage* pmsg = static_cast<etl::imessage*>(data);
 
-  #if defined(ETL_MESSAGES_ARE_VIRTUAL) || defined(ETL_POLYMORPHIC_MESSAGES)
         pmsg->~imessage();
-  #else
-        size_t id = pmsg->get_message_id();
-
-        switch (id)
-        {
-          case T1::ID: static_cast<T1*>(pmsg)->~T1(); break;
-          case T2::ID: static_cast<T2*>(pmsg)->~T2(); break;
-          case T3::ID: static_cast<T3*>(pmsg)->~T3(); break;
-          case T4::ID: static_cast<T4*>(pmsg)->~T4(); break;
-          case T5::ID: static_cast<T5*>(pmsg)->~T5(); break;
-          case T6::ID: static_cast<T6*>(pmsg)->~T6(); break;
-          case T7::ID: static_cast<T7*>(pmsg)->~T7(); break;
-          case T8::ID: static_cast<T8*>(pmsg)->~T8(); break;
-          case T9::ID: static_cast<T9*>(pmsg)->~T9(); break;
-          case T10::ID: static_cast<T10*>(pmsg)->~T10(); break;
-          case T11::ID: static_cast<T11*>(pmsg)->~T11(); break;
-          default: assert(false); break;
-        }
-    #endif
       }
     }
 
@@ -2157,7 +1998,7 @@ namespace etl
       }
     }
 
-  #if ETL_CPP11_SUPPORTED && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION)
+  #if ETL_USING_CPP11 && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION)
     //********************************************
     void add_new_message(etl::imessage&& msg)
     {
@@ -2220,7 +2061,7 @@ namespace etl
       ETL_ASSERT(valid, ETL_ERROR(unhandled_message_exception));
     }
 
-  #if ETL_CPP11_SUPPORTED && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION)
+  #if ETL_USING_CPP11 && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION)
     //********************************************
     explicit message_packet(etl::imessage&& msg)
       : data()
@@ -2239,7 +2080,7 @@ namespace etl
     }
   #endif
 
-  #if ETL_CPP11_SUPPORTED && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION)
+  #if ETL_USING_CPP11 && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION) && !defined(ETL_COMPILER_GREEN_HILLS)
     //********************************************
     template <typename TMessage, typename = typename etl::enable_if<!etl::is_same<typename etl::remove_reference<TMessage>::type, etl::message_packet<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> >::value &&
                                                                     !etl::is_same<typename etl::remove_reference<TMessage>::type, etl::imessage>::value &&
@@ -2273,7 +2114,6 @@ namespace etl
     }
   #endif
 
-
     //**********************************************
     message_packet(const message_packet& other)
       : data()
@@ -2285,7 +2125,7 @@ namespace etl
       }
     }
 
-  #if ETL_CPP11_SUPPORTED && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION)
+  #if ETL_USING_CPP11 && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION)
     //**********************************************
     message_packet(message_packet&& other)
       : data()
@@ -2311,7 +2151,7 @@ namespace etl
       return *this;
     }
 
-  #if ETL_CPP11_SUPPORTED && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION)
+  #if ETL_USING_CPP11 && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION)
     //**********************************************
     message_packet& operator =(message_packet&& rhs)
     {
@@ -2401,26 +2241,7 @@ namespace etl
       {
         etl::imessage* pmsg = static_cast<etl::imessage*>(data);
 
-  #if defined(ETL_MESSAGES_ARE_VIRTUAL) || defined(ETL_POLYMORPHIC_MESSAGES)
         pmsg->~imessage();
-  #else
-        size_t id = pmsg->get_message_id();
-
-        switch (id)
-        {
-          case T1::ID: static_cast<T1*>(pmsg)->~T1(); break;
-          case T2::ID: static_cast<T2*>(pmsg)->~T2(); break;
-          case T3::ID: static_cast<T3*>(pmsg)->~T3(); break;
-          case T4::ID: static_cast<T4*>(pmsg)->~T4(); break;
-          case T5::ID: static_cast<T5*>(pmsg)->~T5(); break;
-          case T6::ID: static_cast<T6*>(pmsg)->~T6(); break;
-          case T7::ID: static_cast<T7*>(pmsg)->~T7(); break;
-          case T8::ID: static_cast<T8*>(pmsg)->~T8(); break;
-          case T9::ID: static_cast<T9*>(pmsg)->~T9(); break;
-          case T10::ID: static_cast<T10*>(pmsg)->~T10(); break;
-          default: assert(false); break;
-        }
-    #endif
       }
     }
 
@@ -2446,7 +2267,7 @@ namespace etl
       }
     }
 
-  #if ETL_CPP11_SUPPORTED && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION)
+  #if ETL_USING_CPP11 && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION)
     //********************************************
     void add_new_message(etl::imessage&& msg)
     {
@@ -2508,7 +2329,7 @@ namespace etl
       ETL_ASSERT(valid, ETL_ERROR(unhandled_message_exception));
     }
 
-  #if ETL_CPP11_SUPPORTED && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION)
+  #if ETL_USING_CPP11 && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION)
     //********************************************
     explicit message_packet(etl::imessage&& msg)
       : data()
@@ -2527,7 +2348,7 @@ namespace etl
     }
   #endif
 
-  #if ETL_CPP11_SUPPORTED && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION)
+  #if ETL_USING_CPP11 && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION) && !defined(ETL_COMPILER_GREEN_HILLS)
     //********************************************
     template <typename TMessage, typename = typename etl::enable_if<!etl::is_same<typename etl::remove_reference<TMessage>::type, etl::message_packet<T1, T2, T3, T4, T5, T6, T7, T8, T9> >::value &&
                                                                     !etl::is_same<typename etl::remove_reference<TMessage>::type, etl::imessage>::value &&
@@ -2561,7 +2382,6 @@ namespace etl
     }
   #endif
 
-
     //**********************************************
     message_packet(const message_packet& other)
       : data()
@@ -2573,7 +2393,7 @@ namespace etl
       }
     }
 
-  #if ETL_CPP11_SUPPORTED && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION)
+  #if ETL_USING_CPP11 && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION)
     //**********************************************
     message_packet(message_packet&& other)
       : data()
@@ -2599,7 +2419,7 @@ namespace etl
       return *this;
     }
 
-  #if ETL_CPP11_SUPPORTED && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION)
+  #if ETL_USING_CPP11 && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION)
     //**********************************************
     message_packet& operator =(message_packet&& rhs)
     {
@@ -2689,25 +2509,7 @@ namespace etl
       {
         etl::imessage* pmsg = static_cast<etl::imessage*>(data);
 
-  #if defined(ETL_MESSAGES_ARE_VIRTUAL) || defined(ETL_POLYMORPHIC_MESSAGES)
         pmsg->~imessage();
-  #else
-        size_t id = pmsg->get_message_id();
-
-        switch (id)
-        {
-          case T1::ID: static_cast<T1*>(pmsg)->~T1(); break;
-          case T2::ID: static_cast<T2*>(pmsg)->~T2(); break;
-          case T3::ID: static_cast<T3*>(pmsg)->~T3(); break;
-          case T4::ID: static_cast<T4*>(pmsg)->~T4(); break;
-          case T5::ID: static_cast<T5*>(pmsg)->~T5(); break;
-          case T6::ID: static_cast<T6*>(pmsg)->~T6(); break;
-          case T7::ID: static_cast<T7*>(pmsg)->~T7(); break;
-          case T8::ID: static_cast<T8*>(pmsg)->~T8(); break;
-          case T9::ID: static_cast<T9*>(pmsg)->~T9(); break;
-          default: assert(false); break;
-        }
-    #endif
       }
     }
 
@@ -2732,7 +2534,7 @@ namespace etl
       }
     }
 
-  #if ETL_CPP11_SUPPORTED && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION)
+  #if ETL_USING_CPP11 && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION)
     //********************************************
     void add_new_message(etl::imessage&& msg)
     {
@@ -2792,7 +2594,7 @@ namespace etl
       ETL_ASSERT(valid, ETL_ERROR(unhandled_message_exception));
     }
 
-  #if ETL_CPP11_SUPPORTED && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION)
+  #if ETL_USING_CPP11 && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION)
     //********************************************
     explicit message_packet(etl::imessage&& msg)
       : data()
@@ -2811,7 +2613,7 @@ namespace etl
     }
   #endif
 
-  #if ETL_CPP11_SUPPORTED && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION)
+  #if ETL_USING_CPP11 && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION) && !defined(ETL_COMPILER_GREEN_HILLS)
     //********************************************
     template <typename TMessage, typename = typename etl::enable_if<!etl::is_same<typename etl::remove_reference<TMessage>::type, etl::message_packet<T1, T2, T3, T4, T5, T6, T7, T8> >::value &&
                                                                     !etl::is_same<typename etl::remove_reference<TMessage>::type, etl::imessage>::value &&
@@ -2845,7 +2647,6 @@ namespace etl
     }
   #endif
 
-
     //**********************************************
     message_packet(const message_packet& other)
       : data()
@@ -2857,7 +2658,7 @@ namespace etl
       }
     }
 
-  #if ETL_CPP11_SUPPORTED && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION)
+  #if ETL_USING_CPP11 && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION)
     //**********************************************
     message_packet(message_packet&& other)
       : data()
@@ -2883,7 +2684,7 @@ namespace etl
       return *this;
     }
 
-  #if ETL_CPP11_SUPPORTED && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION)
+  #if ETL_USING_CPP11 && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION)
     //**********************************************
     message_packet& operator =(message_packet&& rhs)
     {
@@ -2970,24 +2771,7 @@ namespace etl
       {
         etl::imessage* pmsg = static_cast<etl::imessage*>(data);
 
-  #if defined(ETL_MESSAGES_ARE_VIRTUAL) || defined(ETL_POLYMORPHIC_MESSAGES)
         pmsg->~imessage();
-  #else
-        size_t id = pmsg->get_message_id();
-
-        switch (id)
-        {
-          case T1::ID: static_cast<T1*>(pmsg)->~T1(); break;
-          case T2::ID: static_cast<T2*>(pmsg)->~T2(); break;
-          case T3::ID: static_cast<T3*>(pmsg)->~T3(); break;
-          case T4::ID: static_cast<T4*>(pmsg)->~T4(); break;
-          case T5::ID: static_cast<T5*>(pmsg)->~T5(); break;
-          case T6::ID: static_cast<T6*>(pmsg)->~T6(); break;
-          case T7::ID: static_cast<T7*>(pmsg)->~T7(); break;
-          case T8::ID: static_cast<T8*>(pmsg)->~T8(); break;
-          default: assert(false); break;
-        }
-    #endif
       }
     }
 
@@ -3011,7 +2795,7 @@ namespace etl
       }
     }
 
-  #if ETL_CPP11_SUPPORTED && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION)
+  #if ETL_USING_CPP11 && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION)
     //********************************************
     void add_new_message(etl::imessage&& msg)
     {
@@ -3070,7 +2854,7 @@ namespace etl
       ETL_ASSERT(valid, ETL_ERROR(unhandled_message_exception));
     }
 
-  #if ETL_CPP11_SUPPORTED && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION)
+  #if ETL_USING_CPP11 && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION)
     //********************************************
     explicit message_packet(etl::imessage&& msg)
       : data()
@@ -3089,7 +2873,7 @@ namespace etl
     }
   #endif
 
-  #if ETL_CPP11_SUPPORTED && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION)
+  #if ETL_USING_CPP11 && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION) && !defined(ETL_COMPILER_GREEN_HILLS)
     //********************************************
     template <typename TMessage, typename = typename etl::enable_if<!etl::is_same<typename etl::remove_reference<TMessage>::type, etl::message_packet<T1, T2, T3, T4, T5, T6, T7> >::value &&
                                                                     !etl::is_same<typename etl::remove_reference<TMessage>::type, etl::imessage>::value &&
@@ -3123,7 +2907,6 @@ namespace etl
     }
   #endif
 
-
     //**********************************************
     message_packet(const message_packet& other)
       : data()
@@ -3135,7 +2918,7 @@ namespace etl
       }
     }
 
-  #if ETL_CPP11_SUPPORTED && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION)
+  #if ETL_USING_CPP11 && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION)
     //**********************************************
     message_packet(message_packet&& other)
       : data()
@@ -3161,7 +2944,7 @@ namespace etl
       return *this;
     }
 
-  #if ETL_CPP11_SUPPORTED && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION)
+  #if ETL_USING_CPP11 && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION)
     //**********************************************
     message_packet& operator =(message_packet&& rhs)
     {
@@ -3248,23 +3031,7 @@ namespace etl
       {
         etl::imessage* pmsg = static_cast<etl::imessage*>(data);
 
-  #if defined(ETL_MESSAGES_ARE_VIRTUAL) || defined(ETL_POLYMORPHIC_MESSAGES)
         pmsg->~imessage();
-  #else
-        size_t id = pmsg->get_message_id();
-
-        switch (id)
-        {
-          case T1::ID: static_cast<T1*>(pmsg)->~T1(); break;
-          case T2::ID: static_cast<T2*>(pmsg)->~T2(); break;
-          case T3::ID: static_cast<T3*>(pmsg)->~T3(); break;
-          case T4::ID: static_cast<T4*>(pmsg)->~T4(); break;
-          case T5::ID: static_cast<T5*>(pmsg)->~T5(); break;
-          case T6::ID: static_cast<T6*>(pmsg)->~T6(); break;
-          case T7::ID: static_cast<T7*>(pmsg)->~T7(); break;
-          default: assert(false); break;
-        }
-    #endif
       }
     }
 
@@ -3287,7 +3054,7 @@ namespace etl
       }
     }
 
-  #if ETL_CPP11_SUPPORTED && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION)
+  #if ETL_USING_CPP11 && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION)
     //********************************************
     void add_new_message(etl::imessage&& msg)
     {
@@ -3345,7 +3112,7 @@ namespace etl
       ETL_ASSERT(valid, ETL_ERROR(unhandled_message_exception));
     }
 
-  #if ETL_CPP11_SUPPORTED && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION)
+  #if ETL_USING_CPP11 && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION)
     //********************************************
     explicit message_packet(etl::imessage&& msg)
       : data()
@@ -3364,7 +3131,7 @@ namespace etl
     }
   #endif
 
-  #if ETL_CPP11_SUPPORTED && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION)
+  #if ETL_USING_CPP11 && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION) && !defined(ETL_COMPILER_GREEN_HILLS)
     //********************************************
     template <typename TMessage, typename = typename etl::enable_if<!etl::is_same<typename etl::remove_reference<TMessage>::type, etl::message_packet<T1, T2, T3, T4, T5, T6> >::value &&
                                                                     !etl::is_same<typename etl::remove_reference<TMessage>::type, etl::imessage>::value &&
@@ -3398,7 +3165,6 @@ namespace etl
     }
   #endif
 
-
     //**********************************************
     message_packet(const message_packet& other)
       : data()
@@ -3410,7 +3176,7 @@ namespace etl
       }
     }
 
-  #if ETL_CPP11_SUPPORTED && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION)
+  #if ETL_USING_CPP11 && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION)
     //**********************************************
     message_packet(message_packet&& other)
       : data()
@@ -3436,7 +3202,7 @@ namespace etl
       return *this;
     }
 
-  #if ETL_CPP11_SUPPORTED && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION)
+  #if ETL_USING_CPP11 && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION)
     //**********************************************
     message_packet& operator =(message_packet&& rhs)
     {
@@ -3523,22 +3289,7 @@ namespace etl
       {
         etl::imessage* pmsg = static_cast<etl::imessage*>(data);
 
-  #if defined(ETL_MESSAGES_ARE_VIRTUAL) || defined(ETL_POLYMORPHIC_MESSAGES)
         pmsg->~imessage();
-  #else
-        size_t id = pmsg->get_message_id();
-
-        switch (id)
-        {
-          case T1::ID: static_cast<T1*>(pmsg)->~T1(); break;
-          case T2::ID: static_cast<T2*>(pmsg)->~T2(); break;
-          case T3::ID: static_cast<T3*>(pmsg)->~T3(); break;
-          case T4::ID: static_cast<T4*>(pmsg)->~T4(); break;
-          case T5::ID: static_cast<T5*>(pmsg)->~T5(); break;
-          case T6::ID: static_cast<T6*>(pmsg)->~T6(); break;
-          default: assert(false); break;
-        }
-    #endif
       }
     }
 
@@ -3560,7 +3311,7 @@ namespace etl
       }
     }
 
-  #if ETL_CPP11_SUPPORTED && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION)
+  #if ETL_USING_CPP11 && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION)
     //********************************************
     void add_new_message(etl::imessage&& msg)
     {
@@ -3617,7 +3368,7 @@ namespace etl
       ETL_ASSERT(valid, ETL_ERROR(unhandled_message_exception));
     }
 
-  #if ETL_CPP11_SUPPORTED && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION)
+  #if ETL_USING_CPP11 && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION)
     //********************************************
     explicit message_packet(etl::imessage&& msg)
       : data()
@@ -3636,7 +3387,7 @@ namespace etl
     }
   #endif
 
-  #if ETL_CPP11_SUPPORTED && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION)
+  #if ETL_USING_CPP11 && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION) && !defined(ETL_COMPILER_GREEN_HILLS)
     //********************************************
     template <typename TMessage, typename = typename etl::enable_if<!etl::is_same<typename etl::remove_reference<TMessage>::type, etl::message_packet<T1, T2, T3, T4, T5> >::value &&
                                                                     !etl::is_same<typename etl::remove_reference<TMessage>::type, etl::imessage>::value &&
@@ -3670,7 +3421,6 @@ namespace etl
     }
   #endif
 
-
     //**********************************************
     message_packet(const message_packet& other)
       : data()
@@ -3682,7 +3432,7 @@ namespace etl
       }
     }
 
-  #if ETL_CPP11_SUPPORTED && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION)
+  #if ETL_USING_CPP11 && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION)
     //**********************************************
     message_packet(message_packet&& other)
       : data()
@@ -3708,7 +3458,7 @@ namespace etl
       return *this;
     }
 
-  #if ETL_CPP11_SUPPORTED && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION)
+  #if ETL_USING_CPP11 && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION)
     //**********************************************
     message_packet& operator =(message_packet&& rhs)
     {
@@ -3795,21 +3545,7 @@ namespace etl
       {
         etl::imessage* pmsg = static_cast<etl::imessage*>(data);
 
-  #if defined(ETL_MESSAGES_ARE_VIRTUAL) || defined(ETL_POLYMORPHIC_MESSAGES)
         pmsg->~imessage();
-  #else
-        size_t id = pmsg->get_message_id();
-
-        switch (id)
-        {
-          case T1::ID: static_cast<T1*>(pmsg)->~T1(); break;
-          case T2::ID: static_cast<T2*>(pmsg)->~T2(); break;
-          case T3::ID: static_cast<T3*>(pmsg)->~T3(); break;
-          case T4::ID: static_cast<T4*>(pmsg)->~T4(); break;
-          case T5::ID: static_cast<T5*>(pmsg)->~T5(); break;
-          default: assert(false); break;
-        }
-    #endif
       }
     }
 
@@ -3830,7 +3566,7 @@ namespace etl
       }
     }
 
-  #if ETL_CPP11_SUPPORTED && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION)
+  #if ETL_USING_CPP11 && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION)
     //********************************************
     void add_new_message(etl::imessage&& msg)
     {
@@ -3885,7 +3621,7 @@ namespace etl
       ETL_ASSERT(valid, ETL_ERROR(unhandled_message_exception));
     }
 
-  #if ETL_CPP11_SUPPORTED && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION)
+  #if ETL_USING_CPP11 && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION)
     //********************************************
     explicit message_packet(etl::imessage&& msg)
       : data()
@@ -3904,7 +3640,7 @@ namespace etl
     }
   #endif
 
-  #if ETL_CPP11_SUPPORTED && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION)
+  #if ETL_USING_CPP11 && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION) && !defined(ETL_COMPILER_GREEN_HILLS)
     //********************************************
     template <typename TMessage, typename = typename etl::enable_if<!etl::is_same<typename etl::remove_reference<TMessage>::type, etl::message_packet<T1, T2, T3, T4> >::value &&
                                                                     !etl::is_same<typename etl::remove_reference<TMessage>::type, etl::imessage>::value &&
@@ -3938,7 +3674,6 @@ namespace etl
     }
   #endif
 
-
     //**********************************************
     message_packet(const message_packet& other)
       : data()
@@ -3950,7 +3685,7 @@ namespace etl
       }
     }
 
-  #if ETL_CPP11_SUPPORTED && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION)
+  #if ETL_USING_CPP11 && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION)
     //**********************************************
     message_packet(message_packet&& other)
       : data()
@@ -3976,7 +3711,7 @@ namespace etl
       return *this;
     }
 
-  #if ETL_CPP11_SUPPORTED && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION)
+  #if ETL_USING_CPP11 && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION)
     //**********************************************
     message_packet& operator =(message_packet&& rhs)
     {
@@ -4060,20 +3795,7 @@ namespace etl
       {
         etl::imessage* pmsg = static_cast<etl::imessage*>(data);
 
-  #if defined(ETL_MESSAGES_ARE_VIRTUAL) || defined(ETL_POLYMORPHIC_MESSAGES)
         pmsg->~imessage();
-  #else
-        size_t id = pmsg->get_message_id();
-
-        switch (id)
-        {
-          case T1::ID: static_cast<T1*>(pmsg)->~T1(); break;
-          case T2::ID: static_cast<T2*>(pmsg)->~T2(); break;
-          case T3::ID: static_cast<T3*>(pmsg)->~T3(); break;
-          case T4::ID: static_cast<T4*>(pmsg)->~T4(); break;
-          default: assert(false); break;
-        }
-    #endif
       }
     }
 
@@ -4093,7 +3815,7 @@ namespace etl
       }
     }
 
-  #if ETL_CPP11_SUPPORTED && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION)
+  #if ETL_USING_CPP11 && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION)
     //********************************************
     void add_new_message(etl::imessage&& msg)
     {
@@ -4147,7 +3869,7 @@ namespace etl
       ETL_ASSERT(valid, ETL_ERROR(unhandled_message_exception));
     }
 
-  #if ETL_CPP11_SUPPORTED && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION)
+  #if ETL_USING_CPP11 && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION)
     //********************************************
     explicit message_packet(etl::imessage&& msg)
       : data()
@@ -4166,7 +3888,7 @@ namespace etl
     }
   #endif
 
-  #if ETL_CPP11_SUPPORTED && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION)
+  #if ETL_USING_CPP11 && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION) && !defined(ETL_COMPILER_GREEN_HILLS)
     //********************************************
     template <typename TMessage, typename = typename etl::enable_if<!etl::is_same<typename etl::remove_reference<TMessage>::type, etl::message_packet<T1, T2, T3> >::value &&
                                                                     !etl::is_same<typename etl::remove_reference<TMessage>::type, etl::imessage>::value &&
@@ -4200,7 +3922,6 @@ namespace etl
     }
   #endif
 
-
     //**********************************************
     message_packet(const message_packet& other)
       : data()
@@ -4212,7 +3933,7 @@ namespace etl
       }
     }
 
-  #if ETL_CPP11_SUPPORTED && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION)
+  #if ETL_USING_CPP11 && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION)
     //**********************************************
     message_packet(message_packet&& other)
       : data()
@@ -4238,7 +3959,7 @@ namespace etl
       return *this;
     }
 
-  #if ETL_CPP11_SUPPORTED && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION)
+  #if ETL_USING_CPP11 && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION)
     //**********************************************
     message_packet& operator =(message_packet&& rhs)
     {
@@ -4322,19 +4043,7 @@ namespace etl
       {
         etl::imessage* pmsg = static_cast<etl::imessage*>(data);
 
-  #if defined(ETL_MESSAGES_ARE_VIRTUAL) || defined(ETL_POLYMORPHIC_MESSAGES)
         pmsg->~imessage();
-  #else
-        size_t id = pmsg->get_message_id();
-
-        switch (id)
-        {
-          case T1::ID: static_cast<T1*>(pmsg)->~T1(); break;
-          case T2::ID: static_cast<T2*>(pmsg)->~T2(); break;
-          case T3::ID: static_cast<T3*>(pmsg)->~T3(); break;
-          default: assert(false); break;
-        }
-    #endif
       }
     }
 
@@ -4353,7 +4062,7 @@ namespace etl
       }
     }
 
-  #if ETL_CPP11_SUPPORTED && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION)
+  #if ETL_USING_CPP11 && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION)
     //********************************************
     void add_new_message(etl::imessage&& msg)
     {
@@ -4406,7 +4115,7 @@ namespace etl
       ETL_ASSERT(valid, ETL_ERROR(unhandled_message_exception));
     }
 
-  #if ETL_CPP11_SUPPORTED && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION)
+  #if ETL_USING_CPP11 && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION)
     //********************************************
     explicit message_packet(etl::imessage&& msg)
       : data()
@@ -4425,7 +4134,7 @@ namespace etl
     }
   #endif
 
-  #if ETL_CPP11_SUPPORTED && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION)
+  #if ETL_USING_CPP11 && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION) && !defined(ETL_COMPILER_GREEN_HILLS)
     //********************************************
     template <typename TMessage, typename = typename etl::enable_if<!etl::is_same<typename etl::remove_reference<TMessage>::type, etl::message_packet<T1, T2> >::value &&
                                                                     !etl::is_same<typename etl::remove_reference<TMessage>::type, etl::imessage>::value &&
@@ -4459,7 +4168,6 @@ namespace etl
     }
   #endif
 
-
     //**********************************************
     message_packet(const message_packet& other)
       : data()
@@ -4471,7 +4179,7 @@ namespace etl
       }
     }
 
-  #if ETL_CPP11_SUPPORTED && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION)
+  #if ETL_USING_CPP11 && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION)
     //**********************************************
     message_packet(message_packet&& other)
       : data()
@@ -4497,7 +4205,7 @@ namespace etl
       return *this;
     }
 
-  #if ETL_CPP11_SUPPORTED && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION)
+  #if ETL_USING_CPP11 && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION)
     //**********************************************
     message_packet& operator =(message_packet&& rhs)
     {
@@ -4581,18 +4289,7 @@ namespace etl
       {
         etl::imessage* pmsg = static_cast<etl::imessage*>(data);
 
-  #if defined(ETL_MESSAGES_ARE_VIRTUAL) || defined(ETL_POLYMORPHIC_MESSAGES)
         pmsg->~imessage();
-  #else
-        size_t id = pmsg->get_message_id();
-
-        switch (id)
-        {
-          case T1::ID: static_cast<T1*>(pmsg)->~T1(); break;
-          case T2::ID: static_cast<T2*>(pmsg)->~T2(); break;
-          default: assert(false); break;
-        }
-    #endif
       }
     }
 
@@ -4610,7 +4307,7 @@ namespace etl
       }
     }
 
-  #if ETL_CPP11_SUPPORTED && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION)
+  #if ETL_USING_CPP11 && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION)
     //********************************************
     void add_new_message(etl::imessage&& msg)
     {
@@ -4662,7 +4359,7 @@ namespace etl
       ETL_ASSERT(valid, ETL_ERROR(unhandled_message_exception));
     }
 
-  #if ETL_CPP11_SUPPORTED && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION)
+  #if ETL_USING_CPP11 && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION)
     //********************************************
     explicit message_packet(etl::imessage&& msg)
       : data()
@@ -4681,7 +4378,7 @@ namespace etl
     }
   #endif
 
-  #if ETL_CPP11_SUPPORTED && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION)
+  #if ETL_USING_CPP11 && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION) && !defined(ETL_COMPILER_GREEN_HILLS)
     //********************************************
     template <typename TMessage, typename = typename etl::enable_if<!etl::is_same<typename etl::remove_reference<TMessage>::type, etl::message_packet<T1> >::value &&
                                                                     !etl::is_same<typename etl::remove_reference<TMessage>::type, etl::imessage>::value &&
@@ -4715,7 +4412,6 @@ namespace etl
     }
   #endif
 
-
     //**********************************************
     message_packet(const message_packet& other)
       : data()
@@ -4727,7 +4423,7 @@ namespace etl
       }
     }
 
-  #if ETL_CPP11_SUPPORTED && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION)
+  #if ETL_USING_CPP11 && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION)
     //**********************************************
     message_packet(message_packet&& other)
       : data()
@@ -4753,7 +4449,7 @@ namespace etl
       return *this;
     }
 
-  #if ETL_CPP11_SUPPORTED && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION)
+  #if ETL_USING_CPP11 && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION)
     //**********************************************
     message_packet& operator =(message_packet&& rhs)
     {
@@ -4837,17 +4533,7 @@ namespace etl
       {
         etl::imessage* pmsg = static_cast<etl::imessage*>(data);
 
-  #if defined(ETL_MESSAGES_ARE_VIRTUAL) || defined(ETL_POLYMORPHIC_MESSAGES)
         pmsg->~imessage();
-  #else
-        size_t id = pmsg->get_message_id();
-
-        switch (id)
-        {
-          case T1::ID: static_cast<T1*>(pmsg)->~T1(); break;
-          default: assert(false); break;
-        }
-    #endif
       }
     }
 
@@ -4864,7 +4550,7 @@ namespace etl
       }
     }
 
-  #if ETL_CPP11_SUPPORTED && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION)
+  #if ETL_USING_CPP11 && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION)
     //********************************************
     void add_new_message(etl::imessage&& msg)
     {

@@ -73,11 +73,6 @@ SOFTWARE.
 #define ETL_POLYMORPHIC_VECTOR
 #define ETL_POLYMORPHIC_INDIRECT_VECTOR
 
-//#define ETL_POLYMORPHIC_CONTAINERS
-
-//#define ETL_MESSAGES_ARE_VIRTUAL
-//#define ETL_POLYMORPHIC_MESSAGES
-
 #if defined(ETL_FORCE_TEST_CPP03_IMPLEMENTATION)
   #define ETL_FUNCTION_FORCE_CPP03_IMPLEMENTATION
   #define ETL_PRIORITY_QUEUE_FORCE_CPP03_IMPLEMENTATION
@@ -100,6 +95,8 @@ SOFTWARE.
   #define ETL_MESSAGE_ROUTER_FORCE_CPP03_IMPLEMENTATION
   #define ETL_FSM_FORCE_CPP03_IMPLEMENTATION
   #define ETL_DELEGATE_FORCE_CPP03_IMPLEMENTATION
+  #define ETL_SINGLETON_FORCE_CPP03_IMPLEMENTATION
+  #define ETL_BYTE_FORCE_CPP03_IMPLEMENTATION
 #endif
 
 #if defined(ETL_FORCE_TEST_CPP11)
@@ -107,19 +104,13 @@ SOFTWARE.
   #define ETL_VARIANT_FORCE_CPP11
 #endif
 
-//#define ETL_VARIANT_CPP11_MAX_16_TYPES
-
-#if defined(ETL_NO_STL)
-  #define ETL_TIMER_SEMAPHORE_TYPE uint32_t
-#endif
-
 #include "../include/etl/profiles/determine_compiler_language_support.h"
+#include "../include/etl/profiles/determine_compiler_version.h"
+#include "../include/etl/profiles/determine_development_os.h"
 
 #if ETL_CPP17_NOT_SUPPORTED
   #error THE UNIT TESTS REQUIRE C++17 SUPPORT
 #endif
-
-#include "../include/etl/profiles/determine_compiler_version.h"
 
 #if defined(ETL_COMPILER_GCC)
   #if (ETL_COMPILER_VERSION < 8)
@@ -127,14 +118,16 @@ SOFTWARE.
   #endif
 #endif
 
-#include "../include/etl/profiles/determine_development_os.h"
-
 #if defined(ETL_DEVELOPMENT_OS_WINDOWS)
   #define ETL_TARGET_OS_WINDOWS
 #elif defined(ETL_DEVELOPMENT_OS_LINUX)
   #define ETL_TARGET_OS_LINUX
 #else
   #define ETL_TARGET_OS_GENERIC
+#endif
+
+#if !((ETL_CPP20_SUPPORTED && !defined(ETL_NO_STL)) || defined(__BYTE_ORDER__))
+  #define ETL_ENDIAN_NATIVE 0
 #endif
 
 #endif

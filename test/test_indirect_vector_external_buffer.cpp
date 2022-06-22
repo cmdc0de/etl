@@ -258,7 +258,7 @@ namespace
       CHECK(!data.empty());
     }
 
-#if ETL_USING_INITIALIZER_LIST
+#if ETL_HAS_INITIALIZER_LIST
     //*************************************************************************
     TEST(test_constructor_initializer_list)
     {
@@ -485,7 +485,9 @@ namespace
       const DataDC constData(10, lookup2, pool2);
 
       CHECK_EQUAL(&data[0], &(*data.begin()));
+      CHECK_EQUAL(&data[0], &(*data.cbegin()));
       CHECK_EQUAL(&constData[0], &(*constData.begin()));
+      CHECK_EQUAL(&constData[0], &(*constData.cbegin()));
     }
 
     //*************************************************************************
@@ -500,8 +502,10 @@ namespace
       DataDC data(10, lookup1, pool1);
       const DataDC constData(10, lookup2, pool2);
 
-      CHECK_EQUAL(&data[10], &(*data.end()));
-      CHECK_EQUAL(&constData[10], &(constData.end()));
+      CHECK(std::distance(data.begin(), data.end()) == 10U);
+      CHECK(std::distance(data.cbegin(), data.cend()) == 10U);
+      CHECK(std::distance(constData.begin(), constData.end()) == 10U);
+      CHECK(std::distance(constData.cbegin(), constData.cend()) == 10U);
     }
 
     //*************************************************************************

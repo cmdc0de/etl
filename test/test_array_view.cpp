@@ -63,6 +63,9 @@ namespace
     const StlData cstldata = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
     const StlVData cstlvdata = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
 
+    const int FillData = -1;
+    const EtlData filldata = { -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 };
+
     int cdata[] = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
     int* pcdata = cdata;
 
@@ -284,7 +287,7 @@ namespace
     }
 
     //*************************************************************************
-#if ETL_CPP17_SUPPORTED && ETL_USING_INITIALIZER_LIST && !defined(ETL_TEMPLATE_DEDUCTION_GUIDE_TESTS_DISABLED)
+#if ETL_USING_CPP17 && ETL_HAS_INITIALIZER_LIST && !defined(ETL_TEMPLATE_DEDUCTION_GUIDE_TESTS_DISABLED)
     TEST(test_cpp17_deduced_constructor)
     {
       etl::array data{ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
@@ -746,6 +749,19 @@ namespace
 
       // Should compile without ambiguous function error.
       f_issue_482(c);
+    }
+
+    //*************************************************************************
+    TEST(test_fill)
+    {
+      View view;
+
+      view.assign(etldata.begin(), etldata.end());
+
+      view.fill(FillData);
+
+      bool isEqual = std::equal(filldata.begin(), filldata.end(), view.begin());
+      CHECK(isEqual);
     }
   };
 }

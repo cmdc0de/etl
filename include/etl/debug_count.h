@@ -35,6 +35,7 @@ SOFTWARE.
 #include <assert.h>
 
 #include "platform.h"
+#include "atomic.h"
 
 ///\defgroup debug_count debug count
 ///\ingroup utilities
@@ -62,23 +63,23 @@ namespace etl
   {
   public:
 
-    inline debug_count()
+    debug_count()
       : count(0)
     {
     }
 
-    inline ~debug_count()
+    ~debug_count()
     {
       assert(count == 0);
     }
 
-    inline debug_count& operator ++()
+    debug_count& operator ++()
     {
       ++count;
       return *this;
     }
 
-    inline debug_count& operator --()
+    debug_count& operator --()
     {
       --count;
       assert(count >= 0);
@@ -86,32 +87,36 @@ namespace etl
     }
 
     template <typename T>
-    inline debug_count& operator +=(T n)
+    debug_count& operator +=(T n)
     {
       count += int32_t(n);
       return *this;
     }
 
     template <typename T>
-    inline debug_count& operator -=(T n)
+    debug_count& operator -=(T n)
     {
       count -= int32_t(n);
       return *this;
     }
 
-    inline operator int32_t()
+    operator int32_t()
     {
       return count;
     }
 
-    inline void clear()
+    void clear()
     {
       count = 0;
     }
 
   private:
 
+#if ETL_HAS_ATOMIC
+    etl::atomic_int32_t count;
+#else
     int32_t count;
+#endif
   };
 
 }

@@ -386,7 +386,8 @@ namespace etl
     {
       while (first != last)
       {
-        add(*first++);
+        add(*first);
+        ++first;
       }
     }
 
@@ -526,11 +527,12 @@ namespace etl
     {
       while (first != last)
       {
-        this->add(*first++);
+        this->add(*first);
+        ++first;
       }
     }
 
-#if ETL_USING_INITIALIZER_LIST
+#if ETL_HAS_INITIALIZER_LIST
     //********************************************
     // Initializer_list constructor.
     //********************************************
@@ -541,7 +543,8 @@ namespace etl
 
       while (itr != init.end())
       {
-        this->add(*itr++);
+        this->add(*itr);
+        ++itr;
       }
     }
 #endif

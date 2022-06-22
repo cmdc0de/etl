@@ -129,7 +129,7 @@ namespace etl
     template <typename TIterator>
     void assign(TIterator first, TIterator last)
     {
-#if defined(ETL_DEBUG)
+#if ETL_IS_DEBUG_BUILD
       intmax_t d = etl::distance(first, last);
       ETL_ASSERT(d >= 0, ETL_ERROR(intrusive_list_iterator_exception));
 #endif
@@ -688,7 +688,8 @@ namespace etl
       while (first != last)
       {
         // Set up the next free link.
-        this->insert_link(*position.p_value->link_type::etl_previous, *first++);
+        this->insert_link(*position.p_value->link_type::etl_previous, *first);
+        ++first;
       }
     }
 
@@ -1046,7 +1047,7 @@ namespace etl
     {
       if ((this != &other) && !other.empty())
       {
-#if defined(ETL_DEBUG)
+#if ETL_IS_DEBUG_BUILD
         ETL_ASSERT(etl::is_sorted(other.begin(), other.end(), compare), ETL_ERROR(intrusive_list_unsorted));
         ETL_ASSERT(etl::is_sorted(begin(), end(), compare), ETL_ERROR(intrusive_list_unsorted));
 #endif

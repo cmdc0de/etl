@@ -140,7 +140,7 @@ namespace etl
       this->accumulator = other.accumulator;
     }
 
-#if ETL_CPP11_SUPPORTED
+#if ETL_USING_CPP11
     //*********************************
     /// Move constructor
     //*********************************
@@ -160,7 +160,7 @@ namespace etl
       return *this;
     }
 
-#if ETL_CPP11_SUPPORTED
+#if ETL_USING_CPP11
     //*********************************
     /// Move assignment
     //*********************************
@@ -188,7 +188,8 @@ namespace etl
     {
       while (first != last)
       {
-        add(*first++);
+        add(*first);
+        ++first;
       }
     }
 
@@ -263,7 +264,7 @@ namespace etl
       this->accumulator = other.accumulator;
     }
 
-#if ETL_CPP11_SUPPORTED
+#if ETL_USING_CPP11
     //*********************************
     /// Move constructor
     //*********************************
@@ -283,7 +284,7 @@ namespace etl
       return *this;
     }
 
-#if ETL_CPP11_SUPPORTED
+#if ETL_USING_CPP11
     //*********************************
     /// Move assignment
     //*********************************
@@ -311,7 +312,8 @@ namespace etl
     {
       while (first != last)
       {
-        add(*first++);
+        add(*first);
+        ++first;
       }
     }
 
@@ -392,7 +394,7 @@ namespace etl
       this->accumulator = other.accumulator;
     }
 
-#if ETL_CPP11_SUPPORTED
+#if ETL_USING_CPP11
     //*********************************
     /// Move constructor
     //*********************************
@@ -412,7 +414,7 @@ namespace etl
       return *this;
     }
 
-#if ETL_CPP11_SUPPORTED
+#if ETL_USING_CPP11
     //*********************************
     /// Move assignment
     //*********************************
@@ -472,7 +474,8 @@ namespace etl
     {
       while (first != last)
       {
-        add(*first++);
+        add(*first);
+        ++first;
       }
     }
 
@@ -547,7 +550,8 @@ namespace etl
 
       while (itr != accumulator.end())
       {
-        sum += (*itr++).second;
+        sum += (*itr).second;
+        ++itr;
       }
 
       return sum;

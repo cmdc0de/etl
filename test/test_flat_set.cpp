@@ -278,9 +278,9 @@ namespace
       CHECK(data.begin() == data.end());
     }
 
-#if ETL_CPP17_SUPPORTED && ETL_USING_INITIALIZER_LIST && !defined(ETL_TEMPLATE_DEDUCTION_GUIDE_TESTS_DISABLED)
+#if ETL_USING_CPP17 && ETL_HAS_INITIALIZER_LIST && !defined(ETL_TEMPLATE_DEDUCTION_GUIDE_TESTS_DISABLED)
     //*************************************************************************
-    TEST(test_cpp17_deduced_constructor)
+    TEST_FIXTURE(SetupFixture, test_cpp17_deduced_constructor)
     {
       etl::flat_set data{ N0, N1, N2, N3, N4, N5, N6, N7, N8, N9 };
       etl::flat_set<NDC, 10U> check = { N0, N1, N2, N3, N4, N5, N6, N7, N8, N9 };
@@ -297,7 +297,7 @@ namespace
 #endif
 
     //*************************************************************************
-    TEST(test_destruct_via_iflat_set)
+    TEST_FIXTURE(SetupFixture, test_destruct_via_iflat_set)
     {
       int current_count = NDC::get_instance_count();
 
@@ -320,7 +320,7 @@ namespace
       CHECK(!data.empty());
     }
 
-#if ETL_USING_INITIALIZER_LIST
+#if ETL_HAS_INITIALIZER_LIST
     //*************************************************************************
     TEST_FIXTURE(SetupFixture, test_constructor_initializer_list)
     {
@@ -339,7 +339,7 @@ namespace
 #endif
 
     //*************************************************************************
-    TEST(test_move_constructor)
+    TEST_FIXTURE(SetupFixture, test_move_constructor)
     {
       using Item = MC;
 
@@ -1161,8 +1161,8 @@ namespace
     }
 
     //*************************************************************************
-#if ETL_CPP17_SUPPORTED && ETL_USING_INITIALIZER_LIST && !defined(ETL_TEMPLATE_DEDUCTION_GUIDE_TESTS_DISABLED)
-    TEST(test_flat_set_template_deduction)
+#if ETL_USING_CPP17 && ETL_HAS_INITIALIZER_LIST && !defined(ETL_TEMPLATE_DEDUCTION_GUIDE_TESTS_DISABLED)
+    TEST_FIXTURE(SetupFixture, test_flat_set_template_deduction)
     {
       using Pair = ETL_OR_STD::pair<const int, NDC>;
 
@@ -1189,8 +1189,8 @@ namespace
 #endif
 
     //*************************************************************************
-#if ETL_USING_INITIALIZER_LIST
-    TEST(test_make_flat_set)
+#if ETL_HAS_INITIALIZER_LIST
+    TEST_FIXTURE(SetupFixture, test_make_flat_set)
     {
       auto data = etl::make_flat_set<NDC>(NDC("A"), NDC("B"), NDC("C"), NDC("D"), NDC("E"), NDC("F"));
 

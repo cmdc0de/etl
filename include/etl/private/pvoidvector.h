@@ -337,7 +337,7 @@ namespace etl
     typename etl::enable_if<!etl::is_pointer<TIterator>::value, void>::type
       assign(TIterator first, TIterator last)
     {
-#if defined(ETL_DEBUG)
+#if ETL_IS_DEBUG_BUILD
       difference_type d = etl::distance(first, last);
       ETL_ASSERT(static_cast<size_t>(d) <= CAPACITY, ETL_ERROR(vector_full));
 #endif
@@ -346,7 +346,8 @@ namespace etl
 
       while (first != last)
       {
-        *p_end++ = (void*)(*first++);
+        *p_end++ = (void*)(*first);
+        ++first;
       }
     }
 
@@ -361,7 +362,7 @@ namespace etl
     typename etl::enable_if<etl::is_pointer<TIterator>::value, void>::type
       assign(TIterator first, TIterator last)
     {
-#if defined(ETL_DEBUG)     
+#if ETL_IS_DEBUG_BUILD     
       difference_type d = etl::distance(first, last);
       ETL_ASSERT(static_cast<size_t>(d) <= CAPACITY, ETL_ERROR(vector_full));
 #endif
@@ -592,7 +593,7 @@ namespace etl
       return *this;
     }
 
-#if ETL_CPP11_SUPPORTED
+#if ETL_USING_CPP11
     //*************************************************************************
     /// Move assignment operator.
     //*************************************************************************

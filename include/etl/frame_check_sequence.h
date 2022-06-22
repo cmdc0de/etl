@@ -36,7 +36,7 @@ SOFTWARE.
 
 #include "iterator.h"
 
-ETL_STATIC_ASSERT(ETL_8BIT_SUPPORT, "This file does not currently support targets with no 8bit type");
+ETL_STATIC_ASSERT(ETL_USING_8BIT_TYPES, "This file does not currently support targets with no 8bit type");
 
 ///\defgroup frame_check_sequence Frame check sequence calculation
 ///\ingroup maths
@@ -149,7 +149,8 @@ namespace etl
 
       while (begin != end)
       {
-        frame_check = policy.add(frame_check, *begin++);
+        frame_check = policy.add(frame_check, *begin);
+        ++begin;
       }
     }
 

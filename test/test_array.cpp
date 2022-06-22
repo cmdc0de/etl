@@ -62,7 +62,7 @@ namespace
       CHECK_EQUAL(data.max_size(), SIZE);
     }
 
-#if ETL_CPP17_SUPPORTED && ETL_USING_INITIALIZER_LIST && !defined(ETL_TEMPLATE_DEDUCTION_GUIDE_TESTS_DISABLED)
+#if ETL_USING_CPP17 && ETL_HAS_INITIALIZER_LIST && !defined(ETL_TEMPLATE_DEDUCTION_GUIDE_TESTS_DISABLED)
     //*************************************************************************
     TEST(test_cpp17_deduced_constructor)
     {
@@ -210,7 +210,7 @@ namespace
     {
       Data data = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
 
-      CHECK_EQUAL(data.end(), &data[SIZE]);
+      CHECK_EQUAL(data.end(), data.data() + SIZE);
     }
 
     //*************************************************************************
@@ -218,7 +218,7 @@ namespace
     {
       const Data data = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
 
-      CHECK_EQUAL(data.cbegin(), &data[0]);
+      CHECK_EQUAL(data.cbegin(), data.data());
     }
 
     //*************************************************************************
@@ -226,7 +226,7 @@ namespace
     {
       const Data data = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
 
-      CHECK_EQUAL(data.cend(), &data[SIZE]);
+      CHECK_EQUAL(data.cend(), data.data() + SIZE);
     }
 
     //*************************************************************************
@@ -234,7 +234,7 @@ namespace
     {
       Data data = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
 
-      CHECK(data.rbegin() == Data::reverse_iterator(&data[SIZE]));
+      CHECK(data.rbegin() == Data::reverse_iterator(data.data() + SIZE));
     }
 
     //*************************************************************************
@@ -250,7 +250,7 @@ namespace
     {
       const Data data = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
 
-      CHECK(data.crbegin() == Data::const_reverse_iterator(&data[SIZE]));
+      CHECK(data.crbegin() == Data::const_reverse_iterator(data.data() + SIZE));
     }
 
     //*************************************************************************
@@ -651,7 +651,7 @@ namespace
     }
 
     //*************************************************************************
-#if ETL_CPP17_SUPPORTED && ETL_USING_INITIALIZER_LIST && !defined(ETL_TEMPLATE_DEDUCTION_GUIDE_TESTS_DISABLED)
+#if ETL_USING_CPP17 && ETL_HAS_INITIALIZER_LIST && !defined(ETL_TEMPLATE_DEDUCTION_GUIDE_TESTS_DISABLED)
     TEST(test_array_template_deduction)
     {
       etl::array data{ char(0), short(1), int(2), long(3), 4, 5, 6, 7, 8, 9 };
@@ -673,7 +673,7 @@ namespace
 #endif
 
     //*************************************************************************
-#if ETL_CPP17_SUPPORTED && ETL_USING_INITIALIZER_LIST
+#if ETL_USING_CPP17 && ETL_HAS_INITIALIZER_LIST
     TEST(test_array_template_deduction_for_movable)
     {
       etl::array data{ Moveable(0), Moveable(1), Moveable(2), Moveable(3), Moveable(4), Moveable(5), Moveable(6), Moveable(7), Moveable(8), Moveable(9) };
@@ -695,7 +695,7 @@ namespace
 #endif
 
     //*************************************************************************
-#if ETL_USING_INITIALIZER_LIST
+#if ETL_HAS_INITIALIZER_LIST
     TEST(test_make_array)
     {
       auto data = etl::make_array<char>(0, 1, 2, 3, 4, 5, 6, 7, 8, 9);
@@ -717,7 +717,7 @@ namespace
 #endif
 
     //*************************************************************************
-#if ETL_USING_INITIALIZER_LIST
+#if ETL_HAS_INITIALIZER_LIST
     TEST(test_make_array_for_movable)
     {
       auto data = etl::make_array<Moveable>(Moveable(0), Moveable(1), Moveable(2), Moveable(3), Moveable(4), Moveable(5), Moveable(6), Moveable(7), Moveable(8), Moveable(9));

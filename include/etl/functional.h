@@ -107,8 +107,25 @@ namespace etl
   }
 
   //***************************************************************************
+  template <typename TArgumentType, typename TResultType>
+  struct unary_function
+  {
+    typedef TArgumentType argument_type;
+    typedef TResultType   result_type;
+  };
+
+  //***************************************************************************
+  template <typename TFirstArgumentType, typename TSecondArgumentType, typename TResultType>
+  struct binary_function
+  {
+    typedef TFirstArgumentType  first_argument_type;
+    typedef TSecondArgumentType second_argument_type;
+    typedef TResultType         result_type;
+  };
+
+  //***************************************************************************
   template <typename T = void>
-  struct less
+  struct less : public etl::binary_function<T, T, bool>
   {
     typedef T value_type;
 
@@ -118,9 +135,9 @@ namespace etl
     }
   };
 
-#if ETL_CPP11_SUPPORTED
+#if ETL_USING_CPP11
   template <>
-  struct less<void> 
+  struct less<void> : public etl::binary_function<void, void, bool>
   {
     typedef int is_transparent;
 
@@ -134,7 +151,7 @@ namespace etl
 
   //***************************************************************************
   template <typename T = void>
-  struct less_equal
+  struct less_equal : public etl::binary_function<T, T, bool>
   {
     typedef T value_type;
 
@@ -144,10 +161,9 @@ namespace etl
     }
   };
 
-
-#if ETL_CPP11_SUPPORTED
+#if ETL_USING_CPP11
   template <>
-  struct less_equal<void>
+  struct less_equal<void> : public etl::binary_function<void, void, bool>
   {
     typedef int is_transparent;
 
@@ -161,7 +177,7 @@ namespace etl
 
   //***************************************************************************
   template <typename T = void>
-  struct greater
+  struct greater : public etl::binary_function<T, T, bool>
   {
     typedef T value_type;
 
@@ -171,9 +187,9 @@ namespace etl
     }
   };
 
-#if ETL_CPP11_SUPPORTED
+#if ETL_USING_CPP11
   template <>
-  struct greater<void>
+  struct greater<void> : public etl::binary_function<void, void, bool>
   {
     typedef int is_transparent;
 
@@ -187,7 +203,7 @@ namespace etl
 
   //***************************************************************************
   template <typename T = void>
-  struct greater_equal
+  struct greater_equal : public etl::binary_function<T, T, bool>
   {
     typedef T value_type;
 
@@ -197,9 +213,9 @@ namespace etl
     }
   };
 
-#if ETL_CPP11_SUPPORTED
+#if ETL_USING_CPP11
   template <>
-  struct greater_equal<void>
+  struct greater_equal<void> : public etl::binary_function<void, void, bool>
   {
     typedef int is_transparent;
 
@@ -213,7 +229,7 @@ namespace etl
 
   //***************************************************************************
   template <typename T = void>
-  struct equal_to
+  struct equal_to : public etl::binary_function<T, T, bool>
   {
     typedef T value_type;
 
@@ -223,9 +239,9 @@ namespace etl
     }
   };
 
-#if ETL_CPP11_SUPPORTED
+#if ETL_USING_CPP11
   template <>
-  struct equal_to<void>
+  struct equal_to<void> : public etl::binary_function<void, void, bool>
   {
     typedef void value_type;
     typedef int is_transparent;
@@ -240,7 +256,7 @@ namespace etl
 
   //***************************************************************************
   template <typename T = void>
-  struct not_equal_to
+  struct not_equal_to : public etl::binary_function<T, T, bool>
   {
     typedef T value_type;
 
@@ -250,9 +266,9 @@ namespace etl
     }
   };
 
-#if ETL_CPP11_SUPPORTED
+#if ETL_USING_CPP11
   template <>
-  struct not_equal_to<void>
+  struct not_equal_to<void> : public etl::binary_function<void, void, bool>
   {
     typedef int is_transparent;
 
@@ -265,26 +281,6 @@ namespace etl
 #endif
 
   //***************************************************************************
-
-  template <typename TArgumentType, typename TResultType>
-  struct unary_function
-  {
-    typedef TArgumentType argument_type;
-    typedef TResultType   result_type;
-  };
-
-  //***************************************************************************
-
-  template <typename TFirstArgumentType, typename TSecondArgumentType, typename TResultType>
-  struct binary_function
-  {
-    typedef TFirstArgumentType  first_argument_type;
-    typedef TSecondArgumentType second_argument_type;
-    typedef TResultType         result_type;
-  };
-
-  //***************************************************************************
-
   template <typename TFunction>
   class binder1st : public etl::unary_function<typename TFunction::second_argument_type, typename TFunction::result_type>
   {

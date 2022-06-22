@@ -71,6 +71,7 @@ namespace
     CompareDataNDC unordered_data;
     CompareDataNDC stable_part_ordered_data;
     CompareDataNDC stable_part_greater_ordered_data;
+    CompareDataNDC blank_data;
 
     template <typename TIterator, typename TFunctor>
     void test_algorithm(TIterator first1, TIterator last1, TIterator first2, TFunctor functor)
@@ -105,6 +106,7 @@ namespace
         NDC n_stable_part_ordered[]         = { NDC("1"), NDC("4", 1), NDC("0"), NDC("2"), NDC("3"), NDC("4", 2), NDC("4", 3), NDC("6"), NDC("7"), NDC("9"), NDC("8"), NDC("5") };
         NDC n_stable_part_greater_ordered[] = { NDC("1"), NDC("4", 1), NDC("9"), NDC("7"), NDC("6"), NDC("4", 2), NDC("4", 3), NDC("3"), NDC("2"), NDC("0"), NDC("8"), NDC("5") };
 
+        NDC n_blank[] = { NDC("99"), NDC("99"), NDC("99"), NDC("99"), NDC("99"), NDC("99"), NDC("99"), NDC("99"), NDC("99"), NDC("99"), NDC("99"), NDC("99") };
 
         initial_data.assign(std::begin(n), std::end(n));
         insert_data.assign(std::begin(n_insert), std::end(n_insert));
@@ -122,6 +124,7 @@ namespace
         stable_greater_reverse_ordered_data.assign(std::begin(n_stable_greater_reverse_ordered_data), std::end(n_stable_greater_reverse_ordered_data));
         stable_part_ordered_data.assign(std::begin(n_stable_part_ordered), std::end(n_stable_part_ordered));
         stable_part_greater_ordered_data.assign(std::begin(n_stable_part_greater_ordered), std::end(n_stable_part_greater_ordered));
+        blank_data.assign(std::begin(n_blank), std::end(n_blank));
       }
     };
 
@@ -136,7 +139,7 @@ namespace
       CHECK_EQUAL(data.max_size(), SIZE);
     }
 
-#if ETL_CPP17_SUPPORTED && ETL_USING_INITIALIZER_LIST && !defined(ETL_TEMPLATE_DEDUCTION_GUIDE_TESTS_DISABLED)
+#if ETL_USING_CPP17 && ETL_HAS_INITIALIZER_LIST && !defined(ETL_TEMPLATE_DEDUCTION_GUIDE_TESTS_DISABLED)
     //*************************************************************************
     TEST(test_cpp17_deduced_constructor)
     {
@@ -230,7 +233,7 @@ namespace
       CHECK(!data.empty());
     }
 
-#if ETL_USING_INITIALIZER_LIST
+#if ETL_HAS_INITIALIZER_LIST
     //*************************************************************************
     TEST(test_constructor_initializer_list)
     {
@@ -406,17 +409,21 @@ namespace
       const DataDC constData(10);
 
       CHECK_EQUAL(&data[0], &(*data.begin()));
+      CHECK_EQUAL(&data[0], &(*data.cbegin()));
       CHECK_EQUAL(&constData[0], &(*constData.begin()));
+      CHECK_EQUAL(&constData[0], &(*constData.cbegin()));
     }
 
     //*************************************************************************
     TEST_FIXTURE(SetupFixture, test_end)
     {
-      DataDC data(10);
-      const DataDC constData(10);
+      DataDC data(10U);
+      const DataDC constData(10U);
 
-      CHECK_EQUAL(&data[10], &(*data.end()));
-      CHECK_EQUAL(&constData[10], &(constData.end()));
+      CHECK(std::distance(data.begin(),       data.end())       == 10U);
+      CHECK(std::distance(data.cbegin(),      data.cend())      == 10U);
+      CHECK(std::distance(constData.begin(),  constData.end())  == 10U);
+      CHECK(std::distance(constData.cbegin(), constData.cend()) == 10U);
     }
 
     //*************************************************************************
@@ -845,7 +852,7 @@ namespace
     // So this is only tested on C++11 onwards
     TEST_FIXTURE(SetupFixture, test_emplace_back_non_const_references)
     {
-#if ETL_CPP11_SUPPORTED && ETL_NOT_USING_STLPORT && !defined(ETL_VECTOR_FORCE_CPP03_IMPLEMENTATION)
+#if ETL_USING_CPP11 && ETL_NOT_USING_STLPORT && !defined(ETL_VECTOR_FORCE_CPP03_IMPLEMENTATION)
       class Data
       {
       public:
@@ -1465,6 +1472,16 @@ namespace
                                  ordered_data.begin());
 
       CHECK(is_equal);
+    }
+
+    //*************************************************************************
+    TEST(test_fill)
+    {
+      DataNDC data(initial_data.begin(), initial_data.end());
+
+      data.fill(NDC("99"));
+
+      CHECK(std::equal(blank_data.begin(), blank_data.end(), data.begin()));
     }
   };
 }

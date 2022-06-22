@@ -43,8 +43,8 @@ namespace etl
 {
   //***************************************************************************
   ///\ingroup fibonacci
-  /// Defines <b>value</b> as the Nth Fibbonacci number.
-  ///\tparam N The number to find the Fibbonacci value of.
+  /// Defines <b>value</b> as the Nth Fibonacci number.
+  ///\tparam N The number to find the Fibonacci value of.
   //***************************************************************************
   template <size_t N>
   struct fibonacci
@@ -70,7 +70,7 @@ namespace etl
     static ETL_CONSTANT size_t value = 0UL;
   };
 
-#if ETL_CPP17_SUPPORTED
+#if ETL_USING_CPP17
   template <size_t N>
   inline constexpr size_t fibonacci_v = fibonacci<N>::value;
 #endif

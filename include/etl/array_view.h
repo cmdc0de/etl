@@ -43,7 +43,7 @@ SOFTWARE.
 #include "memory.h"
 #include "type_traits.h"
 
-#if ETL_CPP11_SUPPORTED && ETL_USING_STL
+#if ETL_USING_CPP11 && ETL_USING_STL
 #include <array>
 #endif
 
@@ -130,7 +130,7 @@ namespace etl
     {
     }
 
-#if ETL_CPP11_SUPPORTED
+#if ETL_USING_CPP11
     //*************************************************************************
     /// Construct from etl::array.
     //*************************************************************************
@@ -172,7 +172,7 @@ namespace etl
     }
 #endif
 
-#if ETL_CPP11_SUPPORTED && ETL_USING_STL
+#if ETL_USING_CPP11 && ETL_USING_STL
     //*************************************************************************
     /// Construct from std::array.
     //*************************************************************************
@@ -194,7 +194,7 @@ namespace etl
     }
 #endif
 
-#if ETL_CPP11_SUPPORTED
+#if ETL_USING_CPP11
     //*************************************************************************
     /// Construct from a container or other type that supports
     /// data() and size() member functions.
@@ -548,6 +548,14 @@ namespace etl
     }
 
     //*************************************************************************
+    /// Fills the array.
+    //*************************************************************************
+    void fill(const T& value)
+    {
+      etl::fill(begin(), end(), value);
+    }
+
+    //*************************************************************************
     /// Equality for array views.
     //*************************************************************************
     friend bool operator == (const array_view<T>& lhs, const array_view<T>& rhs)
@@ -605,7 +613,7 @@ namespace etl
   //*************************************************************************
   /// Template deduction guides.
   //*************************************************************************
-#if ETL_CPP17_SUPPORTED
+#if ETL_USING_CPP17
   template <typename TArray>
   array_view(TArray& a) 
     -> array_view<typename TArray::value_type>;
@@ -623,7 +631,7 @@ namespace etl
   //*************************************************************************
   /// Hash function.
   //*************************************************************************
-#if ETL_8BIT_SUPPORT
+#if ETL_USING_8BIT_TYPES
   template <typename T>
   struct hash<etl::array_view<T> >
   {

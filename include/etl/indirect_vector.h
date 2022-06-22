@@ -38,10 +38,7 @@ SOFTWARE.
 #include "utility.h"
 #include "functional.h"
 #include "static_assert.h"
-
-#if ETL_CPP11_SUPPORTED && ETL_NOT_USING_STLPORT && ETL_USING_STL
-  #include <initializer_list>
-#endif
+#include "initializer_list.h"
 
 #ifdef ETL_COMPILER_GCC
 #pragma GCC diagnostic push
@@ -83,7 +80,7 @@ namespace etl
     typedef T              value_type;
     typedef T&             reference;
     typedef const T&       const_reference;
-#if ETL_CPP11_SUPPORTED
+#if ETL_USING_CPP11
     typedef T&&            rvalue_reference;
 #endif
     typedef T*             pointer;
@@ -607,6 +604,7 @@ namespace etl
 
     //*********************************************************************
     /// Does nothing.
+    /// For compatibility with the STL vector API.
     //*********************************************************************
     void reserve(size_t)
     {
@@ -702,7 +700,7 @@ namespace etl
     {
       ETL_STATIC_ASSERT((etl::is_same<typename etl::remove_cv<T>::type, typename etl::remove_cv<typename etl::iterator_traits<TIterator>::value_type>::type>::value), "Iterator type does not match container type");
 
-#if defined(ETL_DEBUG)
+#if ETL_IS_DEBUG_BUILD
       difference_type d = etl::distance(first, last);
       ETL_ASSERT(static_cast<size_t>(d) <= capacity(), ETL_ERROR(vector_full));
 #endif
@@ -744,6 +742,14 @@ namespace etl
       initialise();
     }
 
+    //*************************************************************************
+    /// Fills the buffer.
+    //*************************************************************************
+    void fill(const T& value)
+    {
+      etl::fill(begin(), end(), value);
+    }
+
     //*********************************************************************
     /// Inserts a value at the end of the indirect_vector.
     /// If asserts or exceptions are enabled, emits vector_full if the indirect_vector is already full.
@@ -758,7 +764,7 @@ namespace etl
       lookup.push_back(p);
     }
 
-#if ETL_CPP11_SUPPORTED
+#if ETL_USING_CPP11
     //*********************************************************************
     /// Inserts a value at the end of the indirect_vector.
     /// If asserts or exceptions are enabled, emits vector_full if the indirect_vector is already full.
@@ -774,7 +780,7 @@ namespace etl
     }
 #endif
 
-#if ETL_CPP11_SUPPORTED && ETL_NOT_USING_STLPORT && !defined(ETL_VECTOR_FORCE_CPP03_IMPLEMENTATION)
+#if ETL_USING_CPP11 && ETL_NOT_USING_STLPORT && !defined(ETL_VECTOR_FORCE_CPP03_IMPLEMENTATION)
     //*********************************************************************
     /// Constructs a value at the end of the indirect_vector.
     /// If asserts or exceptions are enabled, emits vector_full if the indirect_vector is already full.
@@ -864,7 +870,7 @@ namespace etl
       return to_iterator(position);
     }
 
-#if ETL_CPP11_SUPPORTED
+#if ETL_USING_CPP11
     //*********************************************************************
     /// Inserts a value to the indirect_vector.
     /// If asserts or exceptions are enabled, emits vector_full if the indirect_vector is already full.
@@ -885,7 +891,7 @@ namespace etl
     //*************************************************************************
     /// Emplaces a value to the vector at the specified position.
     //*************************************************************************
-#if ETL_CPP11_SUPPORTED && ETL_NOT_USING_STLPORT
+#if ETL_USING_CPP11 && ETL_NOT_USING_STLPORT
     template <typename ... Args>
     iterator emplace(iterator position, Args && ... args)
     {
@@ -1056,7 +1062,7 @@ namespace etl
       return *this;
     }
 
-#if ETL_CPP11_SUPPORTED
+#if ETL_USING_CPP11
     //*************************************************************************
     /// Move assignment operator.
     //*************************************************************************
@@ -1160,7 +1166,7 @@ namespace etl
       lookup.clear();
     }
 
-#if ETL_CPP11_SUPPORTED
+#if ETL_USING_CPP11
     //*********************************************************************
     /// Move from a container.
     //*********************************************************************
@@ -1202,7 +1208,6 @@ namespace etl
 #endif
     ~iindirect_vector()
     {
-      initialise();
     }
 
   protected:
@@ -1351,7 +1356,7 @@ namespace etl
       this->assign(first, last);
     }
 
-#if ETL_USING_INITIALIZER_LIST
+#if ETL_HAS_INITIALIZER_LIST
     //*************************************************************************
     /// Constructor, from an initializer_list.
     //*************************************************************************
@@ -1384,7 +1389,7 @@ namespace etl
       return *this;
     }
 
-#if ETL_CPP11_SUPPORTED
+#if ETL_USING_CPP11
     //*************************************************************************
     /// Move constructor.
     //*************************************************************************
@@ -1422,7 +1427,7 @@ namespace etl
   //*************************************************************************
   /// Template deduction guides.
   //*************************************************************************
-#if ETL_CPP17_SUPPORTED && ETL_USING_INITIALIZER_LIST
+#if ETL_USING_CPP17 && ETL_HAS_INITIALIZER_LIST
   template <typename T, typename... Ts>
   indirect_vector(T, Ts...)
     ->indirect_vector<etl::enable_if_t<(etl::is_same_v<T, Ts> && ...), T>, 1U + sizeof...(Ts)>;
@@ -1431,7 +1436,7 @@ namespace etl
   //*************************************************************************
   /// Make
   //*************************************************************************
-#if ETL_CPP11_SUPPORTED && ETL_USING_INITIALIZER_LIST
+#if ETL_USING_CPP11 && ETL_HAS_INITIALIZER_LIST
   template <typename... T>
   constexpr auto make_indirect_vector(T... t) -> etl::indirect_vector<typename etl::common_type_t<T...>, sizeof...(T)>
   {
@@ -1496,7 +1501,7 @@ namespace etl
       this->assign(first, last);
     }
 
-#if ETL_USING_INITIALIZER_LIST
+#if ETL_HAS_INITIALIZER_LIST
     //*************************************************************************
     /// Constructor, from an initializer_list.
     //*************************************************************************
@@ -1531,7 +1536,7 @@ namespace etl
       return *this;
     }
 
-#if ETL_CPP11_SUPPORTED
+#if ETL_USING_CPP11
     //*************************************************************************
     /// Move constructor.
     //*************************************************************************

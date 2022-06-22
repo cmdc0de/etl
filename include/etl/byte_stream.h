@@ -165,7 +165,8 @@ namespace etl
 
       while (itr != range.end())
       {
-        to_bytes(*itr++);
+        to_bytes(*itr);
+        ++itr;
       }
     }
 
@@ -196,7 +197,8 @@ namespace etl
     {
       while (length-- != 0U)
       {
-        to_bytes(*start++);
+        to_bytes(*start);
+        ++start;
       }
     }
 
@@ -216,6 +218,28 @@ namespace etl
       }
 
       return success;
+    }
+
+    //***************************************************************************
+    /// Skip n items of T, up to the maximum space available.
+    /// Returns <b>true</b> if the skip was possible.
+    /// Returns <b>false</b> if the full skip size was not possible.
+    //***************************************************************************
+    template <typename T>
+    bool skip(size_t n)
+    {
+      size_t maximum = available<T>();
+
+      if (n < maximum)
+      {
+        pcurrent += (n * sizeof(T));
+        return true;
+      }
+      else
+      {
+        pcurrent += (maximum * sizeof(T));
+        return false;
+      }
     }
 
     //***************************************************************************
@@ -557,7 +581,7 @@ namespace etl
     {
       T* destination = start;
 
-      while (length-- != 0U)
+      for (size_t i = 0; i < length; ++i)
       {
         *destination++ = from_bytes<T>();
       }

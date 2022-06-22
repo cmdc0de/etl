@@ -35,10 +35,10 @@
 #include "vector.h"
 
 ///\defgroup multi_vector multi_vector
-/// A multi dimentional vector.
+/// A multi dimensional vector.
 ///\ingroup containers
 
-#if ETL_CPP11_SUPPORTED
+#if ETL_USING_CPP11
 
 namespace etl
 {

@@ -80,7 +80,7 @@ namespace etl
   // For internal FSM use.
   typedef typename etl::larger_type<etl::message_id_t>::type fsm_internal_id_t;
 
-#if ETL_CPP17_SUPPORTED && !defined(ETL_FSM_FORCE_CPP03_IMPLEMENTATION) // For C++17 and above
+#if ETL_USING_CPP17 && !defined(ETL_FSM_FORCE_CPP03_IMPLEMENTATION) // For C++17 and above
   template <typename, typename, const etl::fsm_state_id_t, typename...>
   class fsm_state;
 #else
@@ -179,12 +179,14 @@ namespace etl
     // Pass this whenever no state change is desired.
     // The highest unsigned value of fsm_state_id_t.
     static ETL_CONSTANT fsm_state_id_t No_State_Change = etl::integral_limits<fsm_state_id_t>::max;
+    // Pass this when this event also needs to be passed to the parent.
+    static ETL_CONSTANT fsm_state_id_t Pass_To_Parent = No_State_Change - 1U;
 
     /// Allows ifsm_state functions to be private.
     friend class etl::fsm;
     friend class etl::hfsm;
 
-#if ETL_CPP17_SUPPORTED && !defined(ETL_FSM_FORCE_CPP03_IMPLEMENTATION) // For C++17 and above
+#if ETL_USING_CPP17 && !defined(ETL_FSM_FORCE_CPP03_IMPLEMENTATION) // For C++17 and above
     template <typename, typename, const etl::fsm_state_id_t, typename...>
     friend class fsm_state;
 #else
@@ -259,7 +261,7 @@ namespace etl
     }
 
     //*******************************************
-    inline etl::fsm& get_fsm_context() const
+    etl::fsm& get_fsm_context() const
     {
       return *p_context;
     }
@@ -494,7 +496,7 @@ namespace etl
 //*************************************************************************************************
 // For C++17 and above.
 //*************************************************************************************************
-#if ETL_CPP17_SUPPORTED && !defined(ETL_FSM_FORCE_CPP03_IMPLEMENTATION) // For C++17 and above
+#if ETL_USING_CPP17 && !defined(ETL_FSM_FORCE_CPP03_IMPLEMENTATION) // For C++17 and above
   //***************************************************************************
   // The definition for all types.
   //***************************************************************************
@@ -521,7 +523,7 @@ namespace etl
     {
     }
 
-    inline TContext& get_fsm_context() const
+    TContext& get_fsm_context() const
     {
       return static_cast<TContext&>(ifsm_state::get_fsm_context());
     }
@@ -542,7 +544,7 @@ namespace etl
 
       const bool was_handled = (process_event_type<TMessageTypes>(message, new_state_id) || ...);
 
-      if (!was_handled)
+      if (!was_handled || (new_state_id == Pass_To_Parent))
       {
         new_state_id = (p_parent != nullptr) ? p_parent->process_event(message) : static_cast<TDerived*>(this)->on_event_unknown(message);
       }
@@ -597,7 +599,7 @@ namespace etl
     {
     }
 
-    inline TContext& get_fsm_context() const
+    TContext& get_fsm_context() const
     {
       return static_cast<TContext&>(ifsm_state::get_fsm_context());
     }
@@ -630,7 +632,7 @@ namespace etl
         default: new_state_id = p_parent ? p_parent->process_event(message) : static_cast<TDerived*>(this)->on_event_unknown(message); break;
       }
 
-      return new_state_id;
+      return (new_state_id != Pass_To_Parent) ? new_state_id : (p_parent ? p_parent->process_event(message) : No_State_Change);
     }
   };
 
@@ -662,7 +664,7 @@ namespace etl
     {
     }
 
-    inline TContext& get_fsm_context() const
+    TContext& get_fsm_context() const
     {
       return static_cast<TContext&>(ifsm_state::get_fsm_context());
     }
@@ -694,7 +696,7 @@ namespace etl
         default: new_state_id = p_parent ? p_parent->process_event(message) : static_cast<TDerived*>(this)->on_event_unknown(message); break;
       }
 
-      return new_state_id;
+      return (new_state_id != Pass_To_Parent) ? new_state_id : (p_parent ? p_parent->process_event(message) : No_State_Change);
     }
   };
 
@@ -726,7 +728,7 @@ namespace etl
     {
     }
 
-    inline TContext& get_fsm_context() const
+    TContext& get_fsm_context() const
     {
       return static_cast<TContext&>(ifsm_state::get_fsm_context());
     }
@@ -757,7 +759,7 @@ namespace etl
         default: new_state_id = p_parent ? p_parent->process_event(message) : static_cast<TDerived*>(this)->on_event_unknown(message); break;
       }
 
-      return new_state_id;
+      return (new_state_id != Pass_To_Parent) ? new_state_id : (p_parent ? p_parent->process_event(message) : No_State_Change);
     }
   };
 
@@ -789,7 +791,7 @@ namespace etl
     {
     }
 
-    inline TContext& get_fsm_context() const
+    TContext& get_fsm_context() const
     {
       return static_cast<TContext&>(ifsm_state::get_fsm_context());
     }
@@ -819,7 +821,7 @@ namespace etl
         default: new_state_id = p_parent ? p_parent->process_event(message) : static_cast<TDerived*>(this)->on_event_unknown(message); break;
       }
 
-      return new_state_id;
+      return (new_state_id != Pass_To_Parent) ? new_state_id : (p_parent ? p_parent->process_event(message) : No_State_Change);
     }
   };
 
@@ -850,7 +852,7 @@ namespace etl
     {
     }
 
-    inline TContext& get_fsm_context() const
+    TContext& get_fsm_context() const
     {
       return static_cast<TContext&>(ifsm_state::get_fsm_context());
     }
@@ -879,7 +881,7 @@ namespace etl
         default: new_state_id = p_parent ? p_parent->process_event(message) : static_cast<TDerived*>(this)->on_event_unknown(message); break;
       }
 
-      return new_state_id;
+      return (new_state_id != Pass_To_Parent) ? new_state_id : (p_parent ? p_parent->process_event(message) : No_State_Change);
     }
   };
 
@@ -910,7 +912,7 @@ namespace etl
     {
     }
 
-    inline TContext& get_fsm_context() const
+    TContext& get_fsm_context() const
     {
       return static_cast<TContext&>(ifsm_state::get_fsm_context());
     }
@@ -938,7 +940,7 @@ namespace etl
         default: new_state_id = p_parent ? p_parent->process_event(message) : static_cast<TDerived*>(this)->on_event_unknown(message); break;
       }
 
-      return new_state_id;
+      return (new_state_id != Pass_To_Parent) ? new_state_id : (p_parent ? p_parent->process_event(message) : No_State_Change);
     }
   };
 
@@ -969,7 +971,7 @@ namespace etl
     {
     }
 
-    inline TContext& get_fsm_context() const
+    TContext& get_fsm_context() const
     {
       return static_cast<TContext&>(ifsm_state::get_fsm_context());
     }
@@ -996,7 +998,7 @@ namespace etl
         default: new_state_id = p_parent ? p_parent->process_event(message) : static_cast<TDerived*>(this)->on_event_unknown(message); break;
       }
 
-      return new_state_id;
+      return (new_state_id != Pass_To_Parent) ? new_state_id : (p_parent ? p_parent->process_event(message) : No_State_Change);
     }
   };
 
@@ -1027,7 +1029,7 @@ namespace etl
     {
     }
 
-    inline TContext& get_fsm_context() const
+    TContext& get_fsm_context() const
     {
       return static_cast<TContext&>(ifsm_state::get_fsm_context());
     }
@@ -1053,7 +1055,7 @@ namespace etl
         default: new_state_id = p_parent ? p_parent->process_event(message) : static_cast<TDerived*>(this)->on_event_unknown(message); break;
       }
 
-      return new_state_id;
+      return (new_state_id != Pass_To_Parent) ? new_state_id : (p_parent ? p_parent->process_event(message) : No_State_Change);
     }
   };
 
@@ -1083,7 +1085,7 @@ namespace etl
     {
     }
 
-    inline TContext& get_fsm_context() const
+    TContext& get_fsm_context() const
     {
       return static_cast<TContext&>(ifsm_state::get_fsm_context());
     }
@@ -1108,7 +1110,7 @@ namespace etl
         default: new_state_id = p_parent ? p_parent->process_event(message) : static_cast<TDerived*>(this)->on_event_unknown(message); break;
       }
 
-      return new_state_id;
+      return (new_state_id != Pass_To_Parent) ? new_state_id : (p_parent ? p_parent->process_event(message) : No_State_Change);
     }
   };
 
@@ -1138,7 +1140,7 @@ namespace etl
     {
     }
 
-    inline TContext& get_fsm_context() const
+    TContext& get_fsm_context() const
     {
       return static_cast<TContext&>(ifsm_state::get_fsm_context());
     }
@@ -1162,7 +1164,7 @@ namespace etl
         default: new_state_id = p_parent ? p_parent->process_event(message) : static_cast<TDerived*>(this)->on_event_unknown(message); break;
       }
 
-      return new_state_id;
+      return (new_state_id != Pass_To_Parent) ? new_state_id : (p_parent ? p_parent->process_event(message) : No_State_Change);
     }
   };
 
@@ -1192,7 +1194,7 @@ namespace etl
     {
     }
 
-    inline TContext& get_fsm_context() const
+    TContext& get_fsm_context() const
     {
       return static_cast<TContext&>(ifsm_state::get_fsm_context());
     }
@@ -1215,7 +1217,7 @@ namespace etl
         default: new_state_id = p_parent ? p_parent->process_event(message) : static_cast<TDerived*>(this)->on_event_unknown(message); break;
       }
 
-      return new_state_id;
+      return (new_state_id != Pass_To_Parent) ? new_state_id : (p_parent ? p_parent->process_event(message) : No_State_Change);
     }
   };
 
@@ -1245,7 +1247,7 @@ namespace etl
     {
     }
 
-    inline TContext& get_fsm_context() const
+    TContext& get_fsm_context() const
     {
       return static_cast<TContext&>(ifsm_state::get_fsm_context());
     }
@@ -1267,7 +1269,7 @@ namespace etl
         default: new_state_id = p_parent ? p_parent->process_event(message) : static_cast<TDerived*>(this)->on_event_unknown(message); break;
       }
 
-      return new_state_id;
+      return (new_state_id != Pass_To_Parent) ? new_state_id : (p_parent ? p_parent->process_event(message) : No_State_Change);
     }
   };
 
@@ -1296,7 +1298,7 @@ namespace etl
     {
     }
 
-    inline TContext& get_fsm_context() const
+    TContext& get_fsm_context() const
     {
       return static_cast<TContext&>(ifsm_state::get_fsm_context());
     }
@@ -1317,7 +1319,7 @@ namespace etl
         default: new_state_id = p_parent ? p_parent->process_event(message) : static_cast<TDerived*>(this)->on_event_unknown(message); break;
       }
 
-      return new_state_id;
+      return (new_state_id != Pass_To_Parent) ? new_state_id : (p_parent ? p_parent->process_event(message) : No_State_Change);
     }
   };
 
@@ -1346,7 +1348,7 @@ namespace etl
     {
     }
 
-    inline TContext& get_fsm_context() const
+    TContext& get_fsm_context() const
     {
       return static_cast<TContext&>(ifsm_state::get_fsm_context());
     }
@@ -1366,7 +1368,7 @@ namespace etl
         default: new_state_id = p_parent ? p_parent->process_event(message) : static_cast<TDerived*>(this)->on_event_unknown(message); break;
       }
 
-      return new_state_id;
+      return (new_state_id != Pass_To_Parent) ? new_state_id : (p_parent ? p_parent->process_event(message) : No_State_Change);
     }
   };
 
@@ -1395,7 +1397,7 @@ namespace etl
     {
     }
 
-    inline TContext& get_fsm_context() const
+    TContext& get_fsm_context() const
     {
       return static_cast<TContext&>(ifsm_state::get_fsm_context());
     }
@@ -1414,7 +1416,7 @@ namespace etl
         default: new_state_id = p_parent ? p_parent->process_event(message) : static_cast<TDerived*>(this)->on_event_unknown(message); break;
       }
 
-      return new_state_id;
+      return (new_state_id != Pass_To_Parent) ? new_state_id : (p_parent ? p_parent->process_event(message) : No_State_Change);
     }
   };
 
@@ -1443,7 +1445,7 @@ namespace etl
     {
     }
 
-    inline TContext& get_fsm_context() const
+    TContext& get_fsm_context() const
     {
       return static_cast<TContext&>(ifsm_state::get_fsm_context());
     }
@@ -1461,7 +1463,7 @@ namespace etl
         default: new_state_id = p_parent ? p_parent->process_event(message) : static_cast<TDerived*>(this)->on_event_unknown(message); break;
       }
 
-      return new_state_id;
+      return (new_state_id != Pass_To_Parent) ? new_state_id : (p_parent ? p_parent->process_event(message) : No_State_Change);
     }
   };
 
@@ -1489,7 +1491,7 @@ namespace etl
     {
     }
 
-    inline TContext& get_fsm_context() const
+    TContext& get_fsm_context() const
     {
       return static_cast<TContext&>(ifsm_state::get_fsm_context());
     }

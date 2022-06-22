@@ -3,9 +3,9 @@ project(etl_unit_tests)
 
 add_definitions(-DETL_DEBUG)
 
-option(NO_STL "No STL" OFF)
+option(ETL_NO_STL "No STL" OFF)
 
-if (NO_STL)
+if (NO_STL OR ETL_NO_STL)
 	message(STATUS "Compiling for No STL")
 	add_definitions(-DETL_NO_STL)
 else()
@@ -17,20 +17,19 @@ if (ETL_USE_TYPE_TRAITS_BUILTINS)
 	add_definitions(-DETL_USE_TYPE_TRAITS_BUILTINS)
 endif()
 
+if (ETL_USE_MEM_BUILTINS)
+	message(STATUS "Compiling for built-in memory functions")
+	add_definitions(-DETL_USE_MEM_BUILTINS)
+endif()
+
 if (ETL_USER_DEFINED_TYPE_TRAITS)
 	message(STATUS "Compiling for user defined type traits")
 	add_definitions(-DETL_USER_DEFINED_TYPE_TRAITS)
 endif()
 
-if (ETL_FORCE_TEST_CPP03)
+if (ETL_FORCE_TEST_CPP03_IMPLEMENTATION)
 	message(STATUS "Compiling for C++03 tests")
-	add_definitions(-DETL_FORCE_TEST_CPP03)
-endif()
-
-if(NOT UnitTest++_FOUND)
-  # Add unittest-cpp as an ExternalProject
-  include(cmake/unit-test_external_project.cmake)
-  add_unittest_cpp()
+	add_definitions(-DETL_FORCE_TEST_CPP03_IMPLEMENTATION)
 endif()
 
 include_directories(${UTPP_INCLUDE_DIRS} ${PROJECT_SOURCE_DIR}/../include)
@@ -43,13 +42,13 @@ set(TEST_SOURCE_FILES
 	test_array.cpp
 	test_array_view.cpp
 	test_array_wrapper.cpp
-	test_atomic_clang_sync.cpp
-	test_atomic_gcc_sync.cpp
 	test_atomic_std.cpp
 	test_binary.cpp
 	test_bip_buffer_spsc_atomic.cpp
+	test_bit.cpp
 	test_bitset.cpp
 	test_bit_stream.cpp
+	test_byte.cpp
 	test_byte_stream.cpp
 	test_bloom_filter.cpp
 	test_bresenham_line.cpp
@@ -58,6 +57,7 @@ set(TEST_SOURCE_FILES
 	test_callback_service.cpp
 	test_callback_timer.cpp
 	test_callback_timer_atomic.cpp
+	test_callback_timer_interrupt.cpp
 	test_callback_timer_locked.cpp
 	test_checksum.cpp
 	test_circular_buffer.cpp
@@ -125,6 +125,7 @@ set(TEST_SOURCE_FILES
 	test_endian.cpp
 	test_enum_type.cpp
 	test_error_handler.cpp
+	test_etl_traits.cpp
 	test_exception.cpp
 	test_fixed_iterator.cpp
 	test_fixed_sized_memory_block_allocator.cpp
@@ -175,13 +176,15 @@ set(TEST_SOURCE_FILES
 	test_message_router_registry.cpp
 	test_message_timer.cpp
 	test_message_timer_atomic.cpp
-    test_message_timer_locked.cpp
+    test_message_timer_interrupt.cpp
+	test_message_timer_locked.cpp
 	test_multimap.cpp
 	test_multiset.cpp
 	test_multi_array.cpp
 	test_multi_range.cpp
 	test_multi_vector.cpp
 	test_murmur3.cpp
+	test_nth_type.cpp
 	test_numeric.cpp
 	test_observer.cpp
 	test_optional.cpp
@@ -216,6 +219,7 @@ set(TEST_SOURCE_FILES
 	test_scaled_rounding.cpp
 	test_set.cpp
 	test_shared_message.cpp
+	test_singleton.cpp
 	test_smallest.cpp
 	test_span.cpp
 	test_stack.cpp
@@ -223,6 +227,8 @@ set(TEST_SOURCE_FILES
 	test_state_chart.cpp
 	test_state_chart_with_data_parameter.cpp
 	test_state_chart_with_rvalue_data_parameter.cpp
+	test_state_chart_compile_time.cpp
+	test_state_chart_compile_time_with_data_parameter.cpp
 	test_string_char.cpp
 	test_string_char_external_buffer.cpp
 	test_string_stream.cpp
@@ -244,6 +250,7 @@ set(TEST_SOURCE_FILES
 	test_string_view.cpp
 	test_string_wchar_t.cpp
 	test_string_wchar_t_external_buffer.cpp
+	test_successor.cpp
 	test_task_scheduler.cpp
 	test_threshold.cpp
 	test_to_string.cpp
@@ -254,6 +261,8 @@ set(TEST_SOURCE_FILES
 	test_type_lookup.cpp
 	test_type_select.cpp
 	test_type_traits.cpp
+	test_unaligned_type.cpp
+	test_unaligned_type_constexpr.cpp
 	test_unordered_map.cpp
 	test_unordered_multimap.cpp
 	test_unordered_multiset.cpp
@@ -272,34 +281,78 @@ set(TEST_SOURCE_FILES
 	test_vector_pointer_external_buffer.cpp
 	test_visitor.cpp
 	test_xor_checksum.cpp
-	test_xor_rotate_checksum.cpp
+	test_xor_rotate_checksum.cpp 
+  )
+  
+set(UNITTEST_SOURCE_FILES
+    UnitTest++/AssertException.cpp
+    UnitTest++/Checks.cpp
+    UnitTest++/CompositeTestReporter.cpp                                            
+    UnitTest++/CurrentTest.cpp                                                      
+    UnitTest++/DeferredTestReporter.cpp                                             
+    UnitTest++/DeferredTestResult.cpp                                               
+    UnitTest++/MemoryOutStream.cpp                                                  
+    UnitTest++/ReportAssert.cpp                                                     
+    UnitTest++/RequiredCheckException.cpp                                           
+    UnitTest++/RequiredCheckTestReporter.cpp                                        
+    UnitTest++/Test.cpp                                                             
+    UnitTest++/TestDetails.cpp                                                      
+    UnitTest++/TestList.cpp                                                         
+    UnitTest++/TestReporter.cpp                                                     
+    UnitTest++/TestReporterStdout.cpp                                               
+    UnitTest++/TestResults.cpp                                                      
+    UnitTest++/TestRunner.cpp                                                       
+    UnitTest++/ThrowingTestReporter.cpp                                             
+    UnitTest++/TimeConstraint.cpp                                                   
+    UnitTest++/XmlTestReporter.cpp
   )
 
-if (CMAKE_CXX_COMPILER_ID MATCHES "GNU")
-  list(APPEND TEST_SOURCE_FILES "test_atomic_gcc_sync.cpp")
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fexceptions")
-endif()
-add_executable(etl_tests
-  ${TEST_SOURCE_FILES}
+if (WIN32)
+  set(UNITTEST_SOURCE_FILES
+      ${UNITTEST_SOURCE_FILES}
+      UnitTest++/Win32/TimeHelpers.cpp
   )
+else ()
+  set(UNITTEST_SOURCE_FILES
+	  ${UNITTEST_SOURCE_FILES}
+      UnitTest++/Posix/SignalTranslator.cpp
+      UnitTest++/Posix/TimeHelpers.cpp
+  )
+endif ()
+
+if (CMAKE_CXX_COMPILER_ID MATCHES "GNU")
+  message(STATUS "Using GNU")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=address,undefined")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fexceptions")
+  message(STATUS "Including test_atomic_gcc_sync")
+  list(APPEND TEST_SOURCE_FILES "test_atomic_gcc_sync.cpp")
+endif()
+
+if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+  message(STATUS "Using Clang")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=address,undefined")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fexceptions")
+  message(STATUS "Including test_atomic_clang_sync")
+  list(APPEND TEST_SOURCE_FILES "test_atomic_clang_sync.cpp")
+endif()
+
+add_executable(etl_tests ${TEST_SOURCE_FILES})
+add_library(unit_test ${UNITTEST_SOURCE_FILES})
 
 if(UNIX AND NOT APPLE)
   # atomic is need on Linux with Clang
   set(THREADS_PREFER_PTHREAD_FLAG ON)
   find_package(Threads REQUIRED)
-  target_link_libraries(etl_tests UnitTest++ atomic Threads::Threads)
+  target_link_libraries(etl_tests unit_test atomic Threads::Threads)
 elseif(NOT UNIX AND APPLE)
   set(THREADS_PREFER_PTHREAD_FLAG ON)
   find_package(Threads REQUIRED)
-  target_link_libraries(etl_tests UnitTest++)
+  target_link_libraries(etl_tests unit_test)
 else()
-  target_link_libraries(etl_tests UnitTest++)
+  target_link_libraries(etl_tests unit_test)
 endif()
 
-target_include_directories(etl_tests
-  PUBLIC
-  ${CMAKE_CURRENT_LIST_DIR}
-  )
+target_include_directories(etl_tests PUBLIC ${CMAKE_CURRENT_LIST_DIR})
 
 # Enable the 'make test' CMake target using the executable defined above
 add_test(etl_unit_tests etl_tests)
@@ -309,7 +362,4 @@ add_test(etl_unit_tests etl_tests)
 # as they appear from UnitTest++
 add_custom_target(test_verbose COMMAND ${CMAKE_CTEST_COMMAND} --verbose)
 
-
-#RSG
 set_property(TARGET etl_tests PROPERTY CXX_STANDARD 17)
-

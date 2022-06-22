@@ -44,6 +44,7 @@ SOFTWARE.
 #include "static_assert.h"
 #include "error_handler.h"
 #include "nth_type.h"
+#include "initializer_list.h"
 
 ///\defgroup array array
 /// A replacement for std::array if you haven't got C++0x11.
@@ -361,7 +362,7 @@ namespace etl
     //*************************************************************************
     /// Fills the array from the range.
     /// If the range is smaller than the array then the unused array elements are left unmodified.
-    ///\param first The iterator to the first item in the ramge.
+    ///\param first The iterator to the first item in the range.
     ///\param last  The iterator to one past the final item in the range.
     //*************************************************************************
     template <typename TIterator>
@@ -373,7 +374,7 @@ namespace etl
     //*************************************************************************
     /// Fills the array from the range.
     /// If the range is smaller than the array then the unused array elements are initialised with the supplied value.
-    ///\param first The iterator to the first item in the ramge.
+    ///\param first The iterator to the first item in the range.
     ///\param last  The iterator to one past the final item in the range.
     //*************************************************************************
     template <typename TIterator>
@@ -566,7 +567,7 @@ namespace etl
   //*************************************************************************
   /// Template deduction guides.
   //*************************************************************************
-#if ETL_CPP17_SUPPORTED
+#if ETL_USING_CPP17
   template <typename... T>
   array(T...) -> array<typename etl::common_type<T...>::type, sizeof...(T)>;
 #endif  
@@ -574,7 +575,7 @@ namespace etl
   //*************************************************************************
   /// Make
   //*************************************************************************
-#if ETL_CPP11_SUPPORTED
+#if ETL_HAS_INITIALIZER_LIST
   template <typename T, typename... TValues>
   constexpr auto make_array(TValues&&... values) -> etl::array<T, sizeof...(TValues)>
   {
