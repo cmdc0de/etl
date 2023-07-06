@@ -7,7 +7,7 @@ Embedded Template Library.
 https://github.com/ETLCPP/etl
 https://www.etlcpp.com
 
-Copyright(c) 2017 jwellbelove
+Copyright(c) 2017 John Wellbelove
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files(the "Software"), to deal
@@ -31,10 +31,7 @@ SOFTWARE.
 #ifndef ETL_REFERENCE_FLAT_SET_INCLUDED
 #define ETL_REFERENCE_FLAT_SET_INCLUDED
 
-#include <stddef.h>
-
 #include "platform.h"
-
 #include "algorithm.h"
 #include "iterator.h"
 #include "functional.h"
@@ -48,6 +45,8 @@ SOFTWARE.
 #include "iterator.h"
 
 #include "private/comparator_is_transparent.h"
+
+#include <stddef.h>
 
 namespace etl
 {
@@ -456,7 +455,7 @@ namespace etl
     ///\param position The position to insert at.
     ///\param value    The value to insert.
     //*********************************************************************
-    iterator insert(const_iterator position, reference value)
+    iterator insert(const_iterator /*position*/, reference value)
     {
       return insert(value).first;
     }
@@ -936,6 +935,8 @@ namespace etl
 
     static ETL_CONSTANT size_t MAX_SIZE = MAX_SIZE_;
 
+    using typename ireference_flat_set<TKey, TKeyCompare>::value_type;
+
     //*************************************************************************
     /// Constructor.
     //*************************************************************************
@@ -976,11 +977,12 @@ namespace etl
 
   private:
 
-    typedef TKey value_type;
-
     // The vector that stores pointers to the nodes.
     etl::vector<value_type*, MAX_SIZE> lookup;
   };
+
+  template <typename TKey, const size_t MAX_SIZE_, typename TCompare>
+  ETL_CONSTANT size_t reference_flat_set<TKey, MAX_SIZE_, TCompare>::MAX_SIZE;
 
   //*************************************************************************
   /// Template deduction guides.

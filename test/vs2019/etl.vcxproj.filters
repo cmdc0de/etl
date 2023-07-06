@@ -202,6 +202,21 @@
     <Filter Include="ETL\Messaging\Generators">
       <UniqueIdentifier>{ba80408c-0198-432a-a213-e4e2db946aab}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Tests\Initializer List">
+      <UniqueIdentifier>{0014395b-c658-4903-a15f-d21acb676d79}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Tests\Error Handler">
+      <UniqueIdentifier>{69ed2e1e-f009-4a1a-abf2-a9144142b533}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Tests\Error Handler\Log Errors">
+      <UniqueIdentifier>{78498646-3058-4d15-9d21-2243ca5d5cd4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Tests\Error Handler\Exceptions">
+      <UniqueIdentifier>{19d7da41-01e8-4449-8b9b-14be81447752}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Tests\Error Handler\Exceptions_And_Log_Errors">
+      <UniqueIdentifier>{de372ec9-d193-4956-871f-065414a9d3be}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\include\etl\enum_type.h">
@@ -270,9 +285,6 @@
     <ClInclude Include="..\..\include\etl\forward_list.h">
       <Filter>ETL\Containers</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\include\etl\bitset.h">
-      <Filter>ETL\Containers</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\include\etl\smallest.h">
       <Filter>ETL\Utilities</Filter>
     </ClInclude>
@@ -332,9 +344,6 @@
     </ClInclude>
     <ClInclude Include="..\..\include\etl\io_port.h">
       <Filter>ETL\Utilities</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\include\etl\optional.h">
-      <Filter>ETL\Containers</Filter>
     </ClInclude>
     <ClInclude Include="..\..\include\etl\set.h">
       <Filter>ETL\Containers</Filter>
@@ -588,7 +597,7 @@
     <ClInclude Include="..\..\include\etl\state_chart.h">
       <Filter>ETL\Frameworks</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\include\etl\cumulative_moving_average.h">
+    <ClInclude Include="..\..\include\etl\pseudo_moving_average.h">
       <Filter>ETL\Maths</Filter>
     </ClInclude>
     <ClInclude Include="..\..\include\etl\scaled_rounding.h">
@@ -1281,6 +1290,63 @@
     <ClInclude Include="..\..\include\etl\generators\message_router_generator.h">
       <Filter>ETL\Messaging\Generators</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\include\etl\poly_span.h">
+      <Filter>ETL\Containers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\etl_initializer_list\etl_profile.h">
+      <Filter>Tests\Initializer List</Filter>
+    </ClInclude>
+    <ClInclude Include="..\etl_error_handler\log_errors\etl_profile.h">
+      <Filter>Tests\Error Handler\Log Errors</Filter>
+    </ClInclude>
+    <ClInclude Include="..\etl_error_handler\exceptions\etl_profile.h">
+      <Filter>Tests\Error Handler\Exceptions</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\etl\private\diagnostic_pop.h">
+      <Filter>ETL\Private</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\etl\private\diagnostic_unused_function_push.h">
+      <Filter>ETL\Private</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\etl\private\diagnostic_self_assign_overloaded_push.h">
+      <Filter>ETL\Private</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\etl\private\diagnostic_pessimizing_move_push.h">
+      <Filter>ETL\Private</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\etl\message_broker.h">
+      <Filter>ETL\Messaging</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\etl\private\bitset_legacy.h">
+      <Filter>ETL\Private</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\etl\private\bitset_new.h">
+      <Filter>ETL\Private</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\etl\bitset.h">
+      <Filter>ETL\Containers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\etl\circular_iterator.h">
+      <Filter>ETL\Utilities</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\etl\private\diagnostic_uninitialized_push.h">
+      <Filter>ETL\Private</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\etl\to_arithmetic.h">
+      <Filter>ETL\Strings</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\etl\expected.h">
+      <Filter>ETL\Containers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\etl_error_handler\log_errors_and_exceptions\etl_profile.h">
+      <Filter>Tests\Error Handler\Exceptions_And_Log_Errors</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\etl\optional.h">
+      <Filter>ETL\Utilities</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\etl\private\diagnostic_array_bounds_push.h">
+      <Filter>ETL\Private</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\test_string_char.cpp">
@@ -1736,7 +1802,7 @@
     <ClCompile Include="..\test_set.cpp">
       <Filter>Tests\Containers</Filter>
     </ClCompile>
-    <ClCompile Include="..\test_span.cpp">
+    <ClCompile Include="..\test_span_dynamic_extent.cpp">
       <Filter>Tests\Containers</Filter>
     </ClCompile>
     <ClCompile Include="..\test_stack.cpp">
@@ -1790,7 +1856,7 @@
     <ClCompile Include="..\test_covariance.cpp">
       <Filter>Tests\Algorithms</Filter>
     </ClCompile>
-    <ClCompile Include="..\test_cumulative_moving_average.cpp">
+    <ClCompile Include="..\test_pseudo_moving_average.cpp">
       <Filter>Tests\Algorithms</Filter>
     </ClCompile>
     <ClCompile Include="..\test_cyclic_value.cpp">
@@ -1832,16 +1898,13 @@
     <ClCompile Include="..\test_variance.cpp">
       <Filter>Tests\Algorithms</Filter>
     </ClCompile>
-    <ClCompile Include="..\test_variant_legacy.cpp">
-      <Filter>Tests\Algorithms</Filter>
-    </ClCompile>
     <ClCompile Include="..\test_binary.cpp">
       <Filter>Tests\Binary</Filter>
     </ClCompile>
     <ClCompile Include="..\test_bit.cpp">
       <Filter>Tests\Binary</Filter>
     </ClCompile>
-    <ClCompile Include="..\test_bitset.cpp">
+    <ClCompile Include="..\test_bitset_legacy.cpp">
       <Filter>Tests\Binary</Filter>
     </ClCompile>
     <ClCompile Include="..\test_bit_stream.cpp">
@@ -1930,15 +1993,6 @@
     </ClCompile>
     <ClCompile Include="..\test_bip_buffer_spsc_atomic.cpp">
       <Filter>Tests\Queues</Filter>
-    </ClCompile>
-    <ClCompile Include="..\test_atomic_clang_sync.cpp">
-      <Filter>Tests\Atomic</Filter>
-    </ClCompile>
-    <ClCompile Include="..\test_atomic_gcc_sync.cpp">
-      <Filter>Tests\Atomic</Filter>
-    </ClCompile>
-    <ClCompile Include="..\test_atomic_std.cpp">
-      <Filter>Tests\Atomic</Filter>
     </ClCompile>
     <ClCompile Include="..\test_crc8_ccitt.cpp">
       <Filter>Tests\CRC</Filter>
@@ -2141,9 +2195,6 @@
     <ClCompile Include="..\test_random.cpp">
       <Filter>Tests\Maths</Filter>
     </ClCompile>
-    <ClCompile Include="..\test_optional.cpp">
-      <Filter>Tests\Containers</Filter>
-    </ClCompile>
     <ClCompile Include="..\test_error_handler.cpp">
       <Filter>Tests\Errors</Filter>
     </ClCompile>
@@ -2178,9 +2229,6 @@
       <Filter>Tests\Misc</Filter>
     </ClCompile>
     <ClCompile Include="..\test_parameter_type.cpp">
-      <Filter>Tests\Misc</Filter>
-    </ClCompile>
-    <ClCompile Include="..\test_result.cpp">
       <Filter>Tests\Misc</Filter>
     </ClCompile>
     <ClCompile Include="..\test_utility.cpp">
@@ -2255,7 +2303,7 @@
     <ClCompile Include="..\sanity-check\bit_stream.h.t.cpp">
       <Filter>Tests\Sanity Checks\Source</Filter>
     </ClCompile>
-    <ClCompile Include="..\sanity-check\bitset.h.t.cpp">
+    <ClCompile Include="..\sanity-check\bitset_legacy.h.t.cpp">
       <Filter>Tests\Sanity Checks\Source</Filter>
     </ClCompile>
     <ClCompile Include="..\sanity-check\bloom_filter.h.t.cpp">
@@ -2453,7 +2501,7 @@
     <ClCompile Include="..\sanity-check\crc64_ecma.h.t.cpp">
       <Filter>Tests\Sanity Checks\Source</Filter>
     </ClCompile>
-    <ClCompile Include="..\sanity-check\cumulative_moving_average.h.t.cpp">
+    <ClCompile Include="..\sanity-check\pseudo_moving_average.h.t.cpp">
       <Filter>Tests\Sanity Checks\Source</Filter>
     </ClCompile>
     <ClCompile Include="..\sanity-check\cyclic_value.h.t.cpp">
@@ -3254,6 +3302,111 @@
     <ClCompile Include="..\sanity-check\delegate_cpp03.h.t.cpp">
       <Filter>Tests\Sanity Checks\Source</Filter>
     </ClCompile>
+    <ClCompile Include="..\test_bit_stream_writer_big_endian.cpp">
+      <Filter>Tests\Binary</Filter>
+    </ClCompile>
+    <ClCompile Include="..\test_variant_legacy.cpp">
+      <Filter>Tests\Containers</Filter>
+    </ClCompile>
+    <ClCompile Include="..\test_atomic.cpp">
+      <Filter>Tests\Atomic</Filter>
+    </ClCompile>
+    <ClCompile Include="..\test_bit_stream_reader_big_endian.cpp">
+      <Filter>Tests\Binary</Filter>
+    </ClCompile>
+    <ClCompile Include="..\test_bit_stream_writer_little_endian.cpp">
+      <Filter>Tests\Binary</Filter>
+    </ClCompile>
+    <ClCompile Include="..\test_bit_stream_reader_little_endian.cpp">
+      <Filter>Tests\Binary</Filter>
+    </ClCompile>
+    <ClCompile Include="..\sanity-check\poly_span.h.t.cpp">
+      <Filter>Tests\Sanity Checks\Source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\test_poly_span_dynamic_extent.cpp">
+      <Filter>Tests\Containers</Filter>
+    </ClCompile>
+    <ClCompile Include="..\test_span_fixed_extent.cpp">
+      <Filter>Tests\Containers</Filter>
+    </ClCompile>
+    <ClCompile Include="..\test_poly_span_fixed_extent.cpp">
+      <Filter>Tests\Containers</Filter>
+    </ClCompile>
+    <ClCompile Include="..\etl_initializer_list\test_initializer_list.cpp">
+      <Filter>Tests\Initializer List</Filter>
+    </ClCompile>
+    <ClCompile Include="..\etl_error_handler\log_errors\test_error_handler.cpp">
+      <Filter>Tests\Error Handler\Log Errors</Filter>
+    </ClCompile>
+    <ClCompile Include="..\etl_error_handler\exceptions\test_error_handler.cpp">
+      <Filter>Tests\Error Handler\Exceptions</Filter>
+    </ClCompile>
+    <ClCompile Include="..\test_message_broker.cpp">
+      <Filter>Tests\Messaging</Filter>
+    </ClCompile>
+    <ClCompile Include="..\sanity-check\message_broker.h.t.cpp">
+      <Filter>Tests\Sanity Checks\Source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\test_char_traits.cpp">
+      <Filter>Tests\Misc</Filter>
+    </ClCompile>
+    <ClCompile Include="..\test_bitset_new_default_element_type.cpp">
+      <Filter>Tests\Binary</Filter>
+    </ClCompile>
+    <ClCompile Include="..\sanity-check\bitset_new.h.t.cpp">
+      <Filter>Tests\Sanity Checks\Source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\test_bitset_new_explicit_single_element_type.cpp">
+      <Filter>Tests\Binary</Filter>
+    </ClCompile>
+    <ClCompile Include="..\test_circular_iterator.cpp">
+      <Filter>Tests\Memory &amp; Iterators</Filter>
+    </ClCompile>
+    <ClCompile Include="..\sanity-check\circular_iterator.h.t.cpp">
+      <Filter>Tests\Sanity Checks\Source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\test_bitset_new_ext_default_element_type.cpp">
+      <Filter>Tests\Binary</Filter>
+    </ClCompile>
+    <ClCompile Include="..\test_bitset_new_ext_explicit_single_element_type.cpp">
+      <Filter>Tests\Binary</Filter>
+    </ClCompile>
+    <ClCompile Include="..\test_to_arithmetic_wchar_t.cpp">
+      <Filter>Tests\Strings</Filter>
+    </ClCompile>
+    <ClCompile Include="..\test_to_arithmetic.cpp">
+      <Filter>Tests\Strings</Filter>
+    </ClCompile>
+    <ClCompile Include="..\test_to_arithmetic_u16.cpp">
+      <Filter>Tests\Strings</Filter>
+    </ClCompile>
+    <ClCompile Include="..\test_to_arithmetic_u32.cpp">
+      <Filter>Tests\Strings</Filter>
+    </ClCompile>
+    <ClCompile Include="..\sanity-check\to_arithmetic.h.t.cpp">
+      <Filter>Tests\Sanity Checks\Source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\test_crc16_m17.cpp">
+      <Filter>Tests\CRC</Filter>
+    </ClCompile>
+    <ClCompile Include="..\test_optional.cpp">
+      <Filter>Tests\Misc</Filter>
+    </ClCompile>
+    <ClCompile Include="..\test_result.cpp">
+      <Filter>Tests\Containers</Filter>
+    </ClCompile>
+    <ClCompile Include="..\test_expected.cpp">
+      <Filter>Tests\Containers</Filter>
+    </ClCompile>
+    <ClCompile Include="..\sanity-check\expected.h.t.cpp">
+      <Filter>Tests\Sanity Checks\Source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\sanity-check\crc16_m17.h.t.cpp">
+      <Filter>Tests\Sanity Checks\Source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\etl_error_handler\log_errors_and_exceptions\test_error_handler.cpp">
+      <Filter>Tests\Error Handler\Exceptions_And_Log_Errors</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\library.properties">
@@ -3358,6 +3511,21 @@
     <None Include="..\..\scripts\update_release.py">
       <Filter>Tests\Scripts</Filter>
     </None>
+    <None Include="..\..\scripts\generator_test.py">
+      <Filter>Tests\Scripts</Filter>
+    </None>
+    <None Include="..\meson.build">
+      <Filter>Tests\Test Support</Filter>
+    </None>
+    <None Include="..\runtests-01.sh">
+      <Filter>Tests\Scripts</Filter>
+    </None>
+    <None Include="..\runtests-03.sh">
+      <Filter>Tests\Scripts</Filter>
+    </None>
+    <None Include="..\runtests-02.sh">
+      <Filter>Tests\Scripts</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Text Include="..\..\support\Release notes.txt">
@@ -3389,6 +3557,18 @@
     </Text>
     <Text Include="..\..\version.txt">
       <Filter>Resource Files</Filter>
+    </Text>
+    <Text Include="..\etl_initializer_list\CMakeLists.txt">
+      <Filter>Tests\Initializer List</Filter>
+    </Text>
+    <Text Include="..\etl_error_handler\log_errors\CMakeLists.txt">
+      <Filter>Tests\Error Handler\Log Errors</Filter>
+    </Text>
+    <Text Include="..\etl_error_handler\exceptions\CMakeLists.txt">
+      <Filter>Tests\Error Handler\Exceptions</Filter>
+    </Text>
+    <Text Include="..\etl_error_handler\log_errors_and_exceptions\CMakeLists.txt">
+      <Filter>Tests\Error Handler\Exceptions_And_Log_Errors</Filter>
     </Text>
   </ItemGroup>
   <ItemGroup>

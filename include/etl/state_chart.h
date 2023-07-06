@@ -5,7 +5,7 @@ Embedded Template Library.
 https://github.com/ETLCPP/etl
 https://www.etlcpp.com
 
-Copyright(c) 2018 jwellbelove
+Copyright(c) 2018 John Wellbelove
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files(the "Software"), to deal
@@ -29,13 +29,13 @@ SOFTWARE.
 #ifndef ETL_STATE_CHART_INCLUDED
 #define ETL_STATE_CHART_INCLUDED
 
-#include <stdint.h>
-
 #include "platform.h"
 #include "nullptr.h"
 #include "array.h"
 #include "array_view.h"
 #include "utility.h"
+
+#include <stdint.h>
 
 namespace etl
 {
@@ -808,13 +808,13 @@ namespace etl
     }
 
     //*************************************************************************
-    const transition* const transition_table_end() const
+    const transition* transition_table_end() const
     {
       return transition_table_begin + transition_table_size;
     }
 
     //*************************************************************************
-    const state* const state_table_end() const
+    const state* state_table_end() const
     {
       return state_table_begin + state_table_size;
     }
@@ -1058,13 +1058,13 @@ namespace etl
     }
 
     //*************************************************************************
-    const transition* const transition_table_end() const
+    const transition* transition_table_end() const
     {
       return transition_table_begin + transition_table_size;
     }
 
     //*************************************************************************
-    const state* const state_table_end() const
+    const state* state_table_end() const
     {
       return state_table_begin + state_table_size;
     }

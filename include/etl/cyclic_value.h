@@ -7,7 +7,7 @@ Embedded Template Library.
 https://github.com/ETLCPP/etl
 https://www.etlcpp.com
 
-Copyright(c) 2014 jwellbelove
+Copyright(c) 2014 John Wellbelove
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files(the "Software"), to deal
@@ -31,8 +31,6 @@ SOFTWARE.
 #ifndef ETL_CYCLIC_VALUE_INCLUDED
 #define ETL_CYCLIC_VALUE_INCLUDED
 
-#include <stddef.h>
-
 ///\defgroup cyclic_value cyclic_value
 /// Provides a value that cycles between two limits.
 /// \ingroup utilities
@@ -42,8 +40,9 @@ SOFTWARE.
 #include "exception.h"
 #include "static_assert.h"
 #include "type_traits.h"
-
 #include "algorithm.h"
+
+#include <stddef.h>
 
 namespace etl
 {
@@ -67,12 +66,22 @@ namespace etl
   public:
 
     //*************************************************************************
-    /// Constructor.
+    /// Default constructor.
     /// The initial value is set to the first value.
     //*************************************************************************
     cyclic_value()
       : value(FIRST)
     {
+    }
+
+    //*************************************************************************
+    /// Constructor.
+    /// Set to an initial value.
+    /// Clamped to the range.
+    //*************************************************************************
+    explicit cyclic_value(T initial)
+    {
+      set(initial);
     }
 
     //*************************************************************************
@@ -341,8 +350,22 @@ namespace etl
     cyclic_value(T first_, T last_)
       : value(first_),
         first_value(first_),
-        last_value(last_)
+        last_value(last_) 
     {
+    }
+
+    //*************************************************************************
+    /// Constructor.
+    /// Set to an initial value.
+    /// Clamped to the range.
+    ///\param first The first value in the range.
+    ///\param last  The last value in the range.
+    //*************************************************************************
+    cyclic_value(T first_, T last_, T initial)
+      : first_value(first_)
+      , last_value(last_)
+    {
+      set(initial);
     }
 
     //*************************************************************************

@@ -5,7 +5,7 @@ Embedded Template Library.
 https://github.com/ETLCPP/etl
 https://www.etlcpp.com
 
-Copyright(c) 2014 jwellbelove
+Copyright(c) 2014 John Wellbelove
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files(the "Software"), to deal
@@ -55,7 +55,7 @@ namespace
     //*************************************************************************
     TEST(test_copy_constructor)
     {
-      int a;
+      int a{};
 
       etl::fixed_iterator<const int*> fi1(&a);
       etl::fixed_iterator<const int*> fi2(fi1);
@@ -66,7 +66,7 @@ namespace
     //*************************************************************************
     TEST(test_constructor)
     {
-      int a;
+      int a{};
 
       etl::fixed_iterator<const int*> fi(&a);
 
@@ -76,7 +76,7 @@ namespace
     //*************************************************************************
     TEST(test_make)
     {
-      int a;
+      int a{};
 
       etl::fixed_iterator<const int*> fi = &a;
 
@@ -121,7 +121,7 @@ namespace
     //*************************************************************************
     TEST(test_conversion_operator)
     {
-      int a;
+      int a{};
 
       etl::fixed_iterator<const int*> fi(&a);
 
@@ -202,8 +202,8 @@ namespace
     //*************************************************************************
     TEST(test_assignment)
     {
-      int a;
-      int b;
+      int a{};
+      int b{};
 
       etl::fixed_iterator<int*> fi = &a;
       fi = &b;
@@ -218,8 +218,8 @@ namespace
     //*************************************************************************
     TEST(test_equality)
     {
-      int a;
-      int b;
+      int a{};
+      int b{};
 
       etl::fixed_iterator<int*> fi1 = &a;
       etl::fixed_iterator<int*> fi2 = &a;

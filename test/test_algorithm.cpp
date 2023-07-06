@@ -5,7 +5,7 @@ Embedded Template Library.
 https://github.com/ETLCPP/etl
 https://www.etlcpp.com
 
-Copyright(c) 2014 jwellbelove
+Copyright(c) 2014 John Wellbelove
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files(the "Software"), to deal
@@ -1601,7 +1601,7 @@ namespace
       etl::transform_s(std::begin(input),
                        std::end(input),
                        std::begin(output),
-                       std::begin(output) + (std::size(output) / 2),
+                       std::begin(output) + (ETL_OR_STD17::size(output) / 2),
                        std::bind(std::multiplies<int>(), std::placeholders::_1, 2));
 
       bool is_same = std::equal(std::begin(output), std::end(output), std::begin(compare));
@@ -1610,7 +1610,7 @@ namespace
       std::fill(std::begin(output), std::end(output), 0);
 
       etl::transform_s(std::begin(input),
-                       std::begin(input) + (std::size(input) / 2),
+                       std::begin(input) + (ETL_OR_STD17::size(input) / 2),
                        std::begin(output),
                        std::end(output),
                        std::bind(std::multiplies<int>(), std::placeholders::_1, 2));

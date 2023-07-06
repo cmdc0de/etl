@@ -5,7 +5,7 @@ Embedded Template Library.
 https://github.com/ETLCPP/etl
 https://www.etlcpp.com
 
-Copyright(c) 2022 jwellbelove
+Copyright(c) 2022 John Wellbelove
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files(the "Software"), to deal
@@ -62,7 +62,7 @@ namespace
     //*************************************************************************
     TEST(test1)
     {
-      CHECK((std::is_same_v<Test_Singleton::type, Test_Class>));
+      CHECK((std::is_same<Test_Singleton::type, Test_Class>::value));
 
       CHECK(!Test_Singleton::is_valid());
       CHECK_THROW(Test_Singleton::instance(), etl::singleton_not_created);

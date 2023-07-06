@@ -5,7 +5,7 @@ Embedded Template Library.
 https://github.com/ETLCPP/etl
 https://www.etlcpp.com
 
-Copyright(c) 2014 jwellbelove
+Copyright(c) 2014 John Wellbelove
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files(the "Software"), to deal
@@ -29,6 +29,8 @@ SOFTWARE.
 #include "unit_test_framework.h"
 
 #include <string>
+#include <list>
+#include <algorithm>
 
 #include "etl/iterator.h"
 
@@ -77,7 +79,7 @@ namespace
     //*************************************************************************
     TEST(distance_non_random)
     {
-      ptrdiff_t d = etl::distance(non_random_iterator<int>(&dataA[0]), non_random_iterator<int>(&dataA[SIZE]));
+      ptrdiff_t d = etl::distance(non_random_iterator<int>(&dataA[0]), non_random_iterator<int>(dataA + SIZE));
 
       CHECK_EQUAL(SIZE, d);
     }
@@ -85,7 +87,7 @@ namespace
     //*************************************************************************
     TEST(distance_random)
     {
-      ptrdiff_t d = etl::distance(random_iterator<int>(&dataA[0]), random_iterator<int>(&dataA[SIZE]));
+      ptrdiff_t d = etl::distance(random_iterator<int>(&dataA[0]), random_iterator<int>(dataA + SIZE));
 
       CHECK_EQUAL(SIZE, d);
     }
@@ -276,7 +278,7 @@ namespace
       CHECK_EQUAL(*sri, *eri);
     }
 
-
+    //*************************************************************************
     TEST(test_input)
     {
       CHECK(!!etl::is_input_iterator<input>::value);
@@ -292,6 +294,7 @@ namespace
       CHECK(!etl::is_random_iterator_concept<input>::value);
     }
 
+    //*************************************************************************
     TEST(test_output)
     {
       CHECK(!etl::is_input_iterator<output>::value);
@@ -307,6 +310,7 @@ namespace
       CHECK(!etl::is_random_iterator_concept<output>::value);
     }
 
+    //*************************************************************************
     TEST(test_forward)
     {
       CHECK(!etl::is_input_iterator<forward>::value);
@@ -322,6 +326,7 @@ namespace
       CHECK(!etl::is_random_iterator_concept<forward>::value);
     }
 
+    //*************************************************************************
     TEST(test_bidirectional)
     {
       CHECK(!etl::is_input_iterator<bidirectional>::value);
@@ -337,6 +342,7 @@ namespace
       CHECK(!etl::is_random_iterator_concept<bidirectional>::value);
     }
 
+    //*************************************************************************
     TEST(test_random)
     {
       CHECK(!etl::is_input_iterator<random>::value);
@@ -352,6 +358,7 @@ namespace
       CHECK(!!etl::is_random_iterator_concept<random>::value);
     }
 
+    //*************************************************************************
     TEST(test_pointer)
     {
       CHECK(!etl::is_input_iterator<pointer>::value);
@@ -367,6 +374,7 @@ namespace
       CHECK(!!etl::is_random_iterator_concept<pointer>::value);
     }
 
+    //*************************************************************************
     TEST(test_const_pointer)
     {
       CHECK(!etl::is_input_iterator<const_pointer>::value);
@@ -383,7 +391,7 @@ namespace
     }
 
     //*************************************************************************
-    TEST(move_iterator_constructors)
+    TEST(test_move_iterator_constructors)
     {
       Item list[] = { Item("1"), Item("2"), Item("3") };
 
@@ -402,7 +410,7 @@ namespace
     }
 
     //*************************************************************************
-    TEST(move_iterator_relational_operators)
+    TEST(test_move_iterator_relational_operators)
     {
       Item list[] = { Item("1"), Item("2"), Item("3") };
 
@@ -434,7 +442,7 @@ namespace
     }
 
     //*************************************************************************
-    TEST(move_iterator_access_operators)
+    TEST(test_move_iterator_access_operators)
     {
       Item item1("1");
 
@@ -455,7 +463,7 @@ namespace
     }
 
     //*************************************************************************
-    TEST(move_iterator_index)
+    TEST(test_move_iterator_index)
     {
       Item list[] = { Item("1"), Item("2"), Item("3") };
 
@@ -466,7 +474,7 @@ namespace
     }
 
     //*************************************************************************
-    TEST(move_iterator_increment_decrement)
+    TEST(test_move_iterator_increment_decrement)
     {
       Item list[] = { Item("1"), Item("2"), Item("3") };
 
@@ -506,7 +514,7 @@ namespace
     }
 
     //*************************************************************************
-    TEST(move_iterator_subtraction)
+    TEST(test_move_iterator_subtraction)
     {
       Item list[] = { Item("1"), Item("2"), Item("3") };
 
@@ -516,6 +524,42 @@ namespace
       etl::move_iterator<Item*>::difference_type d = mitr2 - mitr1;
 
       CHECK_EQUAL(1, d);
+    }
+
+    //*************************************************************************
+    TEST(test_front_insert_iterator)
+    {
+      std::list<int> input    = {  0,  1,  2,  3,  4,  5, 6, 7, 8, 9 };
+      std::list<int> expected = { 81, 64, 49, 36, 25, 16, 9, 4, 1, 0 };
+      std::list<int> output;
+
+      auto squared = [](int value)
+      {
+        return value * value;
+      };
+
+      std::transform(input.cbegin(), input.cend(), etl::front_inserter(output), squared);
+
+      CHECK_EQUAL(expected.size(), output.size());
+      CHECK(std::equal(output.begin(), output.end(), expected.begin()));
+    }
+
+    //*************************************************************************
+    TEST(test_back_insert_iterator)
+    {
+      std::list<int> input    = { 0, 1, 2, 3,  4,  5,  6,  7,  8,  9 };
+      std::list<int> expected = { 0, 1, 4, 9, 16, 25, 36, 49, 64, 81 };
+      std::list<int> output;
+
+      auto squared = [](int value) 
+      {
+        return value * value;
+      };
+
+      std::transform(input.cbegin(), input.cend(), etl::back_inserter(output), squared);
+
+      CHECK_EQUAL(expected.size(), output.size());
+      CHECK(std::equal(output.begin(), output.end(), expected.begin()));
     }
   };
 }

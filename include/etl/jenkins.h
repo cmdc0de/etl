@@ -7,7 +7,7 @@ Embedded Template Library.
 https://github.com/ETLCPP/etl
 https://www.etlcpp.com
 
-Copyright(c) 2014 jwellbelove
+Copyright(c) 2014 John Wellbelove
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files(the "Software"), to deal
@@ -31,16 +31,15 @@ SOFTWARE.
 #ifndef ETL_JENKINS_INCLUDED
 #define ETL_JENKINS_INCLUDED
 
-#include <stdint.h>
-
 #include "platform.h"
 #include "static_assert.h"
 #include "type_traits.h"
 #include "error_handler.h"
 #include "ihash.h"
 #include "frame_check_sequence.h"
-
 #include "iterator.h"
+
+#include <stdint.h>
 
 #if defined(ETL_COMPILER_KEIL)
 #pragma diag_suppress 1300

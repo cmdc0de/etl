@@ -5,7 +5,7 @@ Embedded Template Library.
 https://github.com/ETLCPP/etl
 https://www.etlcpp.com
 
-Copyright(c) 2016 jwellbelove
+Copyright(c) 2016 John Wellbelove
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files(the "Software"), to deal
@@ -47,31 +47,31 @@ namespace
   }
 
   //***********************************
-  std::ostream& operator << (std::ostream& os, const etl::iu16string::value_type& c)
-  {
-    os << uint16_t(c);
+  //std::ostream& operator << (std::ostream& os, const etl::iu16string::value_type& c)
+  //{
+  //  os << uint16_t(c);
 
-    return os;
-  }
+  //  return os;
+  //}
 
   //***********************************
-  std::ostream& operator << (std::ostream& os, const etl::iu16string::value_type* c)
-  {
-    os << (void*)c;
+  //std::ostream& operator << (std::ostream& os, const etl::iu16string::value_type* c)
+  //{
+  //  os << (void*)c;
 
-    return os;
-  }
+  //  return os;
+  //}
 
   SUITE(test_string_char)
   {
     static const size_t SIZE = 11;
 
-    typedef etl::u16string<SIZE> Text;
-    typedef etl::iu16string      IText;
-    typedef std::u16string       Compare_Text;
-    typedef Text::value_type     value_t;
-    typedef etl::u16string<52>   TextL;
-    typedef etl::u16string<4>    TextS;
+    using Text         = etl::u16string<SIZE>;
+    using IText        = etl::iu16string;
+    using Compare_Text = std::u16string;
+    using value_t      = Text::value_type;
+    using TextL        = etl::u16string<52>;
+    using TextS        = etl::u16string<4>;
 
     Compare_Text initial_text;
     Compare_Text less_text;
@@ -501,7 +501,9 @@ namespace
       Text text(initial_text.begin(), initial_text.end());
       Text other_text(text);
 
+#include "etl/private/diagnostic_self_assign_overloaded_push.h" 
       other_text = other_text;
+#include "etl/private/diagnostic_pop.h" 
 
       bool is_equal = Equal(text, other_text);
 
@@ -518,7 +520,9 @@ namespace
       Text text(longer_text.begin(), longer_text.end());
       Text other_text(text);
 
+#include "etl/private/diagnostic_self_assign_overloaded_push.h" 
       other_text = other_text;
+#include "etl/private/diagnostic_pop.h" 
 
       bool is_equal = Equal(text, other_text);
 
@@ -596,7 +600,6 @@ namespace
       CHECK_EQUAL(&text[0], text.begin());
       CHECK_EQUAL(&constText[0], constText.begin());
     }
-
 
     //*************************************************************************
     TEST_FIXTURE(SetupFixture, test_end)

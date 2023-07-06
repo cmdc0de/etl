@@ -5,7 +5,7 @@ Embedded Template Library.
 https://github.com/ETLCPP/etl
 https://www.etlcpp.com
 
-Copyright(c) 2022 jwellbelove
+Copyright(c) 2022 John Wellbelove
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files(the "Software"), to deal
@@ -38,9 +38,9 @@ namespace
     //*************************************************************************
     TEST(test_nth_type)
     {
-      CHECK((std::is_same_v<etl::nth_type_t<0, int, long, double>, int>));
-      CHECK((std::is_same_v<etl::nth_type_t<1, int, long, double>, long>));
-      CHECK((std::is_same_v<etl::nth_type_t<2, int, long, double>, double>));
+      CHECK((std::is_same<etl::nth_type_t<0, int, long, double>, int>::value));
+      CHECK((std::is_same<etl::nth_type_t<1, int, long, double>, long>::value));
+      CHECK((std::is_same<etl::nth_type_t<2, int, long, double>, double>::value));
     }
   }
 }

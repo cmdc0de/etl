@@ -7,7 +7,7 @@ Embedded Template Library.
 https://github.com/ETLCPP/etl
 https://www.etlcpp.com
 
-Copyright(c) 2014 jwellbelove
+Copyright(c) 2014 John Wellbelove
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files(the "Software"), to deal
@@ -31,9 +31,6 @@ SOFTWARE.
 #ifndef ETL_DEQUE_INCLUDED
 #define ETL_DEQUE_INCLUDED
 
-#include <stddef.h>
-#include <stdint.h>
-
 #include "platform.h"
 #include "algorithm.h"
 #include "iterator.h"
@@ -47,6 +44,9 @@ SOFTWARE.
 #include "iterator.h"
 #include "placement_new.h"
 #include "initializer_list.h"
+
+#include <stddef.h>
+#include <stdint.h>
 
 #include "private/minmax_push.h"
 
@@ -1742,7 +1742,7 @@ namespace etl
     /// If asserts or exceptions are enabled, throws an etl::deque_full if the deque is already full.
     //*************************************************************************
     template <typename ... Args>
-    void emplace_back(Args && ... args)
+    reference emplace_back(Args && ... args)
     {
 #if defined(ETL_CHECK_PUSH_POP)
       ETL_ASSERT(!full(), ETL_ERROR(deque_full));
@@ -1752,6 +1752,7 @@ namespace etl
       ++_end;
       ++current_size;
       ETL_INCREMENT_DEBUG_COUNT
+      return back();
     }
 
 #else
@@ -1761,7 +1762,7 @@ namespace etl
     /// If asserts or exceptions are enabled, throws an etl::deque_full if the deque is already full.
     //*************************************************************************
     template <typename T1>
-    void emplace_back(const T1& value1)
+    reference emplace_back(const T1& value1)
     {
 #if defined(ETL_CHECK_PUSH_POP)
       ETL_ASSERT(!full(), ETL_ERROR(deque_full));
@@ -1771,6 +1772,7 @@ namespace etl
       ++_end;
       ++current_size;
       ETL_INCREMENT_DEBUG_COUNT
+      return back();
     }
 
     //*************************************************************************
@@ -1778,7 +1780,7 @@ namespace etl
     /// If asserts or exceptions are enabled, throws an etl::deque_full if the deque is already full.
     //*************************************************************************
     template <typename T1, typename T2>
-    void emplace_back(const T1& value1, const T2& value2)
+    reference emplace_back(const T1& value1, const T2& value2)
     {
 #if defined(ETL_CHECK_PUSH_POP)
       ETL_ASSERT(!full(), ETL_ERROR(deque_full));
@@ -1788,6 +1790,7 @@ namespace etl
       ++_end;
       ++current_size;
       ETL_INCREMENT_DEBUG_COUNT
+      return back();
     }
 
     //*************************************************************************
@@ -1795,7 +1798,7 @@ namespace etl
     /// If asserts or exceptions are enabled, throws an etl::deque_full if the deque is already full.
     //*************************************************************************
     template <typename T1, typename T2, typename T3>
-    void emplace_back(const T1& value1, const T2& value2, const T3& value3)
+    reference emplace_back(const T1& value1, const T2& value2, const T3& value3)
     {
 #if defined(ETL_CHECK_PUSH_POP)
       ETL_ASSERT(!full(), ETL_ERROR(deque_full));
@@ -1805,6 +1808,7 @@ namespace etl
       ++_end;
       ++current_size;
       ETL_INCREMENT_DEBUG_COUNT
+      return back();
     }
 
     //*************************************************************************
@@ -1812,7 +1816,7 @@ namespace etl
     /// If asserts or exceptions are enabled, throws an etl::deque_full if the deque is already full.
     //*************************************************************************
     template <typename T1, typename T2, typename T3, typename T4>
-    void emplace_back(const T1& value1, const T2& value2, const T3& value3, const T4& value4)
+    reference emplace_back(const T1& value1, const T2& value2, const T3& value3, const T4& value4)
     {
 #if defined(ETL_CHECK_PUSH_POP)
       ETL_ASSERT(!full(), ETL_ERROR(deque_full));
@@ -1822,6 +1826,7 @@ namespace etl
       ++_end;
       ++current_size;
       ETL_INCREMENT_DEBUG_COUNT
+      return back();
     }
 #endif
 
@@ -1870,7 +1875,7 @@ namespace etl
     /// If asserts or exceptions are enabled, throws an etl::deque_full if the deque is already full.
     //*************************************************************************
     template <typename ... Args>
-    void emplace_front(Args && ... args)
+    reference emplace_front(Args && ... args)
     {
 #if defined(ETL_CHECK_PUSH_POP)
       ETL_ASSERT(!full(), ETL_ERROR(deque_full));
@@ -1880,6 +1885,7 @@ namespace etl
       ::new (&(*_begin)) T(etl::forward<Args>(args)...);
       ++current_size;
       ETL_INCREMENT_DEBUG_COUNT
+      return front();
     }
 
 #else
@@ -1889,7 +1895,7 @@ namespace etl
     /// If asserts or exceptions are enabled, throws an etl::deque_full if the deque is already full.
     //*************************************************************************
     template <typename T1>
-    void emplace_front(const T1& value1)
+    reference emplace_front(const T1& value1)
     {
 #if defined(ETL_CHECK_PUSH_POP)
       ETL_ASSERT(!full(), ETL_ERROR(deque_full));
@@ -1899,6 +1905,7 @@ namespace etl
       ::new (&(*_begin)) T(value1);
       ++current_size;
       ETL_INCREMENT_DEBUG_COUNT
+      return front();
     }
 
     //*************************************************************************
@@ -1906,7 +1913,7 @@ namespace etl
     /// If asserts or exceptions are enabled, throws an etl::deque_full if the deque is already full.
     //*************************************************************************
     template <typename T1, typename T2>
-    void emplace_front(const T1& value1, const T2& value2)
+    reference emplace_front(const T1& value1, const T2& value2)
     {
 #if defined(ETL_CHECK_PUSH_POP)
       ETL_ASSERT(!full(), ETL_ERROR(deque_full));
@@ -1916,6 +1923,7 @@ namespace etl
       ::new (&(*_begin)) T(value1, value2);
       ++current_size;
       ETL_INCREMENT_DEBUG_COUNT
+      return front();
     }
 
     //*************************************************************************
@@ -1923,7 +1931,7 @@ namespace etl
     /// If asserts or exceptions are enabled, throws an etl::deque_full if the deque is already full.
     //*************************************************************************
     template <typename T1, typename T2, typename T3>
-    void emplace_front(const T1& value1, const T2& value2, const T3& value3)
+    reference emplace_front(const T1& value1, const T2& value2, const T3& value3)
     {
 #if defined(ETL_CHECK_PUSH_POP)
       ETL_ASSERT(!full(), ETL_ERROR(deque_full));
@@ -1933,6 +1941,7 @@ namespace etl
       ::new (&(*_begin)) T(value1, value2, value3);
       ++current_size;
       ETL_INCREMENT_DEBUG_COUNT
+      return front();
     }
 
     //*************************************************************************
@@ -1940,7 +1949,7 @@ namespace etl
     /// If asserts or exceptions are enabled, throws an etl::deque_full if the deque is already full.
     //*************************************************************************
     template <typename T1, typename T2, typename T3, typename T4>
-    void emplace_front(const T1& value1, const T2& value2, const T3& value3, const T4& value4)
+    reference emplace_front(const T1& value1, const T2& value2, const T3& value3, const T4& value4)
     {
 #if defined(ETL_CHECK_PUSH_POP)
       ETL_ASSERT(!full(), ETL_ERROR(deque_full));
@@ -1950,6 +1959,7 @@ namespace etl
       ::new (&(*_begin)) T(value1, value2, value3, value4);
       ++current_size;
       ETL_INCREMENT_DEBUG_COUNT
+      return front();
     }
 #endif
 
@@ -2458,6 +2468,9 @@ namespace etl
     /// The uninitialised buffer of T used in the deque.
     etl::uninitialized_buffer_of<T, BUFFER_SIZE> buffer;
   };
+
+  template <typename T, const size_t MAX_SIZE_>
+  ETL_CONSTANT size_t deque<T, MAX_SIZE_>::MAX_SIZE;
 
   //*************************************************************************
   /// Template deduction guides.

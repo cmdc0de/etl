@@ -5,7 +5,7 @@ Embedded Template Library.
 https://github.com/ETLCPP/etl
 https://www.etlcpp.com
 
-Copyright(c) 2014 jwellbelove
+Copyright(c) 2014 John Wellbelove
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files(the "Software"), to deal
@@ -44,12 +44,16 @@ namespace
     //*************************************************************************
     TEST(test_murmur3_32_constructor)
     {
-      std::string data("123456789");
+      typename std::aligned_storage<sizeof(char), std::alignment_of<uint32_t>::value>::type storage[10];
+      std::string data("123456789");      
 
-      uint32_t hash = etl::murmur3<uint32_t>(data.begin(), data.end());
+      char* begin = (char*)&storage[0];
+      strcpy(begin, data.c_str());
+      
+      uint32_t hash = etl::murmur3<uint32_t>(begin, begin + data.size());
 
       uint32_t compare;
-      MurmurHash3_x86_32(data.c_str(), data.size(), 0, &compare);
+      MurmurHash3_x86_32(begin, data.size(), 0, &compare);
 
       CHECK_EQUAL(compare, hash);
     }
@@ -57,7 +61,11 @@ namespace
     //*************************************************************************
     TEST(test_murmur3_32_add_values)
     {
+      typename std::aligned_storage<sizeof(char), std::alignment_of<uint32_t>::value>::type storage[10];
       std::string data("123456789");
+
+      char* begin = (char*)&storage[0];
+      strcpy(begin, data.c_str());
 
       etl::murmur3<uint32_t> murmur3_32_calculator;
 
@@ -69,7 +77,7 @@ namespace
       uint32_t hash = murmur3_32_calculator;
 
       uint32_t compare;
-      MurmurHash3_x86_32(data.c_str(), data.size(), 0, &compare);
+      MurmurHash3_x86_32(begin, data.size(), 0, &compare);
 
       CHECK_EQUAL(compare, hash);
     }
@@ -77,7 +85,11 @@ namespace
     //*************************************************************************
     TEST(test_murmur3_32_add_range)
     {
+      typename std::aligned_storage<sizeof(char), std::alignment_of<uint32_t>::value>::type storage[10];
       std::string data("123456789");
+
+      char* begin = (char*)&storage[0];
+      strcpy(begin, data.c_str());
 
       etl::murmur3<uint32_t> murmur3_32_calculator;
 
@@ -86,7 +98,7 @@ namespace
       uint32_t hash = murmur3_32_calculator.value();
 
       uint32_t compare;
-      MurmurHash3_x86_32(data.c_str(), data.size(), 0, &compare);
+      MurmurHash3_x86_32(begin, data.size(), 0, &compare);
 
       CHECK_EQUAL(compare, hash);
     }

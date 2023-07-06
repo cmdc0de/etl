@@ -5,7 +5,7 @@ Embedded Template Library.
 https://github.com/ETLCPP/etl
 https://www.etlcpp.com
 
-Copyright(c) 2020 jwellbelove
+Copyright(c) 2020 John Wellbelove
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files(the "Software"), to deal
@@ -35,6 +35,47 @@ namespace
   using Allocator8  = etl::fixed_sized_memory_block_allocator<sizeof(int8_t),  alignof(int8_t),  4>;
   using Allocator16 = etl::fixed_sized_memory_block_allocator<sizeof(int16_t), alignof(int16_t), 4>;
   using Allocator32 = etl::fixed_sized_memory_block_allocator<sizeof(int32_t), alignof(int32_t), 4>;
+
+  class CustomAllocator8 : public Allocator8
+  {
+  public:
+
+    bool allocate_block_called = false;
+    bool release_block_called  = false;
+    mutable bool is_owner_of_block_called = false;
+
+  protected:
+
+    //*************************************************************************
+    /// The overridden virtual function to allocate a block.
+    //*************************************************************************
+    void* allocate_block(size_t required_size, size_t required_alignment) override
+    {
+      allocate_block_called = true;
+
+      return Allocator8::allocate_block(required_size, required_alignment);
+    }
+
+    //*************************************************************************
+    /// The overridden virtual function to release a block.
+    //*************************************************************************
+    bool release_block(const void* const pblock) override
+    {
+      release_block_called = true;
+
+      return Allocator8::release_block(pblock);
+    }
+
+    //*************************************************************************
+    /// Returns true if the allocator is the owner of the block.
+    //*************************************************************************
+    bool is_owner_of_block(const void* const pblock) const override
+    {
+      is_owner_of_block_called = true;
+
+      return Allocator8::is_owner_of_block(pblock);
+    }
+  };
 
   SUITE(test_fixed_sized_memory_block_allocator)
   {
@@ -229,6 +270,20 @@ namespace
       CHECK(allocator8.release(p9));
       CHECK(allocator8.release(p10));
       CHECK(allocator8.release(p11));
+    }
+
+    //*************************************************************************
+    TEST(test_custom_allocator)
+    {
+      CustomAllocator8 allocator8;
+
+      int8_t* p1 = static_cast<int8_t*>(allocator8.allocate(sizeof(int8_t), alignof(int8_t)));
+      CHECK(allocator8.allocate_block_called);
+      CHECK(p1 != nullptr);
+      CHECK(allocator8.is_owner_of(p1));
+      CHECK(allocator8.is_owner_of_block_called);
+      CHECK(allocator8.release(p1));
+      CHECK(allocator8.release_block_called);
     }
   }
 }

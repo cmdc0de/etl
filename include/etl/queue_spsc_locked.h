@@ -7,7 +7,7 @@ Embedded Template Library.
 https://github.com/ETLCPP/etl
 https://www.etlcpp.com
 
-Copyright(c) 2019 jwellbelove
+Copyright(c) 2019 John Wellbelove
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files(the "Software"), to deal
@@ -31,9 +31,6 @@ SOFTWARE.
 #ifndef ETL_SPSC_QUEUE_LOCKED_INCLUDED
 #define ETL_SPSC_QUEUE_LOCKED_INCLUDED
 
-#include <stddef.h>
-#include <stdint.h>
-
 #include "platform.h"
 #include "memory.h"
 #include "parameter_type.h"
@@ -42,6 +39,9 @@ SOFTWARE.
 #include "function.h"
 #include "utility.h"
 #include "placement_new.h"
+
+#include <stddef.h>
+#include <stdint.h>
 
 namespace etl
 {
@@ -860,6 +860,9 @@ namespace etl
     /// The uninitialised buffer of T used in the queue_lockable.
     etl::uninitialized_buffer_of<T, MAX_SIZE> buffer;
   };
+
+  template <typename T, size_t SIZE, const size_t MEMORY_MODEL>
+  ETL_CONSTANT typename queue_spsc_locked<T, SIZE, MEMORY_MODEL>::size_type queue_spsc_locked<T, SIZE, MEMORY_MODEL>::MAX_SIZE;
 }
 
 #endif

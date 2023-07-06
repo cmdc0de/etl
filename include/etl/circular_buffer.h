@@ -7,7 +7,7 @@ Embedded Template Library.
 https://github.com/ETLCPP/etl
 https://www.etlcpp.com
 
-Copyright(c) 2020 jwellbelove
+Copyright(c) 2020 John Wellbelove
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files(the "Software"), to deal
@@ -71,6 +71,19 @@ namespace etl
   };
 
   //***************************************************************************
+  /// Incompatible type exception.
+  //***************************************************************************
+  class circular_buffer_incompatible_type : public circular_buffer_exception
+  {
+  public:
+
+    circular_buffer_incompatible_type(string_type file_name_, numeric_type line_number_)
+      : circular_buffer_exception(ETL_ERROR_TEXT("circular_buffer:type", ETL_CIRCULAR_BUFFER_FILE_ID"B"), file_name_, line_number_)
+    {
+    }
+  };
+
+  //***************************************************************************
   ///
   //***************************************************************************
   class circular_buffer_base
@@ -83,7 +96,7 @@ namespace etl
     //*************************************************************************
     size_type size() const
     {
-      return (in >= out) ? in - out : BUFFER_SIZE - (out - in);
+      return (in >= out) ? in - out : buffer_size - (out - in);
     }
 
     //*************************************************************************
@@ -98,7 +111,7 @@ namespace etl
       size_t i = in;
 
       ++i;
-      if (i == BUFFER_SIZE) ETL_UNLIKELY
+      if (i == buffer_size) ETL_UNLIKELY
       {
         i = 0U;
       }
@@ -115,20 +128,20 @@ namespace etl
     //*************************************************************************
     size_type max_size() const
     {
-      return BUFFER_SIZE - 1U;
+      return buffer_size - 1U;
     }
 
     //*************************************************************************
     size_type capacity() const
     {
-      return BUFFER_SIZE - 1U;
+      return buffer_size - 1U;
     }
 
   protected:
 
     //*************************************************************************
-    circular_buffer_base(size_type BUFFER_SIZE_)
-      : BUFFER_SIZE(BUFFER_SIZE_)
+    circular_buffer_base(size_type buffer_size_)
+      : buffer_size(buffer_size_)
       , in(0U)
       , out(0U)
     {
@@ -138,7 +151,7 @@ namespace etl
     void increment_in()
     {
       ++in;
-      if (in == BUFFER_SIZE) ETL_UNLIKELY
+      if (in == buffer_size) ETL_UNLIKELY
       {
         in = 0U;
       }
@@ -148,16 +161,16 @@ namespace etl
     void increment_out()
     {
       ++out;
-      if (out == BUFFER_SIZE) ETL_UNLIKELY
+      if (out == buffer_size) ETL_UNLIKELY
       {
         out = 0U;
       }
     }
 
-    const size_type BUFFER_SIZE;
+    size_type buffer_size;
     size_type in;            ///< Index to the next write.
     size_type out;           ///< Index to the next read.
-    ETL_DECLARE_DEBUG_COUNT; ///< Internal debugging.
+    ETL_DECLARE_DEBUG_COUNT  ///< Internal debugging.
   };
 
   //***************************************************************************
@@ -230,7 +243,7 @@ namespace etl
       //*************************************************************************
       pointer operator ->() const
       {
-        return picb->pbuffer[current];
+        return &picb->pbuffer[current];
       }
 
       //*************************************************************************
@@ -241,7 +254,7 @@ namespace etl
         ++current;
 
         // Did we reach the end of the buffer?
-        if (current == picb->BUFFER_SIZE)
+        if (current == picb->buffer_size)
         {
           current = 0U;
         }
@@ -269,7 +282,7 @@ namespace etl
         // Are we at the end of the buffer?
         if (current == 0U)
         {
-          current = picb->BUFFER_SIZE - 1;
+          current = picb->buffer_size - 1;
         }
         else
         {
@@ -296,8 +309,8 @@ namespace etl
       //*************************************************************************
       iterator& operator +=(int n)
       {
-        current += size_type(picb->BUFFER_SIZE + n);
-        current %= picb->BUFFER_SIZE;
+        current += size_type(picb->buffer_size + n);
+        current %= picb->buffer_size;
 
         return (*this);
       }
@@ -407,7 +420,7 @@ namespace etl
       {
         if (index < firstIndex)
         {
-          return picb->BUFFER_SIZE + current - firstIndex;
+          return picb->buffer_size + current - firstIndex;
         }
         else
         {
@@ -501,7 +514,7 @@ namespace etl
       //*************************************************************************
       const_pointer operator ->() const
       {
-        return picb->pbuffer[current];
+        return &(picb->pbuffer[current]);
       }
 
       //*************************************************************************
@@ -512,7 +525,7 @@ namespace etl
         ++current;
 
         // Did we reach the end of the buffer?
-        if (current == picb->BUFFER_SIZE)
+        if (current == picb->buffer_size)
         {
           current = 0U;
         }
@@ -540,7 +553,7 @@ namespace etl
         // Are we at the end of the buffer?
         if (current == 0U)
         {
-          current = picb->BUFFER_SIZE - 1;
+          current = picb->buffer_size - 1;
         }
         else
         {
@@ -567,8 +580,8 @@ namespace etl
       //*************************************************************************
       const_iterator& operator +=(int n)
       {
-        current += size_type(picb->BUFFER_SIZE + n);
-        current %= picb->BUFFER_SIZE;
+        current += size_type(picb->buffer_size + n);
+        current %= picb->buffer_size;
 
         return (*this);
       }
@@ -820,7 +833,7 @@ namespace etl
     {
       ETL_ASSERT(!empty(), ETL_ERROR(circular_buffer_empty));
 
-      return pbuffer[in == 0U ? BUFFER_SIZE - 1 : in - 1U];
+      return pbuffer[in == 0U ? buffer_size - 1 : in - 1U];
     }
 
     //*************************************************************************
@@ -831,7 +844,7 @@ namespace etl
     {
       ETL_ASSERT(!empty(), ETL_ERROR(circular_buffer_empty));
 
-      return pbuffer[in == 0U ? BUFFER_SIZE - 1 : in - 1U];
+      return pbuffer[in == 0U ? buffer_size - 1 : in - 1U];
     }
 
     //*************************************************************************
@@ -839,7 +852,7 @@ namespace etl
     //*************************************************************************
     reference operator [](size_t index)
     {
-      return pbuffer[(out + index) % BUFFER_SIZE];
+      return pbuffer[(out + index) % buffer_size];
     }
 
     //*************************************************************************
@@ -848,7 +861,7 @@ namespace etl
     //*************************************************************************
     const_reference operator [](size_t index) const
     {
-      return pbuffer[(out + index) % BUFFER_SIZE];
+      return pbuffer[(out + index) % buffer_size];
     }
 
     //*************************************************************************
@@ -962,6 +975,13 @@ namespace etl
       etl::fill(begin(), end(), value);
     }
 
+#ifdef ETL_ICIRCULAR_BUFFER_REPAIR_ENABLE
+    //*************************************************************************
+    /// Fix the internal pointers after a low level memory copy.
+    //*************************************************************************
+    virtual void repair() = 0;
+#endif
+
     //*************************************************************************
     /// - operator for iterator
     //*************************************************************************
@@ -1025,7 +1045,7 @@ namespace etl
     {
       const difference_type index = other.get_index();
       const difference_type reference_index = other.container().out;
-      const size_t buffer_size = other.container().BUFFER_SIZE;
+      const size_t buffer_size = other.container().buffer_size;
 
       if (index < reference_index)
       {
@@ -1037,7 +1057,13 @@ namespace etl
       }
     }
 
-
+    //*************************************************************************
+    /// Fix the internal pointers after a low level memory copy.
+    //*************************************************************************
+    void repair_buffer(T* pbuffer_)
+    {
+      pbuffer = pbuffer_;
+    }
 
     pointer pbuffer;
 
@@ -1178,11 +1204,30 @@ namespace etl
       this->clear();
     }
 
+    //*************************************************************************
+    /// Fix the internal pointers after a low level memory copy.
+    //*************************************************************************
+#ifdef ETL_ICIRCULAR_BUFFER_REPAIR_ENABLE
+    virtual
+#endif
+      void repair()
+#ifdef ETL_ICIRCULAR_BUFFER_REPAIR_ENABLE
+      ETL_OVERRIDE
+#endif
+    {
+      ETL_ASSERT(etl::is_trivially_copyable<T>::value, ETL_ERROR(etl::circular_buffer_incompatible_type));
+
+      etl::icircular_buffer<T>::repair_buffer(buffer);
+    }
+
   private:
 
     /// The uninitialised storage.
     etl::uninitialized_buffer_of<T, MAX_SIZE + 1> buffer;
   };
+
+  template <typename T, size_t MAX_SIZE_>
+  ETL_CONSTANT typename icircular_buffer<T>::size_type circular_buffer<T, MAX_SIZE_>::MAX_SIZE;
 
   //***************************************************************************
   /// A fixed capacity circular buffer.
@@ -1198,6 +1243,15 @@ namespace etl
     //*************************************************************************
     circular_buffer_ext(void* buffer, size_t max_size)
       : icircular_buffer<T>(reinterpret_cast<T*>(buffer), max_size)
+    {
+    }
+
+    //*************************************************************************
+    /// Constructor.
+    /// Null buffer.
+    //*************************************************************************
+    circular_buffer_ext(size_t max_size)
+      : icircular_buffer<T>(ETL_NULLPTR, max_size)
     {
     }
 
@@ -1228,7 +1282,7 @@ namespace etl
 #endif
 
     //*************************************************************************
-    /// Copy Constructor.
+    /// Construct a copy.
     //*************************************************************************
     circular_buffer_ext(const circular_buffer_ext& other, void* buffer, size_t max_size)
       : icircular_buffer<T>(reinterpret_cast<T*>(buffer), max_size)
@@ -1238,6 +1292,11 @@ namespace etl
         this->push(other.begin(), other.end());
       }
     }
+
+    //*************************************************************************
+    /// Copy Constructor (Deleted)
+    //*************************************************************************
+    circular_buffer_ext(const circular_buffer_ext& other) ETL_DELETE;
 
     //*************************************************************************
     /// Assignment operator
@@ -1294,13 +1353,34 @@ namespace etl
     //*************************************************************************
     /// Swap with another circular buffer
     //*************************************************************************
-    void swap(circular_buffer_ext& other)
+    void swap(circular_buffer_ext& other) ETL_NOEXCEPT
     {
       using ETL_OR_STD::swap; // Allow ADL
 
       swap(this->in, other.in);
       swap(this->out, other.out);
       swap(this->pbuffer, other.pbuffer);
+      swap(this->buffer_size, other.buffer_size);
+
+#if defined(ETL_DEBUG_COUNT)
+      this->etl_debug_count.swap(other.etl_debug_count);
+#endif
+    }
+
+    //*************************************************************************
+    /// set_buffer
+    //*************************************************************************
+    void set_buffer(void* buffer)
+    {
+      this->pbuffer = reinterpret_cast<T*>(buffer);
+    }
+
+    //*************************************************************************
+    /// set_buffer
+    //*************************************************************************
+    bool is_valid() const
+    {
+      return this->pbuffer != ETL_NULLPTR;
     }
 
     //*************************************************************************
@@ -1309,6 +1389,19 @@ namespace etl
     ~circular_buffer_ext()
     {
       this->clear();
+    }
+
+    //*************************************************************************
+    /// Fix the internal pointers after a low level memory copy.
+    //*************************************************************************
+#ifdef ETL_ICIRCULAR_BUFFER_REPAIR_ENABLE
+    virtual
+#endif
+      void repair()
+#ifdef ETL_ICIRCULAR_BUFFER_REPAIR_ENABLE
+      ETL_OVERRIDE
+#endif
+    {
     }
   };
 

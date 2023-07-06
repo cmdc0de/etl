@@ -7,7 +7,7 @@ Embedded Template Library.
 https://github.com/ETLCPP/etl
 https://www.etlcpp.com
 
-Copyright(c) 2017 jwellbelove
+Copyright(c) 2017 John Wellbelove
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files(the "Software"), to deal
@@ -31,8 +31,6 @@ SOFTWARE.
 #ifndef ETL_REFERENCE_FLAT_MULTIMAP_INCLUDED
 #define ETL_REFERENCE_FLAT_MULTIMAP_INCLUDED
 
-#include <stddef.h>
-
 #include "platform.h"
 #include "exception.h"
 #include "error_handler.h"
@@ -44,6 +42,8 @@ SOFTWARE.
 #include "type_traits.h"
 
 #include "private/comparator_is_transparent.h"
+
+#include <stddef.h>
 
 namespace etl
 {
@@ -480,7 +480,7 @@ namespace etl
     ///\param position The position to insert at.
     ///\param value    The value to insert.
     //*********************************************************************
-    iterator insert(const_iterator position, const value_type& value)
+    iterator insert(const_iterator /*position*/, const value_type& value)
     {
       return insert(value).first;
     }
@@ -1040,6 +1040,9 @@ namespace etl
     // The vector that stores pointers to the nodes.
     etl::vector<node_t*, MAX_SIZE> lookup;
   };
+
+  template <typename TKey, typename TValue, const size_t MAX_SIZE_, typename TCompare>
+  ETL_CONSTANT size_t reference_flat_multimap< TKey, TValue, MAX_SIZE_, TCompare>::MAX_SIZE;
 
   //*************************************************************************
   /// Template deduction guides.

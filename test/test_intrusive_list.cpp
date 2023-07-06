@@ -5,7 +5,7 @@ Embedded Template Library.
 https://github.com/ETLCPP/etl
 https://www.etlcpp.com
 
-Copyright(c) 2015 jwellbelove
+Copyright(c) 2015 John Wellbelove
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files(the "Software"), to deal
@@ -223,6 +223,21 @@ namespace
     }
 
     //*************************************************************************
+    TEST_FIXTURE(SetupFixture, test_iterator_arrow_operator)
+    {
+      ItemNDCNode item1("1");
+      ItemNDCNode item2("2");
+      DataNDC0 data;
+      data.push_back(item1);
+      data.push_back(item2);
+
+      auto iter = data.begin();
+      CHECK(*(iter.operator->()) == item1);
+      ++iter;
+      CHECK(*(iter.operator->()) == item2);
+    }
+
+    //*************************************************************************
     TEST_FIXTURE(SetupFixture, test_const_iterator)
     {
       bool are_equal;
@@ -235,12 +250,140 @@ namespace
     }
 
     //*************************************************************************
+    TEST_FIXTURE(SetupFixture, test_const_iterator_arrow_operator)
+    {
+      ItemNDCNode item1("1");
+      ItemNDCNode item2("2");
+      DataNDC0 data;
+      data.push_back(item1);
+      data.push_back(item2);
+
+      auto iter = data.cbegin();
+      CHECK(*(iter.operator->()) == item1);
+      ++iter;
+      CHECK(*(iter.operator->()) == item2);
+    }
+
+    //*************************************************************************
     TEST_FIXTURE(SetupFixture, test_clear)
     {
+      FirstLink& fl0 = sorted_data[0];
+      FirstLink& fl1 = sorted_data[1];
+      FirstLink& fl2 = sorted_data[2];
+      FirstLink& fl3 = sorted_data[3];
+      FirstLink& fl4 = sorted_data[4];
+      FirstLink& fl5 = sorted_data[5];
+      FirstLink& fl6 = sorted_data[6];
+      FirstLink& fl7 = sorted_data[7];
+      FirstLink& fl8 = sorted_data[8];
+      FirstLink& fl9 = sorted_data[9];
+
+      SecondLink& sl0 = sorted_data[0];
+      SecondLink& sl1 = sorted_data[1];
+      SecondLink& sl2 = sorted_data[2];
+      SecondLink& sl3 = sorted_data[3];
+      SecondLink& sl4 = sorted_data[4];
+      SecondLink& sl5 = sorted_data[5];
+      SecondLink& sl6 = sorted_data[6];
+      SecondLink& sl7 = sorted_data[7];
+      SecondLink& sl8 = sorted_data[8];
+      SecondLink& sl9 = sorted_data[9];
+
       DataNDC0 data0(sorted_data.begin(), sorted_data.end());
+      
+      CHECK_TRUE(fl0.is_linked());
+      CHECK_TRUE(fl1.is_linked());
+      CHECK_TRUE(fl2.is_linked());
+      CHECK_TRUE(fl3.is_linked());
+      CHECK_TRUE(fl4.is_linked());
+      CHECK_TRUE(fl5.is_linked());
+      CHECK_TRUE(fl6.is_linked());
+      CHECK_TRUE(fl7.is_linked());
+      CHECK_TRUE(fl8.is_linked());
+      CHECK_TRUE(fl9.is_linked());
+
+      CHECK_FALSE(sl0.is_linked());
+      CHECK_FALSE(sl1.is_linked());
+      CHECK_FALSE(sl2.is_linked());
+      CHECK_FALSE(sl3.is_linked());
+      CHECK_FALSE(sl4.is_linked());
+      CHECK_FALSE(sl5.is_linked());
+      CHECK_FALSE(sl6.is_linked());
+      CHECK_FALSE(sl7.is_linked());
+      CHECK_FALSE(sl8.is_linked());
+      CHECK_FALSE(sl9.is_linked());
+      
+      DataNDC1 data1(sorted_data.begin(), sorted_data.end());
+
+      CHECK_TRUE(fl0.is_linked());
+      CHECK_TRUE(fl1.is_linked());
+      CHECK_TRUE(fl2.is_linked());
+      CHECK_TRUE(fl3.is_linked());
+      CHECK_TRUE(fl4.is_linked());
+      CHECK_TRUE(fl5.is_linked());
+      CHECK_TRUE(fl6.is_linked());
+      CHECK_TRUE(fl7.is_linked());
+      CHECK_TRUE(fl8.is_linked());
+      CHECK_TRUE(fl9.is_linked());
+
+      CHECK_TRUE(sl0.is_linked());
+      CHECK_TRUE(sl1.is_linked());
+      CHECK_TRUE(sl2.is_linked());
+      CHECK_TRUE(sl3.is_linked());
+      CHECK_TRUE(sl4.is_linked());
+      CHECK_TRUE(sl5.is_linked());
+      CHECK_TRUE(sl6.is_linked());
+      CHECK_TRUE(sl7.is_linked());
+      CHECK_TRUE(sl8.is_linked());
+      CHECK_TRUE(sl9.is_linked());
+
       data0.clear();
 
-      CHECK(data0.empty());
+      CHECK_FALSE(fl0.is_linked());
+      CHECK_FALSE(fl1.is_linked());
+      CHECK_FALSE(fl2.is_linked());
+      CHECK_FALSE(fl3.is_linked());
+      CHECK_FALSE(fl4.is_linked());
+      CHECK_FALSE(fl5.is_linked());
+      CHECK_FALSE(fl6.is_linked());
+      CHECK_FALSE(fl7.is_linked());
+      CHECK_FALSE(fl8.is_linked());
+      CHECK_FALSE(fl9.is_linked());
+
+      CHECK_TRUE(sl0.is_linked());
+      CHECK_TRUE(sl1.is_linked());
+      CHECK_TRUE(sl2.is_linked());
+      CHECK_TRUE(sl3.is_linked());
+      CHECK_TRUE(sl4.is_linked());
+      CHECK_TRUE(sl5.is_linked());
+      CHECK_TRUE(sl6.is_linked());
+      CHECK_TRUE(sl7.is_linked());
+      CHECK_TRUE(sl8.is_linked());
+      CHECK_TRUE(sl9.is_linked());
+
+      data1.clear();
+
+      CHECK_FALSE(fl0.is_linked());
+      CHECK_FALSE(fl1.is_linked());
+      CHECK_FALSE(fl2.is_linked());
+      CHECK_FALSE(fl3.is_linked());
+      CHECK_FALSE(fl4.is_linked());
+      CHECK_FALSE(fl5.is_linked());
+      CHECK_FALSE(fl6.is_linked());
+      CHECK_FALSE(fl7.is_linked());
+      CHECK_FALSE(fl8.is_linked());
+      CHECK_FALSE(fl9.is_linked());
+
+      CHECK_FALSE(sl0.is_linked());
+      CHECK_FALSE(sl1.is_linked());
+      CHECK_FALSE(sl2.is_linked());
+      CHECK_FALSE(sl3.is_linked());
+      CHECK_FALSE(sl4.is_linked());
+      CHECK_FALSE(sl5.is_linked());
+      CHECK_FALSE(sl6.is_linked());
+      CHECK_FALSE(sl7.is_linked());
+      CHECK_FALSE(sl8.is_linked());
+      CHECK_FALSE(sl9.is_linked());
     }
 
     //*************************************************************************
@@ -288,14 +431,14 @@ namespace
       DataNDC0 data0;
       DataNDC1 data1;
 
-      ItemNDCNode node0("0");
-      ItemNDCNode node1("1");
-      ItemNDCNode node2("2");
-      ItemNDCNode node3("3");
-      ItemNDCNode node4("4");
-      ItemNDCNode node5("5");
-      ItemNDCNode node6("6");
-      ItemNDCNode node7("7");
+      static ItemNDCNode node0("0");
+      static ItemNDCNode node1("1");
+      static ItemNDCNode node2("2");
+      static ItemNDCNode node3("3");
+      static ItemNDCNode node4("4");
+      static ItemNDCNode node5("5");
+      static ItemNDCNode node6("6");
+      static ItemNDCNode node7("7");
 
       compare0.push_front(node0);
       compare0.push_front(node1);
@@ -450,12 +593,12 @@ namespace
       std::list<ItemNDCNode> compare_data;
       DataNDC0 data0;
 
-      ItemNDCNode node1("1");
-      ItemNDCNode node2("2");
-      ItemNDCNode node3("3");
-      ItemNDCNode node4("4");
-      ItemNDCNode node5("5");
-      ItemNDCNode node6("6");
+      static ItemNDCNode node1("1");
+      static ItemNDCNode node2("2");
+      static ItemNDCNode node3("3");
+      static ItemNDCNode node4("4");
+      static ItemNDCNode node5("5");
+      static ItemNDCNode node6("6");
 
       compare_data.push_front(node1);
       compare_data.push_front(node2);
@@ -483,12 +626,12 @@ namespace
       DataNDC0 data0;
       DataNDC1 data1;
 
-      ItemNDCNode node1("1");
-      ItemNDCNode node2("2");
-      ItemNDCNode node3("3");
-      ItemNDCNode node4("4");
-      ItemNDCNode node5("5");
-      ItemNDCNode node6("6");
+      static ItemNDCNode node1("1");
+      static ItemNDCNode node2("2");
+      static ItemNDCNode node3("3");
+      static ItemNDCNode node4("4");
+      static ItemNDCNode node5("5");
+      static ItemNDCNode node6("6");
 
       data0.push_front(node1);
       data0.push_front(node2);
@@ -527,6 +670,28 @@ namespace
       CHECK_EQUAL(6U, data1.size());
       CHECK_EQUAL(6, std::distance(data1.begin(), data1.end()));
       CHECK(!data1.empty());
+    }
+
+    //*************************************************************************
+    TEST_FIXTURE(SetupFixture, test_push_front_already_linked_value)
+    {
+      DataNDC0 data0;
+
+      static ItemNDCNode node1("1");
+
+      data0.push_front(node1);
+      CHECK_THROW(data0.push_front(node1), etl::intrusive_list_value_is_already_linked);
+    }
+
+    //*************************************************************************
+    TEST_FIXTURE(SetupFixture, test_push_back_already_linked_value)
+    {
+      DataNDC0 data0;
+
+      static ItemNDCNode node1("1");
+
+      data0.push_front(node1);
+      CHECK_THROW(data0.push_back(node1), etl::intrusive_list_value_is_already_linked);
     }
 
     //*************************************************************************
@@ -596,6 +761,28 @@ namespace
     {
       bool are_equal;
 
+      FirstLink& fl0 = sorted_data[0];
+      FirstLink& fl1 = sorted_data[1];
+      FirstLink& fl2 = sorted_data[2];
+      FirstLink& fl3 = sorted_data[3];
+      FirstLink& fl4 = sorted_data[4];
+      FirstLink& fl5 = sorted_data[5];
+      FirstLink& fl6 = sorted_data[6];
+      FirstLink& fl7 = sorted_data[7];
+      FirstLink& fl8 = sorted_data[8];
+      FirstLink& fl9 = sorted_data[9];
+
+      SecondLink& sl0 = sorted_data[0];
+      SecondLink& sl1 = sorted_data[1];
+      SecondLink& sl2 = sorted_data[2];
+      SecondLink& sl3 = sorted_data[3];
+      SecondLink& sl4 = sorted_data[4];
+      SecondLink& sl5 = sorted_data[5];
+      SecondLink& sl6 = sorted_data[6];
+      SecondLink& sl7 = sorted_data[7];
+      SecondLink& sl8 = sorted_data[8];
+      SecondLink& sl9 = sorted_data[9];
+
       std::vector<ItemNDCNode> compare_data(sorted_data.begin(), sorted_data.end());
       DataNDC0 data0(sorted_data.begin(), sorted_data.end());
       DataNDC1 data1(sorted_data.begin(), sorted_data.end());
@@ -604,17 +791,39 @@ namespace
       std::advance(i_data_1, 3);
 
       DataNDC0::iterator i_data_2 = data0.begin();
-      std::advance(i_data_2, 4);
+      std::advance(i_data_2, 7);
 
       std::vector<ItemNDCNode>::iterator i_compare_data_1 = compare_data.begin();
       std::advance(i_compare_data_1, 3);
 
       std::vector<ItemNDCNode>::iterator i_compare_data_2 = compare_data.begin();
-      std::advance(i_compare_data_2, 4);
+      std::advance(i_compare_data_2, 7);
 
       std::vector<ItemNDCNode>::iterator i_compare_result = compare_data.erase(i_compare_data_1, i_compare_data_2);
 
       DataNDC0::iterator i_result = data0.erase(i_data_1, i_data_2);
+
+      CHECK_TRUE(fl0.is_linked());
+      CHECK_TRUE(fl1.is_linked());
+      CHECK_TRUE(fl2.is_linked());
+      CHECK_FALSE(fl3.is_linked());
+      CHECK_FALSE(fl4.is_linked());
+      CHECK_FALSE(fl5.is_linked());
+      CHECK_FALSE(fl6.is_linked());
+      CHECK_TRUE(fl7.is_linked());
+      CHECK_TRUE(fl8.is_linked());
+      CHECK_TRUE(fl9.is_linked());
+
+      CHECK_TRUE(sl0.is_linked());
+      CHECK_TRUE(sl1.is_linked());
+      CHECK_TRUE(sl2.is_linked());
+      CHECK_TRUE(sl3.is_linked());
+      CHECK_TRUE(sl4.is_linked());
+      CHECK_TRUE(sl5.is_linked());
+      CHECK_TRUE(sl6.is_linked());
+      CHECK_TRUE(sl7.is_linked());
+      CHECK_TRUE(sl8.is_linked());
+      CHECK_TRUE(sl9.is_linked());
 
       CHECK_EQUAL(*i_compare_result, *i_result);
 

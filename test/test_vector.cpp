@@ -5,7 +5,7 @@ Embedded Template Library.
 https://github.com/ETLCPP/etl
 https://www.etlcpp.com
 
-Copyright(c) 2014 jwellbelove
+Copyright(c) 2014 John Wellbelove
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files(the "Software"), to deal
@@ -248,7 +248,9 @@ namespace
       Data data(initial_data.begin(), initial_data.end());
       Data other_data(data);
 
+#include "etl/private/diagnostic_self_assign_overloaded_push.h" 
       other_data = other_data;
+#include "etl/private/diagnostic_pop.h" 
 
       bool is_equal = std::equal(data.begin(),
                                  data.end(),
@@ -633,31 +635,6 @@ namespace
     }
 
     //*************************************************************************
-    TEST_FIXTURE(SetupFixture, test_emplace_back)
-    {
-      Compare_Data compare_data;
-      Data data;
-
-      for (int i = 0; i < int(SIZE); ++i)
-      {
-        compare_data.emplace_back(i);
-      }
-
-      for (int i = 0; i < int(SIZE); ++i)
-      {
-        data.emplace_back(i);
-      }
-
-      CHECK_EQUAL(compare_data.size(), data.size());
-
-      bool is_equal = std::equal(data.begin(),
-                                 data.end(),
-                                 compare_data.begin());
-
-      CHECK(is_equal);
-    }
-
-    //*************************************************************************
     TEST_FIXTURE(SetupFixture, test_push_back_literal)
     {
       Compare_Data compare_data;
@@ -693,6 +670,41 @@ namespace
       }
 
       CHECK_THROW(data.push_back(SIZE), etl::vector_full);
+    }
+
+    //*************************************************************************
+    TEST_FIXTURE(SetupFixture, test_emplace_back)
+    {
+      Compare_Data compare_data;
+      Data data;
+
+      for (int i = 0; i < int(SIZE); ++i)
+      {
+        compare_data.emplace_back(i);
+      }
+
+      for (int i = 0; i < int(SIZE); ++i)
+      {
+        data.emplace_back(i);
+      }
+
+      CHECK_EQUAL(compare_data.size(), data.size());
+
+      bool is_equal = std::equal(data.begin(),
+        data.end(),
+        compare_data.begin());
+
+      CHECK(is_equal);
+    }
+
+    //*************************************************************************
+    TEST_FIXTURE(SetupFixture, test_emplace_back_return)
+    {
+      Data data;
+
+      data.emplace_back(24);
+      auto back = data.emplace_back(42);
+      CHECK_EQUAL(back, data.back());
     }
 
     //*************************************************************************
@@ -784,6 +796,7 @@ namespace
     }
 
     //*************************************************************************
+#include "etl/private/diagnostic_array_bounds_push.h"
     TEST_FIXTURE(SetupFixture, test_insert_position_value_excess)
     {
       const size_t INITIAL_SIZE     = SIZE;
@@ -803,6 +816,7 @@ namespace
 
       CHECK_THROW(data.insert(data.cbegin() + offset, INITIAL_VALUE), etl::vector_full);
     }
+#include "etl/private/diagnostic_pop.h"
 
     //*************************************************************************
     TEST_FIXTURE(SetupFixture, test_insert_position_n_value)
@@ -1365,8 +1379,8 @@ namespace
     {
       auto data = etl::make_vector<char>(0, 1, 2, 3, 4, 5, 6, 7, 8, 9);
 
-      using Type = std::remove_reference_t<decltype(data[0])>;
-      CHECK((std::is_same_v<int, Type>));
+      using Type = typename std::remove_reference<decltype(data[0])>::type;
+      CHECK((std::is_same<int, Type>::value));
 
       CHECK_EQUAL(0, data[0]);
       CHECK_EQUAL(1, data[1]);

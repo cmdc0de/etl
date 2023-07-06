@@ -7,7 +7,7 @@ Embedded Template Library.
 https://github.com/ETLCPP/etl
 https://www.etlcpp.com
 
-Copyright(c) 2021 jwellbelove
+Copyright(c) 2021 John Wellbelove
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files(the "Software"), to deal
@@ -67,6 +67,7 @@ SOFTWARE.
 #include "crc16_usb.h"
 #include "crc16_x25.h"
 #include "crc16_xmodem.h"
+#include "crc16_m17.h"
 
 #include "crc32.h"
 #include "crc32_bzip2.h"

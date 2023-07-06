@@ -38,9 +38,6 @@ SOFTWARE.
 #ifndef ETL_BIP_BUFFER_SPSC_ATOMIC_INCLUDED
 #define ETL_BIP_BUFFER_SPSC_ATOMIC_INCLUDED
 
-#include <stddef.h>
-#include <stdint.h>
-
 #include "platform.h"
 #include "alignment.h"
 #include "parameter_type.h"
@@ -51,6 +48,10 @@ SOFTWARE.
 #include "utility.h"
 #include "error_handler.h"
 #include "span.h"
+#include "file_error_numbers.h"
+
+#include <stddef.h>
+#include <stdint.h>
 
 #if ETL_HAS_ATOMIC
 
@@ -77,7 +78,7 @@ namespace etl
   public:
 
     bip_buffer_reserve_invalid(string_type file_name_, numeric_type line_number_)
-      : bip_buffer_exception("bip_buffer:reserve", file_name_, line_number_)
+      : bip_buffer_exception(ETL_ERROR_TEXT("bip_buffer:reserve", ETL_BIP_BUFFER_SPSC_ATOMIC_FILE_ID"A"), file_name_, line_number_)
     {
     }
   };
@@ -85,7 +86,7 @@ namespace etl
   //***************************************************************************
   /// The common base for a bip_buffer_spsc_atomic_base.
   //***************************************************************************
-  template <const size_t MEMORY_MODEL = etl::memory_model::MEMORY_MODEL_LARGE>
+  template <size_t MEMORY_MODEL = etl::memory_model::MEMORY_MODEL_LARGE>
   class bip_buffer_spsc_atomic_base
   {
   public:
@@ -200,7 +201,7 @@ namespace etl
     }
 
     //*************************************************************************
-    size_type get_write_reserve(size_type* psize)
+    size_type get_write_reserve(size_type* psize, size_type fallback_size = numeric_limits<size_type>::max())
     {
       size_type write_index = write.load(etl::memory_order_relaxed);
       size_type read_index = read.load(etl::memory_order_acquire);
@@ -215,8 +216,9 @@ namespace etl
         {
           return write_index;
         }
-        // There isn't more space even when wrapping around
-        else if (read_index <= (forward_size + 1))
+        // There isn't more space even when wrapping around,
+        // or the linear size is good enough as fallback
+        else if ((read_index <= (forward_size + 1)) || (fallback_size <= forward_size))
         {
           *psize = forward_size;
           return write_index;
@@ -265,12 +267,12 @@ namespace etl
         // Wrapped around already
         if (write_index < read_index)
         {
-          ETL_ASSERT_AND_RETURN((windex == write_index) && ((wsize + 1) <= read_index), ETL_ERROR(bip_buffer_reserve_invalid));
+          ETL_ASSERT_OR_RETURN((windex == write_index) && ((wsize + 1) <= read_index), ETL_ERROR(bip_buffer_reserve_invalid));
         }
         // No wraparound so far, also not wrapping around with this block
         else if (windex == write_index)
         {
-          ETL_ASSERT_AND_RETURN(wsize <= (capacity() - write_index), ETL_ERROR(bip_buffer_reserve_invalid));
+          ETL_ASSERT_OR_RETURN(wsize <= (capacity() - write_index), ETL_ERROR(bip_buffer_reserve_invalid));
 
           // Move both indexes forward
           last.store(windex + wsize, etl::memory_order_release);
@@ -278,7 +280,7 @@ namespace etl
         // Wrapping around now
         else
         {
-          ETL_ASSERT_AND_RETURN((windex == 0) && ((wsize + 1) <= read_index), ETL_ERROR(bip_buffer_reserve_invalid));
+          ETL_ASSERT_OR_RETURN((windex == 0) && ((wsize + 1) <= read_index), ETL_ERROR(bip_buffer_reserve_invalid));
         }
         
         // Always update write index
@@ -328,7 +330,7 @@ namespace etl
       if (rsize > 0)
       {
         size_type rsize_checker = rsize;
-        ETL_ASSERT_AND_RETURN((rindex == get_read_reserve(&rsize_checker)) && (rsize == rsize_checker), ETL_ERROR(bip_buffer_reserve_invalid));
+        ETL_ASSERT_OR_RETURN((rindex == get_read_reserve(&rsize_checker)) && (rsize == rsize_checker), ETL_ERROR(bip_buffer_reserve_invalid));
 
         read.store(rindex + rsize, etl::memory_order_release);
       }
@@ -384,9 +386,9 @@ namespace etl
     using base_t::max_size;
 
     //*************************************************************************
-    // Reserves a memory area for reading up to the max_reserve_size
+    // Reserves a memory area for reading (up to the max_reserve_size).
     //*************************************************************************
-    span<T> read_reserve(size_type max_reserve_size)
+    span<T> read_reserve(size_type max_reserve_size = numeric_limits<size_type>::max())
     {
       size_type reserve_size = max_reserve_size;
       size_type rindex = get_read_reserve(&reserve_size);
@@ -406,7 +408,7 @@ namespace etl
     }
 
     //*************************************************************************
-    // Reserves a memory area for writing up to the max_reserve_size
+    // Reserves a memory area for writing up to the max_reserve_size.
     //*************************************************************************
     span<T> write_reserve(size_type max_reserve_size)
     {
@@ -414,6 +416,18 @@ namespace etl
       size_type windex = get_write_reserve(&reserve_size);
         
       return span<T>(p_buffer + windex, reserve_size);
+    }
+
+    //*************************************************************************
+    // Reserves an optimal memory area for writing. The buffer will only wrap
+    // around if the available forward space is less than min_reserve_size.
+    //*************************************************************************
+    span<T> write_reserve_optimal(size_type min_reserve_size = 1U)
+    {
+        size_type reserve_size = numeric_limits<size_type>::max();
+        size_type windex = get_write_reserve(&reserve_size, min_reserve_size);
+
+        return span<T>(p_buffer + windex, reserve_size);
     }
 
     //*************************************************************************
@@ -433,7 +447,7 @@ namespace etl
     void clear()
     {
       // the buffer might be split into two contiguous blocks
-      for (span<T> reader = read_reserve(max_size()); reader.size() > 0; reader = read_reserve(max_size()))
+      for (span<T> reader = read_reserve(); reader.size() > 0; reader = read_reserve())
       {
         destroy(reader.begin(), reader.end());
         read_commit(reader);
@@ -512,11 +526,14 @@ namespace etl
       base_t::clear();
     }
 
-  private:
+  private: 
 
     /// The uninitialised buffer of T used in the bip_buffer_spsc.
     etl::uninitialized_buffer_of<T, RESERVED_SIZE> buffer;
   };
+
+  template <typename T, const size_t SIZE, const size_t MEMORY_MODEL> 
+  ETL_CONSTANT typename bip_buffer_spsc_atomic<T, SIZE, MEMORY_MODEL>::size_type bip_buffer_spsc_atomic<T, SIZE, MEMORY_MODEL>::RESERVED_SIZE;
 }
 
 #endif /* ETL_HAS_ATOMIC && ETL_USING_CPP11 */

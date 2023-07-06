@@ -7,7 +7,7 @@ Embedded Template Library.
 https://github.com/ETLCPP/etl
 https://www.etlcpp.com
 
-Copyright(c) 2019 jwellbelove
+Copyright(c) 2019 John Wellbelove
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files(the "Software"), to deal
@@ -64,6 +64,9 @@ SOFTWARE.
   #elif defined(ETL_COMPILER_TEXAS_INSTRUMENTS)
     #define ETL_COMPILER_VERSION      __TI_COMPILER_VERSION__
     #define ETL_COMPILER_FULL_VERSION __TI_COMPILER_VERSION__
+  #elif defined(ETL_COMPILER_TASKING)
+    #define ETL_COMPILER_VERSION      __REVISION__
+    #define ETL_COMPILER_FULL_VERSION __VERSION__
   #else
     #define ETL_COMPILER_VERSION      0
     #define ETL_COMPILER_FULL_VERSION 0

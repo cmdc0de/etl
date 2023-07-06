@@ -5,7 +5,7 @@ Embedded Template Library.
 https://github.com/ETLCPP/etl
 https://www.etlcpp.com
 
-Copyright(c) 2019 jwellbelove
+Copyright(c) 2019 John Wellbelove
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files(the "Software"), to deal
@@ -96,13 +96,13 @@ namespace
   Test test;
 
   // Callback for 'member2'.
-  constexpr Service::delegate_type member_callback = Service::delegate_type::create<Test, test, &Test::member2>();
+  ETL_CONSTEXPR14 Service::delegate_type member_callback = Service::delegate_type::create<Test, test, &Test::member2>();
 
   // Callback for 'global'.
-  constexpr Service::delegate_type global_callback = Service::delegate_type::create<global>();
+  ETL_CONSTEXPR14 Service::delegate_type global_callback = Service::delegate_type::create<global>();
 
   // Callback for 'unhandled'.
-  constexpr Service::delegate_type unhandled_callback = Service::delegate_type::create<unhandled>();
+  ETL_CONSTEXPR14 Service::delegate_type unhandled_callback = Service::delegate_type::create<unhandled>();
 
   //*****************************************************************************
   // Initialises the test results.

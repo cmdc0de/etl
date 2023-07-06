@@ -5,7 +5,7 @@ Embedded Template Library.
 https://github.com/ETLCPP/etl
 https://www.etlcpp.com
 
-Copyright(c) 2017 jwellbelove
+Copyright(c) 2017 John Wellbelove
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files(the "Software"), to deal
@@ -40,6 +40,8 @@ SOFTWARE.
 #include <numeric>
 #include <stdint.h>
 #include <vector>
+
+#include <memory>
 
 
 namespace
@@ -104,7 +106,7 @@ namespace
     }
 
     template <class U>
-    void operator()(U* p) const
+    void operator()(U* /*p*/) const
     {
     }
   };
@@ -1116,10 +1118,10 @@ namespace
     //*************************************************************************
     TEST(test_uninitialized_buffer)
     {
-      typedef etl::uninitialized_buffer<sizeof(uint32_t), 4, etl::alignment_of_v<uint32_t>> storage32_t;
+      typedef etl::uninitialized_buffer<sizeof(uint32_t), 4, etl::alignment_of<uint32_t>::value> storage32_t;
 
-      size_t alignment = etl::alignment_of_v<storage32_t>;
-      size_t expected  = std::alignment_of_v<uint32_t>;
+      size_t alignment = etl::alignment_of<storage32_t>::value;
+      size_t expected  = std::alignment_of<uint32_t>::value;
 
       CHECK_EQUAL(expected, alignment);
     }
@@ -1152,8 +1154,8 @@ namespace
       CHECK_EQUAL(2U, refbuffer[2]);
       CHECK_EQUAL(3U, refbuffer[3]);
 
-      size_t alignment = etl::alignment_of_v<storage32_t>;
-      size_t expected  = std::alignment_of_v<uint32_t>;
+      size_t alignment = etl::alignment_of<storage32_t>::value;
+      size_t expected  = std::alignment_of<uint32_t>::value;
 
       CHECK_EQUAL(expected, alignment);
     }
@@ -1300,6 +1302,221 @@ namespace
       CHECK_EQUAL(uint32_t(0x29), uint32_t(*p1));
       CHECK((reinterpret_cast<const char*>(data) + 18) == p1);
       CHECK((reinterpret_cast<const char*>(data) + 32) == p2);
+    }
+
+    //*************************************************************************
+    class Base 
+    {
+    public:
+      virtual ~Base() {};
+      virtual void function() = 0;
+    };
+
+    static bool function_was_called = false;
+
+    class Derived : public Base 
+    {
+    public:
+      Derived() 
+      {
+        function_was_called = false;
+      }
+
+      void function() 
+      {
+        function_was_called = true;
+      }
+    };
+
+    void call(etl::unique_ptr<Base> ptr) 
+    {
+      ptr->function();
+    }
+
+    TEST(test_derived_type)
+    {
+      CHECK(!function_was_called);
+
+      etl::unique_ptr<Derived> ptr(new Derived());
+      CHECK(ptr.get() != ETL_NULLPTR);
+      
+      call(etl::move(ptr));
+      CHECK(function_was_called);
+      CHECK(ptr.get() == ETL_NULLPTR);
+    }
+
+    //*************************************************************************
+    struct Flags
+    {
+      Flags()
+        : constructed(false)
+        , destructed(false)
+      {
+      }
+
+      void Clear()
+      {
+        constructed = false;
+        destructed = false;
+      }
+
+      bool constructed;
+      bool destructed;
+    };
+
+    static Flags flags;
+
+    TEST(test_construct_get_destroy_object_aligned)
+    {
+      struct Data
+      {
+        Data()
+          : a(1)
+          , b(2)
+        {
+          flags.constructed = true;
+        }
+
+        Data(int a_, int b_)
+          : a(a_)
+          , b(b_)
+        {
+          flags.constructed = true;
+        }
+
+        ~Data()
+        {
+          flags.destructed = true;
+        }
+
+        int a;
+        int b;
+      };
+     
+      alignas(Data) char buffer1[sizeof(Data)];
+      char* pbuffer1 = buffer1;
+
+      alignas(Data) char buffer1b[sizeof(Data)];
+      char* pbuffer1b = buffer1b;
+
+      alignas(Data) char buffer2[sizeof(Data)];
+      char* pbuffer2 = buffer2;
+
+      alignas(Data) char buffer2b[sizeof(Data)];
+      char* pbuffer2b = buffer2b;
+
+      alignas(Data) char buffer3[sizeof(Data)];
+      char* pbuffer3 = buffer3;
+
+      alignas(Data) char buffer3b[sizeof(Data)];
+      char* pbuffer3b = buffer3b;
+
+      flags.Clear();
+      Data& rdata1 = etl::construct_object_at<Data>(pbuffer1);
+      CHECK_TRUE(flags.constructed);
+      CHECK_FALSE(flags.destructed);
+      CHECK_EQUAL(1, rdata1.a);
+      CHECK_EQUAL(2, rdata1.b);
+
+      flags.Clear();
+      Data data2(3, 4);
+      Data& rdata2 = etl::construct_object_at(pbuffer2, data2);
+      CHECK_TRUE(flags.constructed);
+      CHECK_FALSE(flags.destructed);
+      CHECK_EQUAL(data2.a, rdata2.a);
+      CHECK_EQUAL(data2.b, rdata2.b);
+
+      flags.Clear();
+      Data& rdata3 = etl::construct_object_at<Data>(pbuffer3, 5, 6);
+      CHECK_TRUE(flags.constructed);
+      CHECK_FALSE(flags.destructed);
+      CHECK_EQUAL(5, rdata3.a);
+      CHECK_EQUAL(6, rdata3.b);
+
+      memcpy(buffer1b, buffer1, sizeof(Data));
+      memcpy(buffer2b, buffer2, sizeof(Data));
+      memcpy(buffer3b, buffer3, sizeof(Data));
+
+      flags.Clear();
+      Data& rdata1b = etl::get_object_at<Data>(pbuffer1b);
+      CHECK_FALSE(flags.constructed);
+      CHECK_FALSE(flags.destructed);
+      CHECK_EQUAL(1, rdata1b.a);
+      CHECK_EQUAL(2, rdata1b.b);
+      
+      flags.Clear();
+      Data& rdata2b = etl::get_object_at<Data>(pbuffer2b);
+      CHECK_FALSE(flags.constructed);
+      CHECK_FALSE(flags.destructed);
+      CHECK_EQUAL(data2.a, rdata2b.a);
+      CHECK_EQUAL(data2.b, rdata2b.b);
+      
+      flags.Clear();
+      Data& rdata3b = etl::get_object_at<Data>(pbuffer3b);
+      CHECK_FALSE(flags.constructed);
+      CHECK_FALSE(flags.destructed);
+      CHECK_EQUAL(5, rdata3b.a);
+      CHECK_EQUAL(6, rdata3b.b);
+
+      flags.Clear();
+      etl::destroy_object_at<Data>(pbuffer1b);
+      CHECK_FALSE(flags.constructed);
+      CHECK_TRUE(flags.destructed);
+
+      flags.Clear();
+      etl::destroy_object_at<Data>(pbuffer2b);
+      CHECK_FALSE(flags.constructed);
+      CHECK_TRUE(flags.destructed);
+
+      flags.Clear();
+      etl::destroy_object_at<Data>(pbuffer3b);
+      CHECK_FALSE(flags.constructed);
+      CHECK_TRUE(flags.destructed);
+    }
+
+    TEST(test_construct_get_destroy_object_misaligned)
+    {
+      struct Data
+      {
+        Data()
+          : a(1)
+          , b(2)
+        {
+        }
+
+        Data(int a_, int b_)
+          : a(a_)
+          , b(b_)
+        {
+        }
+
+        ~Data()
+        {
+        }
+
+        int a;
+        int b;
+      };
+
+      alignas(Data) char buffer1[sizeof(Data)];
+      char* pbuffer1 = buffer1 + 1;
+
+      alignas(Data) char buffer2[sizeof(Data)];
+      char* pbuffer2 = buffer2 + 1;
+
+      alignas(Data) char buffer3[sizeof(Data)];
+      char* pbuffer3 = buffer3 + 1;
+
+      CHECK_THROW(etl::construct_object_at<Data>(pbuffer1), etl::alignment_error);
+
+      Data data2(3, 4);
+      CHECK_THROW(etl::construct_object_at(pbuffer2, data2), etl::alignment_error);
+
+      CHECK_THROW(etl::construct_object_at<Data>(pbuffer3, 5, 6), etl::alignment_error);
+
+      CHECK_THROW(etl::get_object_at<Data>(pbuffer1), etl::alignment_error);
+
+      CHECK_THROW(etl::destroy_object_at<Data>(pbuffer1), etl::alignment_error);
     }
   };
 }

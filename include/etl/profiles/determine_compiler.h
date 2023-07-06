@@ -7,7 +7,7 @@ Embedded Template Library.
 https://github.com/ETLCPP/etl
 https://www.etlcpp.com
 
-Copyright(c) 2019 jwellbelove
+Copyright(c) 2019 John Wellbelove
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files(the "Software"), to deal
@@ -31,6 +31,9 @@ SOFTWARE.
 #ifndef ETL_DETERMINE_COMPILER_H_INCLUDED
 #define ETL_DETERMINE_COMPILER_H_INCLUDED
 
+//*****************************************************************************
+// Macros that are conditionally defined.
+//*****************************************************************************
 #if !defined(ETL_COMPILER_GCC) && \
     !defined(ETL_COMPILER_MICROSOFT) && \
     !defined(ETL_COMPILER_ARM5) && \
@@ -41,6 +44,7 @@ SOFTWARE.
     !defined(ETL_COMPILER_IAR) && \
     !defined(ETL_COMPILER_INTEL) && \
     !defined(ETL_COMPILER_TEXAS_INSTRUMENTS) && \
+    !defined(ETL_COMPILER_TASKING) && \
     !defined(ETL_COMPILER_GENERIC)
 
   #if !defined(ETL_COMPILER_TYPE_DETECTED) && !defined(ETL_COMPILER_ARM5)
@@ -116,11 +120,21 @@ SOFTWARE.
     #endif
   #endif
 
+  #if !defined(ETL_COMPILER_TYPE_DETECTED) && !defined(ETL_COMPILER_TASKING)
+    #if defined(__TASKING__)
+      #define ETL_COMPILER_TASKING
+      #define ETL_COMPILER_TYPE_DETECTED
+    #endif
+  #endif
+
   #if !defined(ETL_COMPILER_TYPE_DETECTED)
     #define ETL_COMPILER_GENERIC
   #endif
 #endif
 
+//*****************************************************************************
+// 'Using' macros that are always defined.
+//*****************************************************************************
 #if defined(ETL_COMPILER_GCC)
   #define ETL_USING_GCC_COMPILER 1
 #else
@@ -179,6 +193,12 @@ SOFTWARE.
   #define ETL_USING_TEXAS_INSTRUMENTS_COMPILER 1
 #else
   #define ETL_USING_TEXAS_INSTRUMENTS_COMPILER 0
+#endif
+
+#if defined(ETL_COMPILER_TASKING)
+  #define ETL_USING_TASKING_COMPILER 1
+#else
+  #define ETL_USING_TASKING_COMPILER 0
 #endif
 
 #if defined(ETL_COMPILER_GENERIC)

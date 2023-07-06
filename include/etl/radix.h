@@ -7,7 +7,7 @@ Embedded Template Library.
 https://github.com/ETLCPP/etl
 https://www.etlcpp.com
 
-Copyright(c) 2014 jwellbelove
+Copyright(c) 2014 John Wellbelove
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files(the "Software"), to deal
@@ -31,10 +31,10 @@ SOFTWARE.
 #ifndef ETL_RADIX_INCLUDED
 #define ETL_RADIX_INCLUDED
 
-#include <stdint.h>
-
 #include "platform.h"
 #include "enum_type.h"
+
+#include <stdint.h>
 
 ///\defgroup radix radix
 /// Radix constants for binary, octal, decimal and hex.

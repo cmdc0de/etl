@@ -5,7 +5,7 @@ Embedded Template Library.
 https://github.com/ETLCPP/etl
 https://www.etlcpp.com
 
-Copyright(c) 2014 jwellbelove
+Copyright(c) 2014 John Wellbelove
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files(the "Software"), to deal
@@ -471,7 +471,9 @@ namespace
       DataNDC data(initial_data.begin(), initial_data.end());
       DataNDC other_data(data);
 
+#include "etl/private/diagnostic_self_assign_overloaded_push.h" 
       other_data = other_data;
+#include "etl/private/diagnostic_pop.h" 
 
       bool isEqual = Check_Equal(data.begin(),
                                  data.end(),
@@ -1523,7 +1525,7 @@ namespace
       
       auto v = *data.begin();
       using Type = decltype(v);
-      CHECK((std::is_same_v<Pair, Type>));
+      CHECK((std::is_same<Pair, Type>::value));
 
       CHECK_EQUAL(NDC("A"), data.at(0));
       CHECK_EQUAL(NDC("B"), data.at(1));

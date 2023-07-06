@@ -5,7 +5,7 @@ Embedded Template Library.
 https://github.com/ETLCPP/etl
 https://www.etlcpp.com
 
-Copyright(c) 2017 jwellbelove
+Copyright(c) 2017 John Wellbelove
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files(the "Software"), to deal
@@ -43,7 +43,10 @@ SOFTWARE.
 
 namespace
 {
-  typedef etl::string_view View;
+  using View    = etl::string_view;
+  using WView   = etl::wstring_view;
+  using U16View = etl::u16string_view;
+  using U32View = etl::u32string_view;
 
   etl::string<11> etltext    = "Hello World";
   std::string text           = "Hello World";
@@ -54,12 +57,20 @@ namespace
   std::string text_shorter   = "Hello Worl";
   std::string text_different = "Goodbye!!!!";
 
-  char ctext[] = { 'H', 'e', 'l', 'l', 'o', ' ', 'W', 'o', 'r', 'l', 'd', '\0' };
-  char* pctext = ctext;
+  constexpr char     cctext[]   = { 'H', 'e', 'l', 'l', 'o', ' ', 'W', 'o', 'r', 'l', 'd', '\0' };
+  constexpr wchar_t  cwtext[]   = { L'H', L'e', L'l', L'l', L'o', L' ', L'W', L'o', L'r', L'l', L'd', L'\0' };
+  constexpr char16_t cu16text[] = { u'H', u'e', u'l', u'l', u'o', u' ', u'W', u'o', u'r', u'l', u'd', u'\0' };
+  constexpr char32_t cu32text[] = { U'H', U'e', U'l', U'l', U'o', U' ', U'W', U'o', U'r', U'l', U'd', U'\0' };
+  
+  const char*     pctext   = cctext;
+  const wchar_t*  pwtext   = cwtext;
+  const char16_t* pu16text = cu16text;
+  const char32_t* pu32text = cu32text;
 
   SUITE(test_string_view)
   {
     //*************************************************************************
+#if ETL_USING_CPP14
     TEST(test_constexpr)
     {
       constexpr const char* text = "Hello";
@@ -79,6 +90,7 @@ namespace
       CHECK_ARRAY_EQUAL(text, str3, 5U);
       CHECK_ARRAY_EQUAL(text, str4, 5U);
     }
+#endif
 
     //*************************************************************************
     TEST(test_default_constructor)
@@ -91,9 +103,45 @@ namespace
     }
 
     //*************************************************************************
-    TEST(test_constructor_pointer_range)
+    TEST(test_constructor_pointer_range_char)
     {
-      View view(pctext, pctext + strlen(pctext));
+      View view(pctext, pctext + etl::strlen(pctext));
+
+      CHECK(text.size() == view.size());
+      CHECK(text.size() == view.max_size());
+
+      bool isEqual = std::equal(view.begin(), view.end(), text.begin());
+      CHECK(isEqual);
+    }
+
+    //*************************************************************************
+    TEST(test_constructor_pointer_range_wchar_t)
+    {
+      WView view(pwtext, pwtext + etl::strlen(pwtext));
+
+      CHECK(text.size() == view.size());
+      CHECK(text.size() == view.max_size());
+
+      bool isEqual = std::equal(view.begin(), view.end(), text.begin());
+      CHECK(isEqual);
+    }
+
+    //*************************************************************************
+    TEST(test_constructor_pointer_range_u16char_t)
+    {
+      U16View view(pu16text, pu16text + etl::strlen(pu16text));
+
+      CHECK(text.size() == view.size());
+      CHECK(text.size() == view.max_size());
+
+      bool isEqual = std::equal(view.begin(), view.end(), text.begin());
+      CHECK(isEqual);
+    }
+
+    //*************************************************************************
+    TEST(test_constructor_pointer_range_u32char_t)
+    {
+      U32View view(pu32text, pu32text + etl::strlen(pu32text));
 
       CHECK(text.size() == view.size());
       CHECK(text.size() == view.max_size());
@@ -159,9 +207,93 @@ namespace
       auto u32view = etl::make_string_view(U"Hello World");
     
       CHECK(std::equal(cview.begin(),   cview.end(),   text.begin()));
+      CHECK(std::equal(wview.begin(),   wview.end(),   wtext.begin()));
+      CHECK(std::equal(u16view.begin(), u16view.end(), u16text.begin()));
+      CHECK(std::equal(u32view.begin(), u32view.end(), u32text.begin()));
+    }
+
+    //*************************************************************************
+#if ETL_USING_CPP14
+    TEST(test_constexpr_make_string_view)
+    {
+      constexpr auto cview   = etl::make_string_view(cctext);
+      constexpr auto wview   = etl::make_string_view(cwtext);
+      constexpr auto u16view = etl::make_string_view(cu16text);
+      constexpr auto u32view = etl::make_string_view(cu32text);
+
+      CHECK(std::equal(cview.begin(),   cview.end(),   text.begin()));
       CHECK(std::equal(wview.begin(),   wview.end(),   text.begin()));
       CHECK(std::equal(u16view.begin(), u16view.end(), text.begin()));
       CHECK(std::equal(u32view.begin(), u32view.end(), text.begin()));
+    }
+#endif
+
+    //*************************************************************************
+    TEST(test_make_string_view_check_consistent_strings_from_arrays_of_char)
+    {
+      char text_extra_nulls[10] = { 'H', 'e', 'l', 'l', 'o' };
+      char text_no_null[10]     = { 'H', 'e', 'l', 'l', 'o' };
+      std::string text_expected = "Hello";
+
+      auto view_extra_nulls = etl::make_string_view(text_extra_nulls);
+      auto view_no_null     = etl::make_string_view(text_no_null);
+
+      CHECK_EQUAL(text_expected.size(), view_extra_nulls.size());
+      CHECK_EQUAL(text_expected.size(), view_no_null.size());
+
+      CHECK(std::equal(view_extra_nulls.begin(), view_extra_nulls.end(), text_expected.begin()));
+      CHECK(std::equal(view_no_null.begin(),     view_no_null.end(),     text_expected.begin()));
+    }
+
+    //*************************************************************************
+    TEST(test_make_string_view_check_consistent_strings_from_arrays_of_wchar_t)
+    {
+      wchar_t text_extra_nulls[10] = { L'H', L'e', L'l', L'l', L'o' };
+      wchar_t text_no_null[10] = { L'H', L'e', L'l', L'l', L'o' };
+      std::wstring text_expected = L"Hello";
+
+      auto view_extra_nulls = etl::make_string_view(text_extra_nulls);
+      auto view_no_null = etl::make_string_view(text_no_null);
+
+      CHECK_EQUAL(text_expected.size(), view_extra_nulls.size());
+      CHECK_EQUAL(text_expected.size(), view_no_null.size());
+
+      CHECK(std::equal(view_extra_nulls.begin(), view_extra_nulls.end(), text_expected.begin()));
+      CHECK(std::equal(view_no_null.begin(), view_no_null.end(), text_expected.begin()));
+    }
+
+    //*************************************************************************
+    TEST(test_make_string_view_check_consistent_strings_from_arrays_of_char16_t)
+    {
+      char16_t text_extra_nulls[10] = { u'H', u'e', u'l', u'l', u'o' };
+      char16_t text_no_null[10] = { u'H', u'e', u'l', u'l', u'o' };
+      std::u16string text_expected = u"Hello";
+
+      auto view_extra_nulls = etl::make_string_view(text_extra_nulls);
+      auto view_no_null = etl::make_string_view(text_no_null);
+
+      CHECK_EQUAL(text_expected.size(), view_extra_nulls.size());
+      CHECK_EQUAL(text_expected.size(), view_no_null.size());
+
+      CHECK(std::equal(view_extra_nulls.begin(), view_extra_nulls.end(), text_expected.begin()));
+      CHECK(std::equal(view_no_null.begin(), view_no_null.end(), text_expected.begin()));
+    }
+
+    //*************************************************************************
+    TEST(test_make_string_view_check_consistent_strings_from_arrays_of_char32_t)
+    {
+      char32_t text_extra_nulls[10] = { U'H', U'e', U'l', U'l', U'o' };
+      char32_t text_no_null[10] = { U'H', U'e', U'l', U'l', U'o' };
+      std::u32string text_expected = U"Hello";
+
+      auto view_extra_nulls = etl::make_string_view(text_extra_nulls);
+      auto view_no_null = etl::make_string_view(text_no_null);
+
+      CHECK_EQUAL(text_expected.size(), view_extra_nulls.size());
+      CHECK_EQUAL(text_expected.size(), view_no_null.size());
+
+      CHECK(std::equal(view_extra_nulls.begin(), view_extra_nulls.end(), text_expected.begin()));
+      CHECK(std::equal(view_no_null.begin(), view_no_null.end(), text_expected.begin()));
     }
 
     //*************************************************************************
@@ -926,6 +1058,27 @@ namespace
       CHECK(etl::hash<WText>()(wtext) == etl::hash<WView>()(wview));
       CHECK(etl::hash<U16Text>()(u16text) == etl::hash<U16View>()(u16view));
       CHECK(etl::hash<U32Text>()(u32text) == etl::hash<U32View>()(u32view));
+    }
+
+    //*************************************************************************
+    TEST(string_view_literal)
+    {
+      typedef etl::string_view    View;
+      typedef etl::wstring_view   WView;
+      typedef etl::u16string_view U16View;
+      typedef etl::u32string_view U32View;
+
+      using namespace etl::literals::string_literals;
+
+      View    view    =  "Hello World"_sv;
+      WView   wview   = L"Hello World"_sv;
+      U16View u16view = u"Hello World"_sv;
+      U32View u32view = U"Hello World"_sv;
+
+      CHECK_TRUE((view    == View{ "Hello World",     etl::strlen("Hello World") }));
+      CHECK_TRUE((wview   == WView{ L"Hello World",   etl::strlen(L"Hello World") }));
+      CHECK_TRUE((u16view == U16View{ u"Hello World", etl::strlen(u"Hello World") }));
+      CHECK_TRUE((u32view == U32View{ U"Hello World", etl::strlen(U"Hello World") }));
     }
   };
 }

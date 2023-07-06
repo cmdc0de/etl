@@ -5,7 +5,7 @@ Embedded Template Library.
 https://github.com/ETLCPP/etl
 https://www.etlcpp.com
 
-Copyright(c) 2016 jwellbelove
+Copyright(c) 2016 John Wellbelove
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files(the "Software"), to deal
@@ -35,6 +35,7 @@ SOFTWARE.
 #include <string>
 #include <vector>
 #include <numeric>
+#include <unordered_set>
 
 #include "data.h"
 
@@ -63,6 +64,78 @@ namespace etl
 
 namespace
 {
+  //***************************************************************************
+  struct CustomHashFunction
+  {
+    CustomHashFunction()
+      : id(0)
+    {
+    }
+
+    CustomHashFunction(int id_)
+      : id(id_)
+    {
+    }
+
+    size_t operator ()(uint32_t e) const
+    {
+      return size_t(e);
+    }
+
+    int id;
+  };
+
+  //***************************************************************************
+  struct CustomKeyEq
+  {
+    CustomKeyEq()
+      : id(0)
+    {
+    }
+
+    CustomKeyEq(int id_)
+      : id(id_)
+    {
+    }
+
+    size_t operator ()(uint32_t lhs, uint32_t rhs) const
+    {
+      return (lhs == rhs);
+    }
+
+    int id;
+  };
+
+  //*************************************************************************
+  // Hasher whose hash behaviour depends on provided data.
+  struct parameterized_hash
+  {
+    size_t modulus;
+
+    parameterized_hash(size_t modulus_ = 2) : modulus(modulus_){}
+
+    size_t operator()(size_t val) const
+    {
+      return val % modulus;
+    }
+  };
+
+  //*************************************************************************
+  // Equality checker whose behaviour depends on provided data.
+  struct parameterized_equal
+  {
+    size_t modulus;
+
+    // Hasher whose hash behaviour depends on provided data.
+    parameterized_equal(size_t modulus_ = 2) : modulus(modulus_){}
+
+    bool operator()(size_t lhs, size_t rhs) const
+    {
+      return (lhs % modulus) == (rhs % modulus);
+    }
+  };
+
+  //***************************************************************************
   SUITE(test_unordered_set)
   {
     static const size_t SIZE = 10;
@@ -223,11 +296,7 @@ namespace
 
       other_data = data;
 
-      bool isEqual = std::equal(data.begin(),
-                                data.end(),
-                                other_data.begin());
-
-      CHECK(isEqual);
+      CHECK(data == other_data);
     }
 
     //*************************************************************************
@@ -241,11 +310,7 @@ namespace
 
       idata2 = idata1;
 
-      bool isEqual = std::equal(data1.begin(),
-                                data1.end(),
-                                data2.begin());
-
-      CHECK(isEqual);
+      CHECK(data1 == data2);
     }
 
     //*************************************************************************
@@ -254,13 +319,11 @@ namespace
       DataNDC data(initial_data.begin(), initial_data.end());
       DataNDC other_data(data);
 
+#include "etl/private/diagnostic_self_assign_overloaded_push.h"
       other_data = other_data;
+#include "etl/private/diagnostic_pop.h"
 
-      bool isEqual = std::equal(data.begin(),
-                                data.end(),
-                                other_data.begin());
-
-      CHECK(isEqual);
+      CHECK(data == other_data);
     }
 
     //*************************************************************************
@@ -660,6 +723,145 @@ namespace
       CHECK_EQUAL(2, s.size());
       CHECK_EQUAL("set = 2", s[0]);
       CHECK_EQUAL("set = 3", s[1]);
+    }
+
+    TEST(test_parameterized_eq)
+    {
+      constexpr std::size_t MODULO = 4;
+      parameterized_hash hash{MODULO};
+      parameterized_equal eq{MODULO};
+      // values are equal modulo 4
+      etl::unordered_set<std::size_t, 10, 10, parameterized_hash, parameterized_equal> set;
+      set.insert(2);
+
+      const auto& constset = set;
+
+      const size_t key = 6;
+      CHECK_FALSE(set.insert(key).second);
+      CHECK_FALSE(set.insert(std::move(key)).second);
+
+      CHECK(set.find(14) != set.end());
+      CHECK(constset.find(14) != constset.end());
+
+      set.erase(14);
+      CHECK(set.find(6) == set.end());
+    }
+
+    //*************************************************************************
+    TEST(test_equality_comparison_fails_when_hash_collisions_occur_582)
+    {
+      struct bad_hash
+      {
+        // Force hash collisions
+        size_t operator()(int key) const
+        {
+          return key % 4;
+        }
+      };
+
+      std::vector<int> random_keys1 = { 17, 14, 3,  7, 2, 6, 9,  3, 18, 10,  8, 11,  4, 1, 12, 15, 16,  0,  5, 19 };
+      std::vector<int> random_keys2 = {  3,  6, 5, 17, 2, 7, 3, 19,  8, 15, 14,  0, 18, 4, 10,  9, 16, 11, 12,  1 };
+
+      // Check that the input data is valid.
+      CHECK_EQUAL(random_keys1.size(), random_keys2.size());
+      CHECK(std::is_permutation(random_keys1.begin(), random_keys1.end(), random_keys2.begin()));
+
+      //***************************************************
+      // Fill ETL
+      etl::unordered_set<int, 20, 20, bad_hash> etlset1;
+      etl::unordered_set<int, 20, 20, bad_hash> etlset2;
+
+      for (auto i : random_keys1)
+      {
+        etlset1.insert(i);
+      }
+
+      for (auto i : random_keys2)
+      {
+        etlset2.insert(i);
+      }
+
+      //***************************************************
+      // Fill STD
+      std::unordered_set<int, bad_hash> stdset1;
+      std::unordered_set<int, bad_hash> stdset2;
+
+      for (auto i : random_keys1)
+      {
+        stdset1.insert(i);
+      }
+
+      for (auto i : random_keys2)
+      {
+        stdset2.insert(i);
+      }
+
+      //***************************************************
+      CHECK_EQUAL((stdset1 == stdset2), (etlset1 == etlset2));
+    }
+
+    //*************************************************************************
+    TEST(test_copying_of_hash_and_key_compare_with_copy_construct)
+    {
+      CustomHashFunction chf(1);
+      CustomKeyEq        ceq(2);
+
+      etl::unordered_set<uint32_t, 5, 5, CustomHashFunction, CustomKeyEq> set1(chf, ceq);
+      etl::unordered_set<uint32_t, 5, 5, CustomHashFunction, CustomKeyEq> set2(set1);
+
+      CHECK_EQUAL(chf.id, set2.hash_function().id);
+      CHECK_EQUAL(ceq.id, set2.key_eq().id);
+    }
+
+    //*************************************************************************
+    TEST(test_copying_of_hash_and_key_compare_with_assignment)
+    {
+      CustomHashFunction chf1(1);
+      CustomKeyEq        ceq2(2);
+
+      CustomHashFunction chf3(3);
+      CustomKeyEq        ceq4(4);
+
+      etl::unordered_set<uint32_t, 5, 5, CustomHashFunction, CustomKeyEq> set1(chf1, ceq2);
+      etl::unordered_set<uint32_t, 5, 5, CustomHashFunction, CustomKeyEq> set2(chf3, ceq4);
+
+      set2.operator=(set1);
+
+      CHECK_EQUAL(chf1.id, set2.hash_function().id);
+      CHECK_EQUAL(ceq2.id, set2.key_eq().id);
+    }
+
+    //*************************************************************************
+    TEST(test_copying_of_hash_and_key_compare_with_construction_from_iterators)
+    {
+      CustomHashFunction chf1(1);
+      CustomKeyEq        ceq2(2);
+
+      std::array<uint32_t, 5> data = { 1, 2, 3, 4, 5 };
+
+      etl::unordered_set<uint32_t, 5, 5, CustomHashFunction, CustomKeyEq> set1(data.begin(), data.end(), chf1, ceq2);
+
+      CHECK_EQUAL(chf1.id, set1.hash_function().id);
+      CHECK_EQUAL(ceq2.id, set1.key_eq().id);
+    }
+
+    //*************************************************************************
+    TEST(test_copying_of_hash_and_key_compare_with_construction_from_initializer_list)
+    {
+      CustomHashFunction chf1(1);
+      CustomKeyEq        ceq2(2);
+
+      etl::unordered_set<uint32_t, 5, 5, CustomHashFunction, CustomKeyEq> set1({ 1, 2, 3, 4, 5 }, chf1, ceq2);
+
+      CHECK_EQUAL(chf1.id, set1.hash_function().id);
+      CHECK_EQUAL(ceq2.id, set1.key_eq().id);
+    }
+
+    //*************************************************************************
+    TEST(test_iterator_value_types_bug_584)
+    {
+      using Set = etl::unordered_set<int, 1, 1>;
+      CHECK((!std::is_same<typename Set::const_iterator::value_type, typename Set::iterator::value_type>::value));
     }
   };
 }

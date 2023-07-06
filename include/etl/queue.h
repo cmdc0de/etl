@@ -7,7 +7,7 @@ Embedded Template Library.
 https://github.com/ETLCPP/etl
 https://www.etlcpp.com
 
-Copyright(c) 2014 jwellbelove, Mark Kitson
+Copyright(c) 2014 John Wellbelove, Mark Kitson
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files(the "Software"), to deal
@@ -31,9 +31,6 @@ SOFTWARE.
 #ifndef ETL_QUEUE_INCLUDED
 #define ETL_QUEUE_INCLUDED
 
-#include <stddef.h>
-#include <stdint.h>
-
 #include "platform.h"
 #include "iterator.h"
 #include "alignment.h"
@@ -47,6 +44,9 @@ SOFTWARE.
 #include "integral_limits.h"
 #include "utility.h"
 #include "placement_new.h"
+
+#include <stddef.h>
+#include <stdint.h>
 
 //*****************************************************************************
 ///\defgroup queue queue
@@ -103,7 +103,7 @@ namespace etl
   /// The base class for all queues.
   ///\ingroup queue
   //***************************************************************************
-  template <const size_t MEMORY_MODEL = etl::memory_model::MEMORY_MODEL_LARGE>
+  template <size_t MEMORY_MODEL = etl::memory_model::MEMORY_MODEL_LARGE>
   class queue_base
   {
   public:
@@ -660,6 +660,9 @@ namespace etl
     /// The uninitialised buffer of T used in the queue.
     container_type buffer[SIZE];
   };
+
+  template <typename T, const size_t SIZE, const size_t MEMORY_MODEL>
+  ETL_CONSTANT typename queue<T, SIZE, MEMORY_MODEL>::size_type queue<T, SIZE, MEMORY_MODEL>::MAX_SIZE;
 }
 
 #endif

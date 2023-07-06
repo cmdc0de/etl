@@ -7,7 +7,7 @@ Embedded Template Library.
 https://github.com/ETLCPP/etl
 https://www.etlcpp.com
 
-Copyright(c) 2014 jwellbelove, rlindeman
+Copyright(c) 2014 John Wellbelove, rlindeman
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files(the "Software"), to deal
@@ -31,8 +31,6 @@ SOFTWARE.
 #ifndef ETL_SET_INCLUDED
 #define ETL_SET_INCLUDED
 
-#include <stddef.h>
-
 #include "platform.h"
 #include "pool.h"
 #include "exception.h"
@@ -51,6 +49,9 @@ SOFTWARE.
 #include "initializer_list.h"
 
 #include "private/comparator_is_transparent.h"
+
+#include <stddef.h>
+
 #include "private/minmax_push.h"
 
 //*****************************************************************************
@@ -1360,7 +1361,7 @@ namespace etl
     //*************************************************************************
     Data_Node& allocate_data_node(const_reference value)
     {
-      Data_Node& node = create_data_node();
+      Data_Node& node = allocate_data_node();
       ::new ((void*)&node.value) value_type(value);
       ETL_INCREMENT_DEBUG_COUNT
       return node;
@@ -1372,7 +1373,7 @@ namespace etl
     //*************************************************************************
     Data_Node& allocate_data_node(rvalue_reference value)
     {
-      Data_Node& node = create_data_node();
+      Data_Node& node = allocate_data_node();
       ::new ((void*)&node.value) value_type(etl::move(value));
       ETL_INCREMENT_DEBUG_COUNT
       return node;
@@ -1382,7 +1383,7 @@ namespace etl
     //*************************************************************************
     /// Create a Data_Node.
     //*************************************************************************
-    Data_Node& create_data_node()
+    Data_Node& allocate_data_node()
     {
       Data_Node* (etl::ipool::*func)() = &etl::ipool::allocate<Data_Node>;
       return *(p_node_pool->*func)();
@@ -2531,8 +2532,6 @@ namespace etl
     set(set&& other)
       : etl::iset<TKey, TCompare>(node_pool, MAX_SIZE)
     {
-      int count = 0;
-
       if (this != &other)
       {
         typename etl::iset<TKey, TCompare>::iterator from = other.begin();
@@ -2625,6 +2624,9 @@ namespace etl
     /// The pool of data nodes used for the set.
     etl::pool<typename etl::iset<TKey, TCompare>::Data_Node, MAX_SIZE> node_pool;
   };
+
+  template <typename TKey, const size_t MAX_SIZE_, typename TCompare>
+  ETL_CONSTANT size_t set<TKey, MAX_SIZE_, TCompare>::MAX_SIZE;
 
   //*************************************************************************
   /// Template deduction guides.

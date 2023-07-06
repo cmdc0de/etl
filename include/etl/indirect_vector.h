@@ -7,7 +7,7 @@ Embedded Template Library.
 https://github.com/ETLCPP/etl
 https://www.etlcpp.com
 
-Copyright(c) 2019 jwellbelove
+Copyright(c) 2019 John Wellbelove
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files(the "Software"), to deal
@@ -39,11 +39,6 @@ SOFTWARE.
 #include "functional.h"
 #include "static_assert.h"
 #include "initializer_list.h"
-
-#ifdef ETL_COMPILER_GCC
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-variable"
-#endif
 
 //*****************************************************************************
 ///\defgroup indirect_vector indirect_vector
@@ -574,7 +569,7 @@ namespace etl
     ///\param new_size The new size.
     ///\param value   The value to fill new elements with. Default = default constructed value.
     //*********************************************************************
-    void resize(size_t new_size, T value)
+    void resize(size_t new_size, const_reference value)
     {
       ETL_ASSERT(new_size <= capacity(), ETL_ERROR(vector_full));
 
@@ -787,10 +782,11 @@ namespace etl
     ///\param value The value to add.
     //*********************************************************************
     template <typename ... Args>
-    void emplace_back(Args && ... args)
+    reference emplace_back(Args && ... args)
     {
       T* p = storage.create<T>(etl::forward<Args>(args)...);
       lookup.push_back(p);
+      return back();
     }
 #else
     //*********************************************************************
@@ -799,10 +795,11 @@ namespace etl
     ///\param value The value to add.
     //*********************************************************************
     template <typename T1>
-    void emplace_back(const T1& value1)
+    reference emplace_back(const T1& value1)
     {
       T* p = storage.create<T>(T(value1));
       lookup.push_back(p);
+      return back();
     }
 
     //*********************************************************************
@@ -811,10 +808,11 @@ namespace etl
     ///\param value The value to add.
     //*********************************************************************
     template <typename T1, typename T2>
-    void emplace_back(const T1& value1, const T2& value2)
+    reference emplace_back(const T1& value1, const T2& value2)
     {
       T* p = storage.create<T>(T(value1, value2));
       lookup.push_back(p);
+      return back();
     }
 
     //*********************************************************************
@@ -823,10 +821,11 @@ namespace etl
     ///\param value The value to add.
     //*********************************************************************
     template <typename T1, typename T2, typename T3>
-    void emplace_back(const T1& value1, const T2& value2, const T3& value3)
+    reference emplace_back(const T1& value1, const T2& value2, const T3& value3)
     {
       T* p = storage.create<T>(T(value1, value2, value3));
       lookup.push_back(p);
+      return back();
     }
 
     //*********************************************************************
@@ -835,10 +834,11 @@ namespace etl
     ///\param value The value to add.
     //*********************************************************************
     template <typename T1, typename T2, typename T3, typename T4>
-    void emplace_back(const T1& value1, const T2& value2, const T3& value3, const T4& value4)
+    reference emplace_back(const T1& value1, const T2& value2, const T3& value3, const T4& value4)
     {
       T* p = storage.create<T>(T(value1, value2, value3, value4));
       lookup.push_back(p);
+      return back();
     }
 #endif
 
@@ -1424,6 +1424,9 @@ namespace etl
     etl::pool<T, MAX_SIZE>    storage_pool;
   };
 
+  template <typename T, const size_t MAX_SIZE_>
+  ETL_CONSTANT size_t indirect_vector<T, MAX_SIZE_>::MAX_SIZE;
+
   //*************************************************************************
   /// Template deduction guides.
   //*************************************************************************
@@ -1438,7 +1441,7 @@ namespace etl
   //*************************************************************************
 #if ETL_USING_CPP11 && ETL_HAS_INITIALIZER_LIST
   template <typename... T>
-  constexpr auto make_indirect_vector(T... t) -> etl::indirect_vector<typename etl::common_type_t<T...>, sizeof...(T)>
+  constexpr auto make_indirect_vector(T&&... t) -> etl::indirect_vector<typename etl::common_type_t<T...>, sizeof...(T)>
   {
     return { { etl::forward<T>(t)... } };
   }
@@ -1514,7 +1517,7 @@ namespace etl
 #endif
 
     //*************************************************************************
-    /// Copy constructor.
+    /// Construct a copy.
     //*************************************************************************
     indirect_vector_ext(const indirect_vector_ext& other, etl::ivector<T*>& lookup_, etl::ipool& pool_)
       : etl::iindirect_vector<T>(lookup_, pool_)
@@ -1522,6 +1525,11 @@ namespace etl
       ETL_ASSERT(lookup_.capacity() <= pool_.capacity(), ETL_ERROR(indirect_vector_buffer_missmatch));
       this->assign(other.begin(), other.end());
     }
+
+    //*************************************************************************
+    /// Copy constructor (Deleted)
+    //*************************************************************************
+    indirect_vector_ext(const indirect_vector_ext& other) ETL_DELETE;
 
     //*************************************************************************
     /// Assignment operator.
@@ -1538,7 +1546,7 @@ namespace etl
 
 #if ETL_USING_CPP11
     //*************************************************************************
-    /// Move constructor.
+    /// Move construct.
     //*************************************************************************
     indirect_vector_ext(indirect_vector_ext&& other, etl::ivector<T*>& lookup_, etl::ipool& pool_)
       : etl::iindirect_vector<T>(lookup_, pool_)
@@ -1546,6 +1554,11 @@ namespace etl
       ETL_ASSERT(lookup_.capacity() <= pool_.capacity(), ETL_ERROR(indirect_vector_buffer_missmatch));
       this->move_container(etl::move(other));
     }
+
+    //*************************************************************************
+    /// Move constructor.
+    //*************************************************************************
+    indirect_vector_ext(indirect_vector_ext&& other) ETL_DELETE;
 
     //*************************************************************************
     /// Move assignment operator.
@@ -1567,10 +1580,6 @@ namespace etl
     }
   };
 }
-
-#ifdef ETL_COMPILER_GCC
-#pragma GCC diagnostic pop
-#endif
 
 #endif
 

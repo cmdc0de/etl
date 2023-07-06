@@ -7,7 +7,7 @@ Embedded Template Library.
 https://github.com/ETLCPP/etl
 https://www.etlcpp.com
 
-Copyright(c) 2014 jwellbelove
+Copyright(c) 2014 John Wellbelove
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files(the "Software"), to deal
@@ -154,7 +154,7 @@ namespace etl
       if (i_observer_item == observer_list.end())
       {
         // Is there enough room?
-        ETL_ASSERT_AND_RETURN(!observer_list.full(), ETL_ERROR(etl::observer_list_full));
+        ETL_ASSERT_OR_RETURN(!observer_list.full(), ETL_ERROR(etl::observer_list_full));
 
         // Add it.
         observer_list.push_back(observer_item(observer));

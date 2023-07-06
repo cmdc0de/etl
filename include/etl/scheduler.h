@@ -5,7 +5,7 @@ Embedded Template Library.
 https://github.com/ETLCPP/etl
 https://www.etlcpp.com
 
-Copyright(c) 2017 jwellbelove
+Copyright(c) 2017 John Wellbelove
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files(the "Software"), to deal
@@ -29,8 +29,6 @@ SOFTWARE.
 #ifndef ETL_SCHEDULER_INCLUDED
 #define ETL_SCHEDULER_INCLUDED
 
-#include <stdint.h>
-
 #include "platform.h"
 #include "vector.h"
 #include "nullptr.h"
@@ -39,6 +37,8 @@ SOFTWARE.
 #include "task.h"
 #include "type_traits.h"
 #include "function.h"
+
+#include <stdint.h>
 
 namespace etl
 {
@@ -311,7 +311,6 @@ namespace etl
       {
         ETL_ASSERT((p_tasks[i] != ETL_NULLPTR), ETL_ERROR(etl::scheduler_null_task_exception));
         add_task(*(p_tasks[i]));
-        p_tasks[i]->on_task_added();
       }
     }
 

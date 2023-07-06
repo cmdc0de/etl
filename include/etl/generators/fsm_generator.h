@@ -5,7 +5,7 @@ Embedded Template Library.
 https://github.com/ETLCPP/etl
 https://www.etlcpp.com
 
-Copyright(c) 2017 jwellbelove
+Copyright(c) 2017 John Wellbelove
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files(the "Software"), to deal
@@ -63,8 +63,6 @@ cog.outl("//********************************************************************
 #ifndef ETL_FSM_INCLUDED
 #define ETL_FSM_INCLUDED
 
-#include <stdint.h>
-
 #include "platform.h"
 #include "array.h"
 #include "nullptr.h"
@@ -74,6 +72,8 @@ cog.outl("//********************************************************************
 #include "message_router.h"
 #include "integral_limits.h"
 #include "largest.h"
+
+#include <stdint.h>
 
 #include "private/minmax_push.h"
 
@@ -93,12 +93,12 @@ namespace etl
   typedef typename etl::larger_type<etl::message_id_t>::type fsm_internal_id_t;
 
 #if ETL_USING_CPP17 && !defined(ETL_FSM_FORCE_CPP03_IMPLEMENTATION) // For C++17 and above
-  template <typename, typename, const etl::fsm_state_id_t, typename...>
+  template <typename, typename, etl::fsm_state_id_t, typename...>
   class fsm_state;
 #else
   /*[[[cog
   import cog
-  cog.outl("template <typename, typename, const etl::fsm_state_id_t,")
+  cog.outl("template <typename, typename, etl::fsm_state_id_t,")
   cog.out("          ")
   for n in range(1, int(Handlers)):
     cog.out("typename, ")
@@ -188,30 +188,49 @@ namespace etl
     }
   };
 
+  namespace private_fsm
+  {
+    template <typename T = void>
+    class ifsm_state_helper
+    {
+    public:
+
+      // Pass this whenever no state change is desired.
+      // The highest unsigned value of fsm_state_id_t.
+      static ETL_CONSTANT fsm_state_id_t No_State_Change = etl::integral_limits<fsm_state_id_t>::max;
+      
+      // Pass this when this event also needs to be passed to the parent.
+      static ETL_CONSTANT fsm_state_id_t Pass_To_Parent = No_State_Change - 1U;
+    };
+
+    template <typename T>
+    ETL_CONSTANT fsm_state_id_t ifsm_state_helper<T>::No_State_Change;
+
+    template <typename T>
+    ETL_CONSTANT fsm_state_id_t ifsm_state_helper<T>::Pass_To_Parent;
+  }
+
   //***************************************************************************
   /// Interface class for FSM states.
   //***************************************************************************
-  class ifsm_state
+  class ifsm_state : public private_fsm::ifsm_state_helper<>
   {
   public:
-
-    // Pass this whenever no state change is desired.
-    // The highest unsigned value of fsm_state_id_t.
-    static ETL_CONSTANT fsm_state_id_t No_State_Change = etl::integral_limits<fsm_state_id_t>::max;
-    // Pass this when this event also needs to be passed to the parent.
-    static ETL_CONSTANT fsm_state_id_t Pass_To_Parent = No_State_Change - 1U;
 
     /// Allows ifsm_state functions to be private.
     friend class etl::fsm;
     friend class etl::hfsm;
 
+    using private_fsm::ifsm_state_helper<>::No_State_Change;
+    using private_fsm::ifsm_state_helper<>::Pass_To_Parent;
+
 #if ETL_USING_CPP17 && !defined(ETL_FSM_FORCE_CPP03_IMPLEMENTATION) // For C++17 and above
-    template <typename, typename, const etl::fsm_state_id_t, typename...>
+    template <typename, typename, etl::fsm_state_id_t, typename...>
     friend class fsm_state;
 #else
     /*[[[cog
     import cog
-    cog.outl("  template <typename, typename, const etl::fsm_state_id_t,")
+    cog.outl("  template <typename, typename, etl::fsm_state_id_t,")
     cog.out("            ")
     for n in range(1, int(Handlers)):
       cog.out("typename, ")
@@ -332,7 +351,7 @@ namespace etl
   {
   public:
 
-    friend etl::hfsm;
+    friend class etl::hfsm;
     using imessage_router::receive;
 
     //*******************************************
@@ -372,7 +391,7 @@ namespace etl
     /// Subsequent calls will do nothing.
     ///\param call_on_enter_state If true will call on_enter_state() for the first state. Default = true.
     //*******************************************
-    void start(bool call_on_enter_state = true)
+    virtual void start(bool call_on_enter_state = true)
     {
       // Can only be started once.
       if (p_state == ETL_NULLPTR)
@@ -477,7 +496,7 @@ namespace etl
     /// Reset the FSM to pre-started state.
     ///\param call_on_exit_state If true will call on_exit_state() for the current state. Default = false.
     //*******************************************
-    void reset(bool call_on_exit_state = false)
+    virtual void reset(bool call_on_exit_state = false)
     {
       if ((p_state != ETL_NULLPTR) && call_on_exit_state)
       {
@@ -511,32 +530,27 @@ namespace etl
     bool have_changed_state(etl::fsm_state_id_t next_state_id) const
     {
       return (next_state_id != p_state->get_state_id()) &&
-        (next_state_id != ifsm_state::No_State_Change);
+             (next_state_id != ifsm_state::No_State_Change);
     }
 
-    etl::ifsm_state* p_state;          ///< A pointer to the current state.
-    etl::ifsm_state** state_list;       ///< The list of added states.
+    etl::ifsm_state*    p_state;          ///< A pointer to the current state.
+    etl::ifsm_state**   state_list;       ///< The list of added states.
     etl::fsm_state_id_t number_of_states; ///< The number of states.
   };
 
-//*************************************************************************************************
-// For C++17 and above.
-//*************************************************************************************************
+  //*************************************************************************************************
+  // For C++17 and above.
+  //*************************************************************************************************
 #if ETL_USING_CPP17 && !defined(ETL_FSM_FORCE_CPP03_IMPLEMENTATION) // For C++17 and above
   //***************************************************************************
   // The definition for all types.
   //***************************************************************************
-  template <typename TContext, typename TDerived, const etl::fsm_state_id_t STATE_ID_, typename... TMessageTypes>
+  template <typename TContext, typename TDerived, etl::fsm_state_id_t STATE_ID_, typename... TMessageTypes>
   class fsm_state : public ifsm_state
   {
   public:
 
-  public:
-
-    enum
-    {
-      STATE_ID = STATE_ID_
-    };
+    static ETL_CONSTANT etl::fsm_state_id_t STATE_ID = STATE_ID_;
 
     fsm_state()
       : ifsm_state(STATE_ID)
@@ -593,6 +607,11 @@ namespace etl
       }
     }
   };
+
+  /// Definition of STATE_ID
+  template <typename TContext, typename TDerived, etl::fsm_state_id_t STATE_ID_, typename... TMessageTypes>
+  ETL_CONSTANT etl::fsm_state_id_t fsm_state<TContext, TDerived, STATE_ID_, TMessageTypes...>::STATE_ID;
+
 #else
 //*************************************************************************************************
 // For C++14 and below.
@@ -605,7 +624,7 @@ namespace etl
   cog.outl("//***************************************************************************")
   cog.outl("// The definition for all %s message types." % Handlers)
   cog.outl("//***************************************************************************")
-  cog.outl("template <typename TContext, typename TDerived, const etl::fsm_state_id_t STATE_ID_, ")
+  cog.outl("template <typename TContext, typename TDerived, etl::fsm_state_id_t STATE_ID_, ")
   cog.out("          ")
   for n in range(1, int(Handlers)):
       cog.out("typename T%s = void, " % n)
@@ -617,10 +636,7 @@ namespace etl
   cog.outl("{")
   cog.outl("public:")
   cog.outl("")
-  cog.outl("  enum")
-  cog.outl("  {")
-  cog.outl("    STATE_ID = STATE_ID_")
-  cog.outl("  };")
+  cog.outl("  static ETL_CONSTANT etl::fsm_state_id_t STATE_ID = STATE_ID_;")
   cog.outl("")
   cog.outl("  fsm_state()")
   cog.outl("    : ifsm_state(STATE_ID)")
@@ -671,7 +687,7 @@ namespace etl
       else:
           cog.outl("// Specialisation for %d message types." % n)
       cog.outl("//***************************************************************************")
-      cog.outl("template <typename TContext, typename TDerived, const etl::fsm_state_id_t STATE_ID_, ")
+      cog.outl("template <typename TContext, typename TDerived, etl::fsm_state_id_t STATE_ID_, ")
       cog.out("          ")
       for t in range(1, n):
           cog.out("typename T%d, " % t)
@@ -694,10 +710,7 @@ namespace etl
       cog.outl("{")
       cog.outl("public:")
       cog.outl("")
-      cog.outl("  enum")
-      cog.outl("  {")
-      cog.outl("    STATE_ID = STATE_ID_")
-      cog.outl("  };")
+      cog.outl("  static ETL_CONSTANT etl::fsm_state_id_t STATE_ID = STATE_ID_;")
       cog.outl("")
       cog.outl("  fsm_state()")
       cog.outl("    : ifsm_state(STATE_ID)")
@@ -743,7 +756,7 @@ namespace etl
   cog.outl("//***************************************************************************")
   cog.outl("// Specialisation for 0 message types.")
   cog.outl("//***************************************************************************")
-  cog.outl("template <typename TContext, typename TDerived, const etl::fsm_state_id_t STATE_ID_>")
+  cog.outl("template <typename TContext, typename TDerived, etl::fsm_state_id_t STATE_ID_>")
   cog.out("class fsm_state<TContext, TDerived, STATE_ID_, ")
   for t in range(1, int(Handlers)):
       cog.out("void, ")
@@ -754,10 +767,7 @@ namespace etl
   cog.outl("{")
   cog.outl("public:")
   cog.outl("")
-  cog.outl("  enum")
-  cog.outl("  {")
-  cog.outl("    STATE_ID = STATE_ID_")
-  cog.outl("  };")
+  cog.outl("  static ETL_CONSTANT etl::fsm_state_id_t STATE_ID = STATE_ID_;")
   cog.outl("")
   cog.outl("  fsm_state()")
   cog.outl("    : ifsm_state(STATE_ID)")
@@ -781,6 +791,20 @@ namespace etl
   cog.outl("    return p_parent ? p_parent->process_event(message) : static_cast<TDerived*>(this)->on_event_unknown(message);")
   cog.outl("  }")
   cog.outl("};")
+
+  cog.outl("")
+  cog.outl("template <typename TContext, typename TDerived, etl::fsm_state_id_t STATE_ID_, ")
+  cog.out("          ")
+  for n in range(1, int(Handlers)):
+      cog.out("typename T%s, " % n)
+      if n % 4 == 0:
+          cog.outl("")
+          cog.out("          ")
+  cog.outl("typename T%s>" % Handlers)
+  cog.out("ETL_CONSTANT etl::fsm_state_id_t fsm_state<TContext, TDerived, STATE_ID_, ")
+  for n in range(1, int(Handlers)):
+      cog.out("T%s, " % n)
+  cog.outl("T%s>::STATE_ID;" % Handlers)
   ]]]*/
   /*[[[end]]]*/
 #endif

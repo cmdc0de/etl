@@ -5,7 +5,7 @@ Embedded Template Library.
 https://github.com/ETLCPP/etl
 https://www.etlcpp.com
 
-Copyright(c) 2015 jwellbelove
+Copyright(c) 2015 John Wellbelove
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files(the "Software"), to deal
@@ -30,9 +30,6 @@ SOFTWARE.
 
 #include <string>
 #include <ostream>
-
-#include <optional>
-
 
 #include "etl/optional.h"
 #include "etl/vector.h"
@@ -103,7 +100,7 @@ namespace
     {
       Data data("Hello");
 
-      etl::optional opt{ data };
+      etl::optional<Data> opt{ data };
 
       CHECK(opt.has_value());
       CHECK(bool(opt));
@@ -130,6 +127,7 @@ namespace
     //*************************************************************************
     TEST(test_moveable)
     {
+#include "etl/private/diagnostic_pessimizing_move_push.h"
       etl::optional<DataM> data(std::move(DataM(1)));
       CHECK_EQUAL(1U, data.value().value);
       CHECK(bool(data));
@@ -141,6 +139,7 @@ namespace
       etl::optional<DataM> data2(etl::move(data));
       CHECK_EQUAL(2U, data2.value().value);
       CHECK(bool(data2));
+#include "etl/private/diagnostic_pop.h"
     }
 
     //*************************************************************************
@@ -163,6 +162,33 @@ namespace
       data = Data("Value");
       result = data.value_or(Data("Default"));
       CHECK_EQUAL(Data("Value"), result);
+    }
+
+    //*************************************************************************
+    struct github_bug_720_bug_helper
+    {
+      int value{ 5 };
+
+      etl::optional<int> get_valid() const
+      {
+        return value;
+      }
+
+      etl::optional<int> get_invalid() const
+      {
+        return etl::optional<int>();
+      }
+    };
+
+    TEST(test_chained_value_or_github_bug_720 )
+    {
+      github_bug_720_bug_helper helper {};
+
+      int value1 = helper.get_valid().value_or(1);
+      CHECK_EQUAL(5, value1);
+
+      int value2 = helper.get_invalid().value_or(1);
+      CHECK_EQUAL(1, value2);
     }
 
     //*************************************************************************
@@ -240,6 +266,7 @@ namespace
     }
 
     //*************************************************************************
+#include "etl/private/diagnostic_uninitialized_push.h"
     TEST(test_less_than)
     {
       etl::optional<Data> data1;
@@ -270,6 +297,7 @@ namespace
       CHECK(!(Data("Data2") < data1));
       CHECK(Data("Data1") < data2);
     }
+#include "etl/private/diagnostic_pop.h"
 
     //*************************************************************************
     TEST(test_less_than_equal)
@@ -412,7 +440,7 @@ namespace
     {
       etl::optional<Data> data1;
 
-      CHECK_THROW(Data d(data1.value()), etl::optional_invalid);
+      CHECK_THROW(data1.value(), etl::optional_invalid);
     }
 
     //*************************************************************************
@@ -464,5 +492,59 @@ namespace
       data.reset();
       CHECK(!bool(data));
     }
+
+    //*************************************************************************
+    etl::optional<std::uint8_t> get_optional_test_bug_634()
+    {
+      etl::optional<std::uint8_t> result = 8;
+      result.reset();
+      
+      return result;
+    }
+
+    TEST(test_bug_634)
+    {
+      etl::optional<std::uint8_t> result;
+
+      result = get_optional_test_bug_634();
+
+      CHECK_EQUAL(false, result.has_value());
+    }
+
+    //*************************************************************************
+    TEST(test_optional_emplace_bug_636)
+    {
+      etl::optional<std::uint8_t> result = 1;
+      result.emplace(2);
+
+      CHECK_TRUE(result.has_value());
+      CHECK_EQUAL(2, result.value());
+    }
+
+    //*************************************************************************
+    struct MyPODObject
+    {
+      MyPODObject() = delete;
+      int value;
+    };
+
+    TEST(test_optional_pod_emplace_bug_712)
+    {
+      etl::optional<MyPODObject> optionalObject; // The Test: Does this compile for an object with a deleted default constructor?
+
+      // Make sure it isn't optimised away.
+      CHECK_FALSE(optionalObject.has_value());
+    }
+
+    //*************************************************************************
+    TEST(test_optional_pod_assign_bug_714)
+    {
+      etl::optional<int> o = 42;
+      o = etl::nullopt;
+
+      CHECK_EQUAL(false, o.has_value());
+    }
   };
 }
+
+

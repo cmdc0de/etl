@@ -5,7 +5,7 @@ Embedded Template Library.
 https://github.com/ETLCPP/etl
 https://www.etlcpp.com
 
-Copyright(c) 2014 jwellbelove
+Copyright(c) 2014 John Wellbelove
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files(the "Software"), to deal
@@ -299,6 +299,28 @@ namespace
       are_equal = std::equal(data.crbegin(), data.crend(), compare_data.crbegin());
 
       CHECK(are_equal);
+    }
+
+    //*************************************************************************
+    TEST_FIXTURE(SetupFixture, test_front_insert_iterator)
+    {
+      DataInt data = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
+      DataInt expected = {81, 64, 49, 36, 25, 16, 9, 4, 1, 0};
+      DataInt transformed;
+
+      auto squared = [](int value)
+      {
+        return value * value;
+      };
+
+      etl::transform(data.cbegin(), data.cend(), etl::front_inserter(transformed), squared);
+
+      CHECK_EQUAL(expected.size(), transformed.size());
+
+      bool transformed_equals_expected = std::equal(transformed.begin(),
+                                                    transformed.end(),
+                                                    expected.begin());
+      CHECK(transformed_equals_expected);
     }
 
     //*************************************************************************
@@ -710,6 +732,16 @@ namespace
     }
 
     //*************************************************************************
+    TEST_FIXTURE(SetupFixture, test_emplace_front_return)
+    {
+      DataNDC data;
+
+      data.emplace_front("24");
+      auto& front = data.emplace_front("42");
+      CHECK_EQUAL(front, data.front());
+    }
+
+    //*************************************************************************
     TEST_FIXTURE(SetupFixture, test_push_front_excess)
     {
       DataNDC data;
@@ -863,6 +895,16 @@ namespace
 
       are_equal = std::equal(data.begin(), data.end(), compare_data.begin());
       CHECK(are_equal);
+    }
+
+    //*************************************************************************
+    TEST_FIXTURE(SetupFixture, test_emplace_back_return)
+    {
+      DataNDC data;
+
+      data.emplace_back("24");
+      auto& back = data.emplace_back("42");
+      CHECK_EQUAL(back, data.back());
     }
 
     //*************************************************************************
@@ -1204,7 +1246,9 @@ namespace
       DataNDC data(sorted_data.begin(), sorted_data.end());
       DataNDC other_data = data;
 
+#include "etl/private/diagnostic_self_assign_overloaded_push.h" 
       other_data = other_data;
+#include "etl/private/diagnostic_pop.h" 
 
       CHECK_EQUAL(data.size(), other_data.size());
 
@@ -2122,7 +2166,7 @@ namespace
 
       auto v = *data.begin();
       using Type = decltype(v);
-      CHECK((std::is_same_v<ItemNDC, Type>));
+      CHECK((std::is_same<ItemNDC, Type>::value));
 
       decltype(data)::const_iterator itr = data.begin();
 

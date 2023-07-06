@@ -5,7 +5,7 @@ Embedded Template Library.
 https://github.com/ETLCPP/etl
 https://www.etlcpp.com
 
-Copyright(c) 2017 jwellbelove
+Copyright(c) 2017 John Wellbelove
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files(the "Software"), to deal
@@ -722,8 +722,8 @@ namespace
       View  view(etldata.begin(), etldata.end());
       CView cview(etldata.begin(), etldata.end());
 
-      size_t hashdata = etl::private_hash::generic_hash<size_t>(reinterpret_cast<const uint8_t*>(&etldata[0]),
-                                                                reinterpret_cast<const uint8_t*>(&etldata[etldata.size()]));
+      size_t hashdata = etl::private_hash::generic_hash<size_t>(reinterpret_cast<const uint8_t*>(etldata.data()),
+                                                                reinterpret_cast<const uint8_t*>(etldata.data() + etldata.size()));
 
       size_t hashview  = etl::hash<View>()(view);
       size_t hashcview = etl::hash<CView>()(cview);
@@ -733,6 +733,8 @@ namespace
     }
 
     //*************************************************************************
+#include "etl/private/diagnostic_unused_function_push.h"
+
     struct C_issue_482 {};
 
     void f_issue_482(etl::array_view<char>)
@@ -750,6 +752,8 @@ namespace
       // Should compile without ambiguous function error.
       f_issue_482(c);
     }
+
+#include "etl/private/diagnostic_pop.h"
 
     //*************************************************************************
     TEST(test_fill)

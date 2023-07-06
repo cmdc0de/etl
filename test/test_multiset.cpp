@@ -5,7 +5,7 @@ Embedded Template Library.
 https://github.com/ETLCPP/etl
 https://www.etlcpp.com
 
-Copyright(c) 2014 jwellbelove, rlindeman
+Copyright(c) 2014 John Wellbelove, rlindeman
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files(the "Software"), to deal
@@ -365,7 +365,9 @@ namespace
       Data data(initial_data.begin(), initial_data.end());
       Data other_data(data);
 
+#include "etl/private/diagnostic_self_assign_overloaded_push.h" 
       other_data = other_data;
+#include "etl/private/diagnostic_pop.h" 
 
       bool isEqual = std::equal(data.begin(),
                                 data.end(),
@@ -710,7 +712,7 @@ namespace
       using CSet = std::multiset<int, std::less<int>>;
       CSet compare_data(initial_data.begin(), initial_data.end());
       
-      using ESet = etl::multiset<int, MAX_SIZE, std::less<>>;
+      using ESet = etl::multiset<int, MAX_SIZE, etl::less<>>;
       ESet data(initial_data.begin(), initial_data.end());
 
       size_t compare_count = compare_data.erase(2);
@@ -855,7 +857,7 @@ namespace
       using CSet = std::multiset<int, std::less<int>>;
       const CSet compare_data(initial_data.begin(), initial_data.end());
 
-      using ESet = etl::multiset<int, MAX_SIZE, std::less<>>;
+      using ESet = etl::multiset<int, MAX_SIZE, etl::less<>>;
       const ESet data(initial_data.begin(), initial_data.end());
 
       CHECK_EQUAL(compare_data.count(-1), data.count(Key(-1)));
@@ -974,7 +976,7 @@ namespace
       using CSet = std::multiset<int, std::less<int>>;
       CSet compare_data(initial_data.begin(), initial_data.end());
 
-      using ESet = etl::multiset<int, MAX_SIZE, std::less<>>;
+      using ESet = etl::multiset<int, MAX_SIZE, etl::less<>>;
       ESet data(initial_data.begin(), initial_data.end());
 
       ESet::iterator i_data = data.find(Key(0));
@@ -1067,7 +1069,7 @@ namespace
       using CSet = std::multiset<int, std::less<int>>;
       CSet compare_data(initial_data.begin(), initial_data.end());
 
-      using ESet = etl::multiset<int, MAX_SIZE, std::less<>>;
+      using ESet = etl::multiset<int, MAX_SIZE, etl::less<>>;
       ESet data(initial_data.begin(), initial_data.end());
 
       ESet::const_iterator i_data = data.find(Key(0));
@@ -1174,7 +1176,7 @@ namespace
       using CSet = std::multiset<int, std::less<int>>;
       CSet compare_data(initial_data.begin(), initial_data.end());
 
-      using ESet = etl::multiset<int, MAX_SIZE, std::less<>>;
+      using ESet = etl::multiset<int, MAX_SIZE, etl::less<>>;
       ESet data(initial_data.begin(), initial_data.end());
 
       CSet::iterator i_compare = compare_data.lower_bound(2);
@@ -1231,7 +1233,7 @@ namespace
       using CSet = std::multiset<int, std::less<int>>;
       CSet compare_data(initial_data.begin(), initial_data.end());
 
-      using ESet = etl::multiset<int, MAX_SIZE, std::less<>>;
+      using ESet = etl::multiset<int, MAX_SIZE, etl::less<>>;
       ESet data(initial_data.begin(), initial_data.end());
 
       CSet::const_iterator i_compare = compare_data.lower_bound(4);
@@ -1288,7 +1290,7 @@ namespace
       using CSet = std::multiset<int, std::less<int>>;
       CSet compare_data(initial_data.begin(), initial_data.end());
 
-      using ESet = etl::multiset<int, MAX_SIZE, std::less<>>;
+      using ESet = etl::multiset<int, MAX_SIZE, etl::less<>>;
       ESet data(initial_data.begin(), initial_data.end());
 
       CSet::iterator i_compare = compare_data.upper_bound(1);
@@ -1345,7 +1347,7 @@ namespace
       using CSet = std::multiset<int, std::less<int>>;
       const CSet compare_data(initial_data.begin(), initial_data.end());
 
-      using ESet = etl::multiset<int, MAX_SIZE, std::less<>>;
+      using ESet = etl::multiset<int, MAX_SIZE, etl::less<>>;
       const ESet data(initial_data.begin(), initial_data.end());
 
       CSet::const_iterator i_compare = compare_data.upper_bound(3);
@@ -1385,7 +1387,7 @@ namespace
     //*************************************************************************
     TEST_FIXTURE(SetupFixture, test_key_compare_using_transparent_comparator)
     {
-      using ESet = etl::multiset<int, MAX_SIZE, std::less<>>;
+      using ESet = etl::multiset<int, MAX_SIZE, etl::less<>>;
       const ESet data(initial_data.begin(), initial_data.end());
 
       ESet::key_compare compare = data.key_comp();
@@ -1481,7 +1483,7 @@ namespace
       using CSet = std::multiset<int, std::less<int>>;
       CSet compare(initial_data.begin(), initial_data.end());
 
-      using ESet = etl::multiset<int, MAX_SIZE, std::less<>>;
+      using ESet = etl::multiset<int, MAX_SIZE, etl::less<>>;
       ESet data(initial_data.begin(), initial_data.end());
 
       std::vector<int> tab(test_data.begin(), test_data.end());
@@ -1606,7 +1608,7 @@ namespace
 
       auto v = *data.begin();
       using Type = decltype(v);
-      CHECK((std::is_same_v<std::string, Type>));
+      CHECK((std::is_same<std::string, Type>::value));
 
       decltype(data)::const_iterator itr = data.begin();
 

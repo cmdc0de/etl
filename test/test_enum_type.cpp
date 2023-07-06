@@ -5,7 +5,7 @@ Embedded Template Library.
 https://github.com/ETLCPP/etl
 https://www.etlcpp.com
 
-Copyright(c) 2014 jwellbelove
+Copyright(c) 2014 John Wellbelove
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files(the "Software"), to deal
@@ -62,6 +62,7 @@ namespace
     }
 
     //*************************************************************************
+#if ETL_USING_CPP14
     TEST(test_constexpr_values)
     {
       constexpr enum_test zero = enum_test::ZERO;
@@ -85,6 +86,7 @@ namespace
       CHECK_EQUAL(0, enum_zero2.get_value());
       CHECK_EQUAL(std::string("ZERO"), std::string(string_zero));
     }
+#endif
 
     //*************************************************************************
     TEST(test_c_str)

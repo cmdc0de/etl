@@ -7,7 +7,7 @@ Embedded Template Library.
 https://github.com/ETLCPP/etl
 https://www.etlcpp.com
 
-Copyright(c) 2018 jwellbelove
+Copyright(c) 2018 John Wellbelove
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files(the "Software"), to deal
@@ -33,7 +33,7 @@ SOFTWARE.
  * This file is intended to evaluated multiple times by design.
  */
 
-#if !defined(ETL_COMPILER_GREEN_HILLS)
+#if !defined(ETL_COMPILER_GREEN_HILLS) && !defined(ETL_COMPILER_IAR) && !defined(ETL_COMPILER_TASKING)
   #if !defined(ETL_COMPILER_ARM5)
     #pragma push_macro("min")
     #pragma push_macro("max")

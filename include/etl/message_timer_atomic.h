@@ -5,7 +5,7 @@ Embedded Template Library.
 https://github.com/ETLCPP/etl
 https://www.etlcpp.com
 
-Copyright(c) 2021 jwellbelove
+Copyright(c) 2021 John Wellbelove
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files(the "Software"), to deal
@@ -29,9 +29,6 @@ SOFTWARE.
 #ifndef ETL_MESSAGE_TIMER_ATOMIC_INCLUDED
 #define ETL_MESSAGE_TIMER_ATOMIC_INCLUDED
 
-#include <stdint.h>
-#include "algorithm.h"
-
 #include "platform.h"
 #include "nullptr.h"
 #include "message_types.h"
@@ -41,6 +38,9 @@ SOFTWARE.
 #include "static_assert.h"
 #include "timer.h"
 #include "atomic.h"
+#include "algorithm.h"
+
+#include <stdint.h>
 
 #if ETL_HAS_ATOMIC
 
@@ -580,9 +580,9 @@ namespace etl
     // The list of active timers.
     timer_list active_list;
 
-    volatile bool enabled;
-    volatile TSemaphore process_semaphore;
-    volatile uint_least8_t registered_timers;
+    bool enabled;
+    TSemaphore process_semaphore;
+    uint_least8_t registered_timers;
 
   public:
 

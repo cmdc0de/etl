@@ -7,7 +7,7 @@ Embedded Template Library.
 https://github.com/ETLCPP/etl
 https://www.etlcpp.com
 
-Copyright(c) 2017 jwellbelove
+Copyright(c) 2017 John Wellbelove
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files(the "Software"), to deal
@@ -37,6 +37,7 @@ SOFTWARE.
 #define ETL_ISTRING_REPAIR_ENABLE
 #define ETL_IVECTOR_REPAIR_ENABLE
 #define ETL_IDEQUE_REPAIR_ENABLE
+#define ETL_ICIRCULAR_BUFFER_REPAIR_ENABLE
 #define ETL_IN_UNIT_TEST
 #define ETL_DEBUG_COUNT
 #define ETL_ARRAY_VIEW_IS_MUTABLE
@@ -108,9 +109,9 @@ SOFTWARE.
 #include "../include/etl/profiles/determine_compiler_version.h"
 #include "../include/etl/profiles/determine_development_os.h"
 
-#if ETL_CPP17_NOT_SUPPORTED
-  #error THE UNIT TESTS REQUIRE C++17 SUPPORT
-#endif
+//#if ETL_CPP17_NOT_SUPPORTED
+//  #error THE UNIT TESTS REQUIRE C++17 SUPPORT
+//#endif
 
 #if defined(ETL_COMPILER_GCC)
   #if (ETL_COMPILER_VERSION < 8)

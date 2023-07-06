@@ -7,7 +7,7 @@ Embedded Template Library.
 https://github.com/ETLCPP/etl
 https://www.etlcpp.com
 
-Copyright(c) 2021 jwellbelove
+Copyright(c) 2021 John Wellbelove
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files(the "Software"), to deal
@@ -53,6 +53,21 @@ namespace etl
       static ETL_CONSTANT size_t       Accumulator_Bits = etl::integral_limits<accumulator_type>::bits; 
     };
 
+    template <typename TAccumulator, TAccumulator Polynomial_, TAccumulator Initial_, TAccumulator Xor_Out_, bool Reflect_>
+    ETL_CONSTANT TAccumulator crc_parameters<TAccumulator, Polynomial_, Initial_, Xor_Out_, Reflect_>::Polynomial;
+
+    template <typename TAccumulator, TAccumulator Polynomial_, TAccumulator Initial_, TAccumulator Xor_Out_, bool Reflect_>
+    ETL_CONSTANT TAccumulator crc_parameters<TAccumulator, Polynomial_, Initial_, Xor_Out_, Reflect_>::Initial;
+
+    template <typename TAccumulator, TAccumulator Polynomial_, TAccumulator Initial_, TAccumulator Xor_Out_, bool Reflect_>
+    ETL_CONSTANT TAccumulator crc_parameters<TAccumulator, Polynomial_, Initial_, Xor_Out_, Reflect_>::Xor_Out;
+
+    template <typename TAccumulator, TAccumulator Polynomial_, TAccumulator Initial_, TAccumulator Xor_Out_, bool Reflect_>
+    ETL_CONSTANT bool crc_parameters<TAccumulator, Polynomial_, Initial_, Xor_Out_, Reflect_>::Reflect;
+
+    template <typename TAccumulator, TAccumulator Polynomial_, TAccumulator Initial_, TAccumulator Xor_Out_, bool Reflect_>
+    ETL_CONSTANT size_t crc_parameters<TAccumulator, Polynomial_, Initial_, Xor_Out_, Reflect_>::Accumulator_Bits;
+
     // 8 bit.
     typedef crc_parameters<uint8_t, 0x07U, 0x00U, 0x00U, false> crc8_ccitt_parameters;
     typedef crc_parameters<uint8_t, 0x07U, 0xFFU, 0x00U, true>  crc8_rohc_parameters;
@@ -91,6 +106,7 @@ namespace etl
     typedef crc_parameters<uint16_t, 0x1021U, 0x89ECU, 0x0000U, true>  crc16_tms37157_parameters;
     typedef crc_parameters<uint16_t, 0x1021U, 0xC6C6U, 0x0000U, true>  crc16_a_parameters;
     typedef crc_parameters<uint16_t, 0x8005U, 0x0000U, 0x0000U, true>  crc16_arc_parameters;
+    typedef crc_parameters<uint16_t, 0x5935U, 0xFFFFU, 0x0000U, false> crc16_m17_parameters;
 
     // 32 bit.
     typedef crc_parameters<uint32_t, 0x04C11DB7UL, 0xFFFFFFFFUL, 0xFFFFFFFFUL, true>  crc32_parameters;

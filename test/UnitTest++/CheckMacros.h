@@ -33,11 +33,96 @@
    })                                                                                                                                 \
    UNITTEST_MULTILINE_MACRO_END
 
+#define UNITTEST_CHECK_FALSE(value)                                      \
+   UNITTEST_MULTILINE_MACRO_BEGIN                                                                                                     \
+   UNITTEST_IMPL_TRY                                                                                                                             \
+   ({                                                                                                                                 \
+      if (!UnitTest::CheckFalse(value))                                                                                                    \
+         UnitTest::CurrentTest::Results()->OnTestFailure(UnitTest::TestDetails(*UnitTest::CurrentTest::Details(), __LINE__), #value); \
+   })                                                                                                                                 \
+   UNITTEST_IMPL_RETHROW (UnitTest::RequiredCheckException)                                                                                                               \
+   UNITTEST_IMPL_CATCH (std::exception, e,                                                                                                       \
+   {                                                                                                                                  \
+      UnitTest::MemoryOutStream UnitTest_message;                                                                                     \
+      UnitTest_message << "Unhandled exception (" << e.what() << ") in CHECK(" #value ")";                                            \
+      UnitTest::CurrentTest::Results()->OnTestFailure(UnitTest::TestDetails(*UnitTest::CurrentTest::Details(), __LINE__),             \
+                                                      UnitTest_message.GetText());                                                    \
+   })                                                                                                                                 \
+   UNITTEST_IMPL_CATCH_ALL                                                                                                                       \
+      ({                                                                                                                              \
+      UnitTest::CurrentTest::Results()->OnTestFailure(UnitTest::TestDetails(*UnitTest::CurrentTest::Details(), __LINE__),             \
+                                                      "Unhandled exception in CHECK(" #value ")");                                    \
+   })                                                                                                                                 \
+   UNITTEST_MULTILINE_MACRO_END
+
 #define UNITTEST_CHECK_EQUAL(expected, actual)                                                                                                                \
    UNITTEST_MULTILINE_MACRO_BEGIN                                                                                                                    \
    UNITTEST_IMPL_TRY                                                                                                                                            \
    ({                                                                                                                                                \
       UnitTest::CheckEqual(*UnitTest::CurrentTest::Results(), expected, actual, UnitTest::TestDetails(*UnitTest::CurrentTest::Details(), __LINE__)); \
+   })                                                                                                                                                \
+   UNITTEST_IMPL_RETHROW (UnitTest::RequiredCheckException)                                                                                                               \
+   UNITTEST_IMPL_CATCH (std::exception, e,                                                                                                                      \
+   {                                                                                                                                                 \
+      UnitTest::MemoryOutStream UnitTest_message;                                                                                                    \
+      UnitTest_message << "Unhandled exception (" << e.what() << ") in CHECK_EQUAL(" #expected ", " #actual ")";                                     \
+      UnitTest::CurrentTest::Results()->OnTestFailure(UnitTest::TestDetails(*UnitTest::CurrentTest::Details(), __LINE__),                            \
+                                                      UnitTest_message.GetText());                                                                   \
+   })                                                                                                                                                \
+   UNITTEST_IMPL_CATCH_ALL                                                                                                                                      \
+   ({                                                                                                                                                \
+      UnitTest::CurrentTest::Results()->OnTestFailure(UnitTest::TestDetails(*UnitTest::CurrentTest::Details(), __LINE__),                            \
+                                                      "Unhandled exception in CHECK_EQUAL(" #expected ", " #actual ")");                             \
+   })                                                                                                                                                \
+   UNITTEST_MULTILINE_MACRO_END
+
+#define UNITTEST_CHECK_EQUAL_HEX(expected, actual)                                                                                                                \
+   UNITTEST_MULTILINE_MACRO_BEGIN                                                                                                                    \
+   UNITTEST_IMPL_TRY                                                                                                                                            \
+   ({                                                                                                                                                \
+      UnitTest::CheckEqualHex(*UnitTest::CurrentTest::Results(), expected, actual, UnitTest::TestDetails(*UnitTest::CurrentTest::Details(), __LINE__)); \
+   })                                                                                                                                                \
+   UNITTEST_IMPL_RETHROW (UnitTest::RequiredCheckException)                                                                                                               \
+   UNITTEST_IMPL_CATCH (std::exception, e,                                                                                                                      \
+   {                                                                                                                                                 \
+      UnitTest::MemoryOutStream UnitTest_message;                                                                                                    \
+      UnitTest_message << "Unhandled exception (" << e.what() << ") in CHECK_EQUAL(" #expected ", " #actual ")";                                     \
+      UnitTest::CurrentTest::Results()->OnTestFailure(UnitTest::TestDetails(*UnitTest::CurrentTest::Details(), __LINE__),                            \
+                                                      UnitTest_message.GetText());                                                                   \
+   })                                                                                                                                                \
+   UNITTEST_IMPL_CATCH_ALL                                                                                                                                      \
+   ({                                                                                                                                                \
+      UnitTest::CurrentTest::Results()->OnTestFailure(UnitTest::TestDetails(*UnitTest::CurrentTest::Details(), __LINE__),                            \
+                                                      "Unhandled exception in CHECK_EQUAL(" #expected ", " #actual ")");                             \
+   })                                                                                                                                                \
+   UNITTEST_MULTILINE_MACRO_END
+
+#define UNITTEST_CHECK_NOT_EQUAL(expected, actual)                                                                                                                \
+   UNITTEST_MULTILINE_MACRO_BEGIN                                                                                                                    \
+   UNITTEST_IMPL_TRY                                                                                                                                            \
+   ({                                                                                                                                                \
+      UnitTest::CheckNotEqual(*UnitTest::CurrentTest::Results(), expected, actual, UnitTest::TestDetails(*UnitTest::CurrentTest::Details(), __LINE__)); \
+   })                                                                                                                                                \
+   UNITTEST_IMPL_RETHROW (UnitTest::RequiredCheckException)                                                                                                               \
+   UNITTEST_IMPL_CATCH (std::exception, e,                                                                                                                      \
+   {                                                                                                                                                 \
+      UnitTest::MemoryOutStream UnitTest_message;                                                                                                    \
+      UnitTest_message << "Unhandled exception (" << e.what() << ") in CHECK_EQUAL(" #expected ", " #actual ")";                                     \
+      UnitTest::CurrentTest::Results()->OnTestFailure(UnitTest::TestDetails(*UnitTest::CurrentTest::Details(), __LINE__),                            \
+                                                      UnitTest_message.GetText());                                                                   \
+   })                                                                                                                                                \
+   UNITTEST_IMPL_CATCH_ALL                                                                                                                                      \
+   ({                                                                                                                                                \
+      UnitTest::CurrentTest::Results()->OnTestFailure(UnitTest::TestDetails(*UnitTest::CurrentTest::Details(), __LINE__),                            \
+                                                      "Unhandled exception in CHECK_EQUAL(" #expected ", " #actual ")");                             \
+   })                                                                                                                                                \
+   UNITTEST_MULTILINE_MACRO_END
+
+#define UNITTEST_CHECK_FALSE_EQUAL_HEX(expected, actual)                                                                                                                \
+   UNITTEST_MULTILINE_MACRO_BEGIN                                                                                                                    \
+   UNITTEST_IMPL_TRY                                                                                                                                            \
+   ({                                                                                                                                                \
+      UnitTest::CheckNotEqualHex(*UnitTest::CurrentTest::Results(), expected, actual, UnitTest::TestDetails(*UnitTest::CurrentTest::Details(), __LINE__)); \
    })                                                                                                                                                \
    UNITTEST_IMPL_RETHROW (UnitTest::RequiredCheckException)                                                                                                               \
    UNITTEST_IMPL_CATCH (std::exception, e,                                                                                                                      \
@@ -145,10 +230,40 @@
       #define CHECK UNITTEST_CHECK
    #endif
 
+   #ifdef CHECK_TRUE
+      #error CHECK_TRUE already defined, re-configure with UNITTEST_ENABLE_SHORT_MACROS set to 0 and use UNITTEST_CHECK_TRUE instead
+   #else
+      #define CHECK_TRUE UNITTEST_CHECK
+   #endif
+
+   #ifdef CHECK_FALSE
+      #error CHECK_FALSE already defined, re-configure with UNITTEST_ENABLE_SHORT_MACROS set to 0 and use UNITTEST_CHECK_FALSE instead
+   #else
+      #define CHECK_FALSE UNITTEST_CHECK_FALSE
+   #endif
+
    #ifdef CHECK_EQUAL
       #error CHECK_EQUAL already defined, re-configure with UNITTEST_ENABLE_SHORT_MACROS set to 0 and use UNITTEST_CHECK_EQUAL instead
    #else
       #define CHECK_EQUAL UNITTEST_CHECK_EQUAL
+   #endif
+
+   #ifdef CHECK_EQUAL_HEX
+      #error CHECK_EQUAL_HEX already defined, re-configure with UNITTEST_ENABLE_SHORT_MACROS set to 0 and use UNITTEST_CHECK_EQUAL_HEX instead
+   #else
+      #define CHECK_EQUAL_HEX UNITTEST_CHECK_EQUAL_HEX
+   #endif
+
+   #ifdef CHECK_NOT_EQUAL
+      #error CHECK_NOT_EQUAL already defined, re-configure with UNITTEST_ENABLE_SHORT_MACROS set to 0 and use UNITTEST_CHECK_NOT_EQUAL instead
+   #else
+      #define CHECK_NOT_EQUAL UNITTEST_CHECK_NOT_EQUAL
+   #endif
+
+   #ifdef CHECK_NOT_EQUAL_HEX
+      #error CHECK_NOT_EQUAL_HEX already defined, re-configure with UNITTEST_ENABLE_SHORT_MACROS set to 0 and use UNITTEST_CHECK_NOT_EQUAL_HEX instead
+   #else
+      #define CHECK_NOT_EQUAL_HEX UNITTEST_CHECK_NOT_EQUAL_HEX
    #endif
 
    #ifdef CHECK_CLOSE
@@ -226,5 +341,16 @@ if (caught_) \
    #endif
 #endif
 
+#define CHECK_MESSAGE(m1)              std::cerr << (m1) << "\n";
+#define CHECK_MESSAGE1(m1)             std::cerr << (m1) << "\n";
+#define CHECK_MESSAGE2(m1, m2)         std::cerr << (m1) << (m2) << "\n";
+#define CHECK_MESSAGE3(m1, m2, m3)     std::cerr << (m1) << (m2) << (m3) << "\n";
+#define CHECK_MESSAGE4(m1, m2, m3, m4) std::cerr << (m1) << (m2) << (m3) << (m4) << "\n";
+
+#define CHECK_MESSAGE_IF(b, m1)           { if (b) std::cerr << (m1) << "\n"; }
+#define CHECK_MESSAGE1_IF(m1)             { if (b) std::cerr << (m1) << "\n"; }
+#define CHECK_MESSAGE2_IF(m1, m2)         { if (b) std::cerr << (m1) << (m2) << "\n"; }
+#define CHECK_MESSAGE3_IF(m1, m2, m3)     { if (b) std::cerr << (m1) << (m2) << (m3) << "\n"; }
+#define CHECK_MESSAGE4_IF(m1, m2, m3, m4) { if (b) std::cerr << (m1) << (m2) << (m3) << (m4) << "\n"; }
 #endif
 

@@ -5,7 +5,7 @@ Embedded Template Library.
 https://github.com/ETLCPP/etl
 https://www.etlcpp.com
 
-Copyright(c) 2015 jwellbelove, rlindeman
+Copyright(c) 2015 John Wellbelove, rlindeman
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files(the "Software"), to deal
@@ -571,7 +571,10 @@ namespace
 
       etl::priority_queue<int, SIZE> priority_queue2 = priority_queue1;
 
+#include "etl/private/diagnostic_self_assign_overloaded_push.h" 
       priority_queue1 = priority_queue1;
+#include "etl/private/diagnostic_pop.h" 
+      
 
       CHECK(priority_queue1.size() == priority_queue2.size());
 

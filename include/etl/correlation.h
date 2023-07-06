@@ -7,7 +7,7 @@ Embedded Template Library.
 https://github.com/ETLCPP/etl
 https://www.etlcpp.com
 
-Copyright(c) 2021 jwellbelove
+Copyright(c) 2021 John Wellbelove
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files(the "Software"), to deal
@@ -73,10 +73,24 @@ namespace etl
   //***************************************************************************
   /// Correlation Type.
   //***************************************************************************
-  struct correlation_type
+  namespace private_correlation
   {
-    static ETL_CONSTANT bool Sample     = false;
-    static ETL_CONSTANT bool Population = true;
+    template<typename T = void>
+    struct correlation_type_statics
+    {
+      static ETL_CONSTANT bool Sample     = false;
+      static ETL_CONSTANT bool Population = true;
+    };
+
+    template<typename T>
+    ETL_CONSTANT bool correlation_type_statics<T>::Sample;
+
+    template<typename T>
+    ETL_CONSTANT bool correlation_type_statics<T>::Population;
+  }
+
+  struct correlation_type : public private_correlation::correlation_type_statics<>
+  {
   };
 
   //***************************************************************************
@@ -270,6 +284,9 @@ namespace etl
     mutable double correlation_value;
     mutable bool   recalculate;
   };
+
+  template <bool Correlation_Type, typename TInput, typename TCalc>
+  ETL_CONSTANT int correlation<Correlation_Type, TInput, TCalc>::Adjustment;
 }
 
 #endif

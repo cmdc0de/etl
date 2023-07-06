@@ -5,7 +5,7 @@ Embedded Template Library.
 https://github.com/ETLCPP/etl
 https://www.etlcpp.com
 
-Copyright(c) 2020 jwellbelove
+Copyright(c) 2020 John Wellbelove
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files(the "Software"), to deal
@@ -36,15 +36,18 @@ SOFTWARE.
 #undef STR
 #define STR(x) L##x
 
+#undef STR_PTR
+#define STR_PTR const wchar_t*
+
 namespace
 {
   //***********************************
-  std::ostream& operator << (std::ostream& os, const std::wstring::value_type& c)
-  {
-    os << uint16_t(c);
+  //std::ostream& operator << (std::ostream& os, const std::wstring::value_type& c)
+  //{
+  //  os << uint16_t(c);
 
-    return os;
-  }
+  //  return os;
+  //}
 
   SUITE(test_string_utilities_wchar_t)
   {
@@ -56,7 +59,11 @@ namespace
     using Char       = etl::iwstring::value_type;
     using Vector     = etl::vector<String, 15>;
 
+#if ETL_USING_CPP17
     constexpr auto Whitespace = etl::whitespace_v<String::value_type>;
+#else
+    STR_PTR Whitespace = etl::whitespace<String::value_type>::value();
+#endif
 
     //*************************************************************************
     TEST(test_trim_whitespace_left_empty)

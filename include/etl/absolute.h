@@ -7,7 +7,7 @@ Embedded Template Library.
 https://github.com/ETLCPP/etl
 https://www.etlcpp.com
 
-Copyright(c) 2018 jwellbelove
+Copyright(c) 2018 John Wellbelove
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files(the "Software"), to deal
@@ -68,8 +68,8 @@ namespace etl
   ETL_CONSTEXPR typename etl::enable_if<etl::is_signed<T>::value, TReturn>::type
     absolute_unsigned(T value)
   {
-    return (value == etl::integral_limits<T>::min) ? etl::integral_limits<TReturn>::max / 2U
-      : (value < T(0)) ? TReturn(-value) : TReturn(value);
+    return (value == etl::integral_limits<T>::min) ? (etl::integral_limits<TReturn>::max / 2U) + 1U
+                                                   : (value < T(0)) ? TReturn(-value) : TReturn(value);
   }
 
   //***************************************************************************

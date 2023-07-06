@@ -7,7 +7,7 @@
 //https://github.com/ETLCPP/etl
 //https://www.etlcpp.com
 //
-//Copyright(c) 2021 jwellbelove
+//Copyright(c) 2021 John Wellbelove
 //
 //Permission is hereby granted, free of charge, to any person obtaining a copy
 //of this software and associated documentation files(the "Software"), to deal
@@ -44,7 +44,7 @@ namespace etl
 {
   namespace private_multi_vector
   {
-    template <class T, size_t TD1, size_t... TDn>
+    template <typename T, size_t TD1, size_t... TDn>
     struct multi_vector_t
     {
       using type = etl::vector<typename multi_vector_t<T, TDn...>::type, TD1>;

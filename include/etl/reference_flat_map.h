@@ -7,7 +7,7 @@ Embedded Template Library.
 https://github.com/ETLCPP/etl
 https://www.etlcpp.com
 
-Copyright(c) 2017 jwellbelove
+Copyright(c) 2017 John Wellbelove
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files(the "Software"), to deal
@@ -31,8 +31,6 @@ SOFTWARE.
 #ifndef ETL_REFERENCE_FLAT_MAP_INCLUDED
 #define ETL_REFERENCE_FLAT_MAP_INCLUDED
 
-#include <stddef.h>
-
 #include "platform.h"
 #include "vector.h"
 #include "error_handler.h"
@@ -44,8 +42,11 @@ SOFTWARE.
 #include "static_assert.h"
 #include "iterator.h"
 #include "type_traits.h"
+#include "optional.h"
 
 #include "private/comparator_is_transparent.h"
+
+#include <stddef.h>
 
 //*****************************************************************************
 ///\defgroup reference_flat_map reference_flat_map
@@ -462,34 +463,6 @@ namespace etl
 
     //*********************************************************************
     /// Returns a reference to the value at index 'key'
-    ///\param i The index.
-    ///\return A reference to the value at index 'key'
-    //*********************************************************************
-    mapped_type& operator [](key_parameter_t key)
-    {
-      iterator i_element = lower_bound(key);
-
-      ETL_ASSERT((i_element != end()) && keys_are_equal(i_element->first, key), ETL_ERROR(flat_map_out_of_bounds));
-
-      return i_element->second;
-    }
-
-    //*********************************************************************
-    /// Returns a const reference to the value at index 'key'
-    ///\param i The index.
-    ///\return A const reference to the value at index 'key'
-    //*********************************************************************
-    const mapped_type& operator [](key_parameter_t key) const
-    {
-      iterator i_element = lower_bound(key);
-
-      ETL_ASSERT((i_element != end()) && keys_are_equal(i_element->first, key), ETL_ERROR(flat_map_out_of_bounds));
-
-      return i_element->second;
-    }
-
-    //*********************************************************************
-    /// Returns a reference to the value at index 'key'
     /// If asserts or exceptions are enabled, emits an etl::flat_map_out_of_bounds if the key is not in the range.
     ///\param i The index.
     ///\return A reference to the value at index 'key'
@@ -588,7 +561,7 @@ namespace etl
     ///\param position The position to insert at.
     ///\param value    The value to insert.
     //*********************************************************************
-    iterator insert(const_iterator position, reference value)
+    iterator insert(const_iterator /*position*/, reference value)
     {
       return insert(value).first;
     }
@@ -1174,6 +1147,9 @@ namespace etl
     // The vector that stores pointers to the nodes.
     etl::vector<node_t*, MAX_SIZE> lookup;
   };
+
+  template <typename TKey, typename TValue, const size_t MAX_SIZE_, typename TCompare>
+  ETL_CONSTANT size_t reference_flat_map< TKey, TValue, MAX_SIZE_, TCompare>::MAX_SIZE;
 
   //*************************************************************************
   /// Template deduction guides.

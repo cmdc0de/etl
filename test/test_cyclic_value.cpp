@@ -7,7 +7,7 @@ Embedded Template Library.
 https://github.com/ETLCPP/etl
 https://www.etlcpp.com
 
-Copyright(c) 2014 jwellbelove
+Copyright(c) 2014 John Wellbelove
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files(the "Software"), to deal
@@ -88,6 +88,24 @@ namespace
     }
 
     //*************************************************************************
+    TEST(test_set_compile_time_initial_value_in_range)
+    {
+      etl::cyclic_value<int, 2, 7> value(5);
+
+      CHECK_EQUAL(5, value.get());
+    }
+
+    //*************************************************************************
+    TEST(test_set_compile_time_initial_value_out_of_range)
+    {
+      etl::cyclic_value<int, 2, 7> value1(1);
+      etl::cyclic_value<int, 2, 7> value2(8);
+
+      CHECK_EQUAL(2, value1.get());
+      CHECK_EQUAL(7, value2.get());
+    }
+
+    //*************************************************************************
     TEST(test_set_run_time)
     {
       etl::cyclic_value<int> value;
@@ -106,6 +124,24 @@ namespace
 
       value.set(8);
       CHECK_EQUAL(value.last(), value.get());
+    }
+
+    //*************************************************************************
+    TEST(test_set_run_time_initial_value_in_range)
+    {
+      etl::cyclic_value<int> value(2, 7, 5);
+
+      CHECK_EQUAL(5, value.get());
+    }
+
+    //*************************************************************************
+    TEST(test_set_run_time_initial_value_out_of_range)
+    {
+      etl::cyclic_value<int> value1(2, 7, 1);
+      etl::cyclic_value<int> value2(2, 7, 8);
+
+      CHECK_EQUAL(2, value1.get());
+      CHECK_EQUAL(7, value2.get());
     }
 
     //*************************************************************************

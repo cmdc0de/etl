@@ -5,7 +5,7 @@ Embedded Template Library.
 https://github.com/ETLCPP/etl
 https://www.etlcpp.com
 
-Copyright(c) 2016 jwellbelove
+Copyright(c) 2016 John Wellbelove
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files(the "Software"), to deal
@@ -408,7 +408,9 @@ namespace
       Data data(initial_data.begin(), initial_data.end());
       Data other_data(data);
 
+#include "etl/private/diagnostic_self_assign_overloaded_push.h" 
       other_data = other_data;
+#include "etl/private/diagnostic_pop.h" 
 
       bool is_equal = std::equal(data.begin(), data.end(), other_data.begin());
 
@@ -421,7 +423,9 @@ namespace
       CData data(initial_data.begin(), initial_data.end());
       CData other_data(data);
 
+#include "etl/private/diagnostic_self_assign_overloaded_push.h" 
       other_data = other_data;
+#include "etl/private/diagnostic_pop.h" 
 
       bool is_equal = std::equal(data.begin(), data.end(), other_data.begin());
 
@@ -1054,6 +1058,17 @@ namespace
     }
 
     //*************************************************************************
+    TEST_FIXTURE(SetupFixture, test_emplace_back_return)
+    {
+      Data data;
+      int d1 = 22;
+      int d2 = 42;
+
+      data.emplace_back(&d1);
+      CHECK_EQUAL(&d2, data.emplace_back(&d2));
+    }
+
+    //*************************************************************************
     TEST_FIXTURE(SetupFixture, test_pop_back)
     {
       Compare_Data compare_data(initial_data.begin(), initial_data.end());
@@ -1164,10 +1179,11 @@ namespace
     }
 
     //*************************************************************************
+#include "etl/private/diagnostic_array_bounds_push.h"
     TEST_FIXTURE(SetupFixture, test_insert_position_value_excess)
     {
-      const size_t INITIAL_SIZE     = SIZE;
-      int INITIAL_VALUE       = 1;
+      const size_t INITIAL_SIZE = SIZE;
+      int INITIAL_VALUE = 1;
 
       Data data(INITIAL_SIZE, &INITIAL_VALUE);
 
@@ -1183,6 +1199,7 @@ namespace
 
       CHECK_THROW(data.insert(data.begin() + offset, &INITIAL_VALUE), etl::vector_full);
     }
+#include "etl/private/diagnostic_pop.h"
 
     //*************************************************************************
     TEST_FIXTURE(SetupFixture, test_emplace_position_value)

@@ -7,7 +7,7 @@ Embedded Template Library.
 https://github.com/ETLCPP/etl
 https://www.etlcpp.com
 
-Copyright(c) 2021 jwellbelove
+Copyright(c) 2021 John Wellbelove
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files(the "Software"), to deal
@@ -46,6 +46,7 @@ namespace etl
   class fixed_sized_memory_block_allocator : public imemory_block_allocator
   {
   public:
+
     static ETL_CONSTANT size_t Block_Size = VBlock_Size;
     static ETL_CONSTANT size_t Alignment  = VAlignment;
     static ETL_CONSTANT size_t Size       = VSize;
@@ -57,13 +58,7 @@ namespace etl
     {
     }
 
-  private:
-
-    /// A structure that has the size Block_Size.
-    struct block
-    {
-      char data[Block_Size];
-    };
+  protected:
 
     //*************************************************************************
     /// The overridden virtual function to allocate a block.
@@ -71,8 +66,8 @@ namespace etl
     virtual void* allocate_block(size_t required_size, size_t required_alignment) ETL_OVERRIDE
     {
       if ((required_alignment <= Alignment) &&
-          (required_size <= Block_Size) && 
-          !pool.full())
+          (required_size <= Block_Size) &&
+           !pool.full())
       {
         return  pool.template allocate<block>();
       }
@@ -106,9 +101,26 @@ namespace etl
       return pool.is_in_pool(pblock);
     }
 
+  private:
+
+    /// A structure that has the size Block_Size.
+    struct block
+    {
+      char data[Block_Size];
+    };
+
     /// The generic pool from which allocate memory blocks.
     etl::generic_pool<Block_Size, Alignment, Size> pool;
   };
+
+  template <size_t VBlock_Size, size_t VAlignment, size_t VSize>
+  ETL_CONSTANT size_t fixed_sized_memory_block_allocator<VBlock_Size, VAlignment, VSize>::Block_Size;
+
+  template <size_t VBlock_Size, size_t VAlignment, size_t VSize>
+  ETL_CONSTANT size_t fixed_sized_memory_block_allocator<VBlock_Size, VAlignment, VSize>::Alignment;
+
+  template <size_t VBlock_Size, size_t VAlignment, size_t VSize>
+  ETL_CONSTANT size_t fixed_sized_memory_block_allocator<VBlock_Size, VAlignment, VSize>::Size;
 }
 
 #endif

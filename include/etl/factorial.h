@@ -7,7 +7,7 @@ Embedded Template Library.
 https://github.com/ETLCPP/etl
 https://www.etlcpp.com
 
-Copyright(c) 2014 jwellbelove
+Copyright(c) 2014 John Wellbelove
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files(the "Software"), to deal
@@ -31,9 +31,9 @@ SOFTWARE.
 #ifndef ETL_FACTORIAL_INCLUDED
 #define ETL_FACTORIAL_INCLUDED
 
-#include <stddef.h>
-
 #include "platform.h"
+
+#include <stddef.h>
 
 ///\defgroup factorial factorial
 /// fibonacci<N> : Calculates the Nth factorial value.
@@ -60,6 +60,9 @@ namespace etl
   {
     static ETL_CONSTANT size_t value = 1;
   };
+
+  template <size_t N>
+  ETL_CONSTANT size_t factorial<N>::value;
 
 #if ETL_USING_CPP17
   template <size_t N>

@@ -5,7 +5,7 @@ Embedded Template Library.
 https://github.com/ETLCPP/etl
 https://www.etlcpp.com
 
-Copyright(c) 2021 jwellbelove
+Copyright(c) 2021 John Wellbelove
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files(the "Software"), to deal
@@ -29,8 +29,6 @@ SOFTWARE.
 #ifndef ETL_MESSAGE_ROUTER_REGISTRY_INCLUDED
 #define ETL_MESSAGE_ROUTER_REGISTRY_INCLUDED
 
-#include <stdint.h>
-
 #include "platform.h"
 #include "file_error_numbers.h"
 #include "message_router.h"
@@ -39,6 +37,8 @@ SOFTWARE.
 #include "error_handler.h"
 #include "iterator.h"
 #include "memory.h"
+
+#include <stdint.h>
 
 namespace etl
 {
@@ -361,7 +361,7 @@ namespace etl
       }
       else
       {
-        ETL_ALWAYS_ASSERT(ETL_ERROR(etl::message_router_registry_full));
+        ETL_ASSERT_FAIL(ETL_ERROR(etl::message_router_registry_full));
       }
     }
 

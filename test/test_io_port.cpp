@@ -5,7 +5,7 @@ Embedded Template Library.
 https://github.com/ETLCPP/etl
 https://www.etlcpp.com
 
-Copyright(c) 2014 jwellbelove
+Copyright(c) 2014 John Wellbelove
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files(the "Software"), to deal
@@ -33,13 +33,6 @@ SOFTWARE.
 #include <stdint.h>
 #include <array>
 #include <algorithm>
-
-#if defined(ETL_COMPILER_GCC)
-  #pragma GCC diagnostic push
-  #pragma GCC diagnostic ignored "-Wunused-variable"
-#else
-  #pragma warning(disable:4101) // Unused variable.
-#endif
 
 uint8_t rw  = 0x12U;
 uint8_t ro  = 0x34U;
@@ -226,7 +219,3 @@ namespace
     }
   };
 }
-
-#if defined(ETL_COMPILER_GCC)
-  #pragma GCC diagnostic pop
-#endif

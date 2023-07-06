@@ -5,7 +5,7 @@ Embedded Template Library.
 https://github.com/ETLCPP/etl
 https://www.etlcpp.com
 
-Copyright(c) 2021 jwellbelove
+Copyright(c) 2021 John Wellbelove
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files(the "Software"), to deal
@@ -33,11 +33,40 @@ SOFTWARE.
 #include "etl/private/delegate_cpp03.h"
 #include "etl/vector.h"
 
+#include <vector>
+#include <functional>
+#include <algorithm>
+
 namespace
 {
   //*****************************************************************************
+  enum class FunctionCalled : int
+  {
+    Not_Called,
+    Free_Void_Called,
+    Free_Int_Called,
+    Free_Reference_Called,
+    Free_Moveableonly_Called,
+    Normal_Called,
+    Normal_Returning_Void_Called,
+    Alternative_Called,
+    Member_Void_Called,
+    Member_Void_Const_Called,
+    Member_Int_Called,
+    Member_Int_Const_Called,
+    Member_Reference_Called,
+    Member_Reference_Const_Called,
+    Member_Moveableonly_Called,
+    Member_Static_Called,
+    Operator_Called,
+    Operator_Const_Called,
+    Lambda_Called
+  };
+
+  FunctionCalled function_called = FunctionCalled::Not_Called;
+
+  //*****************************************************************************
   const int VALUE1 = 1;
-  bool function_called = false;
   bool parameter_correct = false;
 
   //*****************************************************************************
@@ -53,7 +82,7 @@ namespace
   //*****************************************************************************
   void free_void()
   {
-    function_called = true;
+    function_called = FunctionCalled::Free_Void_Called;
   }
 
   //*****************************************************************************
@@ -61,7 +90,7 @@ namespace
   //*****************************************************************************
   void free_int(int i)
   {
-    function_called = true;
+    function_called = FunctionCalled::Free_Int_Called;
     parameter_correct = (i == VALUE1);
   }
 
@@ -70,7 +99,7 @@ namespace
   //*****************************************************************************
   void free_reference(const Data& data)
   {
-    function_called = true;
+    function_called = FunctionCalled::Free_Reference_Called;
     parameter_correct = (data.d == VALUE1);
   }
 
@@ -79,7 +108,7 @@ namespace
   //*****************************************************************************
   int normal(int i)
   {
-    function_called = true;
+    function_called = FunctionCalled::Normal_Called;
     parameter_correct = (i == VALUE1);
 
     return i;
@@ -90,7 +119,7 @@ namespace
   //*****************************************************************************
   void normal_returning_void(int i)
   {
-    function_called = true;
+    function_called = FunctionCalled::Normal_Returning_Void_Called;
     parameter_correct = (i == VALUE1);
   }
 
@@ -99,7 +128,7 @@ namespace
   //*****************************************************************************
   int alternative(int i)
   {
-    function_called = true;
+    function_called = FunctionCalled::Alternative_Called;
     parameter_correct = (i == VALUE1);
 
     return i + 1;
@@ -116,25 +145,25 @@ namespace
     // void
     void member_void()
     {
-      function_called = true;
+      function_called = FunctionCalled::Member_Void_Called;
     }
 
     void member_void_const() const
     {
-      function_called = true;
+      function_called = FunctionCalled::Member_Void_Const_Called;
     }
 
     //*******************************************
     // int
     void member_int(int i)
     {
-      function_called = true;
+      function_called = FunctionCalled::Member_Int_Called;
       parameter_correct = (i == VALUE1);
     }
 
     void member_int_const(int i) const
     {
-      function_called = true;
+      function_called = FunctionCalled::Member_Int_Const_Called;
       parameter_correct = (i == VALUE1);
     }
 
@@ -142,13 +171,13 @@ namespace
     // reference
     void member_reference(const Data& data)
     {
-      function_called = true;
+      function_called = FunctionCalled::Member_Reference_Called;
       parameter_correct = (data.d == VALUE1);
     }
 
     void member_reference_const(const Data& data) const
     {
-      function_called = true;
+      function_called = FunctionCalled::Member_Reference_Const_Called;
       parameter_correct = (data.d == VALUE1);
     }
 
@@ -156,7 +185,7 @@ namespace
     // static
     static void member_static(const Data& data)
     {
-      function_called = true;
+      function_called = FunctionCalled::Member_Static_Called;
       parameter_correct = (data.d == VALUE1);
     }
 
@@ -164,12 +193,12 @@ namespace
     // operator()
     void operator()()
     {
-      function_called = true;
+      function_called = FunctionCalled::Operator_Called;
     }
 
     void operator()() const
     {
-      function_called = true;
+      function_called = FunctionCalled::Operator_Const_Called;
     }
   };
 
@@ -192,7 +221,7 @@ namespace
   {
     SetupFixture()
     {
-      function_called   = false;
+      function_called   = FunctionCalled::Not_Called;
       parameter_correct = false;
     }
   };
@@ -211,13 +240,33 @@ namespace
     }
 
     //*************************************************************************
+    TEST_FIXTURE(SetupFixture, test_is_valid_true)
+    {
+      auto d = etl_cpp03::delegate<void(void)>::create<free_void>();
+
+      CHECK(d.is_valid());
+      CHECK(d);
+      CHECK_NO_THROW(d());
+    }
+
+    //*************************************************************************
+    TEST_FIXTURE(SetupFixture, test_is_valid_after_clear)
+    {
+      auto d = etl_cpp03::delegate<void(void)>::create<free_void>();
+
+      CHECK_TRUE(d.is_valid());
+      d.clear();
+      CHECK_FALSE(d.is_valid());
+    }
+
+    //*************************************************************************
     TEST_FIXTURE(SetupFixture, test_free_void)
     {
       auto d = etl_cpp03::delegate<void(void)>::create<free_void>();
 
       d();
 
-      CHECK(function_called);
+      CHECK(function_called == FunctionCalled::Free_Void_Called);
     }
 
     //*************************************************************************
@@ -227,7 +276,7 @@ namespace
 
       d(VALUE1);
 
-      CHECK(function_called);
+      CHECK(function_called == FunctionCalled::Free_Int_Called);
       CHECK(parameter_correct);
     }
 
@@ -241,7 +290,7 @@ namespace
 
       d(data);
 
-      CHECK(function_called);
+      CHECK(function_called == FunctionCalled::Free_Reference_Called);
       CHECK(parameter_correct);
     }
 
@@ -254,7 +303,7 @@ namespace
 
       d();
 
-      CHECK(function_called);
+      CHECK(function_called == FunctionCalled::Operator_Called);
     }
 
     //*************************************************************************
@@ -266,7 +315,7 @@ namespace
 
       d();
 
-      CHECK(function_called);
+      CHECK(function_called == FunctionCalled::Operator_Called);
     }
 
     //*************************************************************************
@@ -278,7 +327,7 @@ namespace
 
       d();
 
-      CHECK(function_called);
+      CHECK(function_called == FunctionCalled::Operator_Const_Called);
     }
 
 #if !defined(ETL_COMPILER_GCC)
@@ -289,7 +338,7 @@ namespace
 
       d();
 
-      CHECK(function_called);
+      CHECK(function_called == FunctionCalled::Operator_Called);
     }
 
     //*************************************************************************
@@ -299,7 +348,7 @@ namespace
 
       d();
 
-      CHECK(function_called);
+      CHECK(function_called == FunctionCalled::Operator_Const_Called);
     }
 #endif
 
@@ -314,7 +363,7 @@ namespace
 
       d();
 
-      CHECK(function_called);
+      CHECK(function_called == FunctionCalled::Operator_Called);
     }
 
     //*************************************************************************
@@ -326,7 +375,7 @@ namespace
 
       d();
 
-      CHECK(function_called);
+      CHECK(function_called == FunctionCalled::Member_Void_Called);
     }
 
     //*************************************************************************
@@ -338,7 +387,7 @@ namespace
 
       d();
 
-      CHECK(function_called);
+      CHECK(function_called == FunctionCalled::Member_Void_Const_Called);
     }
 
     //*************************************************************************
@@ -350,7 +399,7 @@ namespace
 
       d(VALUE1);
 
-      CHECK(function_called);
+      CHECK(function_called == FunctionCalled::Member_Int_Called);
       CHECK(parameter_correct);
     }
 
@@ -363,7 +412,7 @@ namespace
 
       d(VALUE1);
 
-      CHECK(function_called);
+      CHECK(function_called == FunctionCalled::Member_Int_Const_Called);
       CHECK(parameter_correct);
     }
 
@@ -378,7 +427,7 @@ namespace
 
       d(data);
 
-      CHECK(function_called);
+      CHECK(function_called == FunctionCalled::Member_Reference_Called);
       CHECK(parameter_correct);
     }
 
@@ -393,7 +442,7 @@ namespace
 
       d(data);
 
-      CHECK(function_called);
+      CHECK(function_called == FunctionCalled::Member_Reference_Const_Called);
       CHECK(parameter_correct);
     }
 
@@ -407,7 +456,7 @@ namespace
 
       d(data);
 
-      CHECK(function_called);
+      CHECK(function_called == FunctionCalled::Member_Static_Called);
       CHECK(parameter_correct);
     }
 
@@ -419,7 +468,7 @@ namespace
 
       d();
 
-      CHECK(function_called);
+      CHECK(function_called == FunctionCalled::Member_Void_Called);
     }
 
     //*************************************************************************
@@ -429,7 +478,7 @@ namespace
 
       d();
 
-      CHECK(function_called);
+      CHECK(function_called == FunctionCalled::Member_Void_Const_Called);
     }
 
     //*************************************************************************
@@ -439,7 +488,7 @@ namespace
 
       d(VALUE1);
 
-      CHECK(function_called);
+      CHECK(function_called == FunctionCalled::Member_Int_Called);
       CHECK(parameter_correct);
     }
 
@@ -450,7 +499,7 @@ namespace
 
       d(VALUE1);
 
-      CHECK(function_called);
+      CHECK(function_called == FunctionCalled::Member_Int_Const_Called);
       CHECK(parameter_correct);
     }
 
@@ -464,7 +513,7 @@ namespace
 
       d(data);
 
-      CHECK(function_called);
+      CHECK(function_called == FunctionCalled::Member_Reference_Called);
       CHECK(parameter_correct);
     }
 
@@ -478,7 +527,7 @@ namespace
 
       d(data);
 
-      CHECK(function_called);
+      CHECK(function_called == FunctionCalled::Member_Reference_Const_Called);
       CHECK(parameter_correct);
     }
 
@@ -491,7 +540,7 @@ namespace
 
       d(VALUE1);
 
-      CHECK(function_called);
+      CHECK(function_called == FunctionCalled::Free_Int_Called);
       CHECK(parameter_correct);
     }
 
@@ -500,11 +549,11 @@ namespace
     {
       etl_cpp03::delegate<void(int)> d;
       
-      d.set([](int i) { function_called = true; parameter_correct = (i == VALUE1); });
+      d.set([](int i) { function_called = FunctionCalled::Lambda_Called; parameter_correct = (i == VALUE1); });
 
       d(VALUE1);
 
-      CHECK(function_called);
+      CHECK(function_called == FunctionCalled::Lambda_Called);
       CHECK(parameter_correct);
     }
 
@@ -521,7 +570,7 @@ namespace
 
       d(data);
 
-      CHECK(function_called);
+      CHECK(function_called == FunctionCalled::Member_Reference_Called);
       CHECK(parameter_correct);
     }
 
@@ -538,7 +587,7 @@ namespace
 
       d(data);
 
-      CHECK(function_called);
+      CHECK(function_called == FunctionCalled::Member_Reference_Const_Called);
       CHECK(parameter_correct);
     }
 
@@ -554,7 +603,7 @@ namespace
 
       d(data);
 
-      CHECK(function_called);
+      CHECK(function_called == FunctionCalled::Member_Reference_Called);
       CHECK(parameter_correct);
     }
 
@@ -570,7 +619,7 @@ namespace
 
       d(data);
 
-      CHECK(function_called);
+      CHECK(function_called == FunctionCalled::Member_Reference_Const_Called);
       CHECK(parameter_correct);
     }
 #endif
@@ -585,7 +634,7 @@ namespace
 
       d2(VALUE1);
 
-      CHECK(function_called);
+      CHECK(function_called == FunctionCalled::Member_Int_Called);
       CHECK(parameter_correct);
     }
 
@@ -601,7 +650,7 @@ namespace
 
       d2(VALUE1);
 
-      CHECK(function_called);
+      CHECK(function_called == FunctionCalled::Member_Int_Called);
       CHECK(parameter_correct);
     }
 
@@ -708,7 +757,7 @@ namespace
       bool was_called = d.call_if(VALUE1);
 
       CHECK(was_called);
-      CHECK(function_called);
+      CHECK(function_called == FunctionCalled::Normal_Returning_Void_Called);
       CHECK(parameter_correct);
     }
 
@@ -720,8 +769,54 @@ namespace
       bool was_called = d.call_if(VALUE1);
 
       CHECK(!was_called);
-      CHECK(!function_called);
+      CHECK(function_called == FunctionCalled::Not_Called);
       CHECK(!parameter_correct);
+    }
+
+    //*************************************************************************
+    TEST_FIXTURE(SetupFixture, test_delegate_identification)
+    {
+      Test test1;
+      Test test2;
+
+      auto d1 = etl_cpp03::delegate<void(int)>::create<free_int>();
+      auto d2 = etl_cpp03::delegate<void(int)>::create<Test, &Test::member_int>(test1);
+      auto d3 = etl_cpp03::delegate<void(int)>::create<Test, &Test::member_int>(test2);
+
+      etl_cpp03::delegate<void(int)> d4;
+
+      using Delegate_List = std::vector<etl_cpp03::delegate<void(int)>>;
+
+      Delegate_List delegate_list = { d1, d2, d3 };
+
+      Delegate_List::const_iterator itr;
+
+      d4 = d1;
+
+      itr = std::find(delegate_list.begin(), delegate_list.end(), d4);
+      CHECK(*itr == d1);
+      CHECK(*itr != d2);
+      CHECK(*itr != d3);
+
+      d4 = d2;
+
+      itr = std::find(delegate_list.begin(), delegate_list.end(), d4);
+      CHECK(*itr != d1);
+      CHECK(*itr == d2);
+      CHECK(*itr != d3);
+
+      d4 = d3;
+
+      itr = std::find(delegate_list.begin(), delegate_list.end(), d4);
+      CHECK(*itr != d1);
+      CHECK(*itr != d2);
+      CHECK(*itr == d3);
+
+      d4 = etl_cpp03::delegate<void(int)>::create<Test, &Test::member_int>(test2); // Same as d3
+      itr = std::find(delegate_list.begin(), delegate_list.end(), d4);
+      CHECK(*itr != d1);
+      CHECK(*itr != d2);
+      CHECK(*itr == d3);
     }
   };
 }

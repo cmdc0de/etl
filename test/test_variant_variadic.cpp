@@ -5,7 +5,7 @@ Embedded Template Library.
 https://github.com/ETLCPP/etl
 https://www.etlcpp.com
 
-Copyright(c) 2021 jwellbelove
+Copyright(c) 2021 John Wellbelove
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files(the "Software"), to deal
@@ -32,36 +32,40 @@ SOFTWARE.
 #include "etl/visitor.h"
 #include "etl/overload.h"
 
+#if ETL_USING_CPP14
+
 #include <array>
 #include <vector>
 #include <algorithm>
 #include <string>
-#include <variant>
 #include <type_traits>
+
+#if ETL_USING_CPP17
+  #include <variant>
+#endif
 
 namespace
 {
   // Test variant_etl types.
   using test_variant_etl_3 = etl::variant<char, int, std::string>;
-  using test_variant_std_3 = std::variant<char, int, std::string>;
 
   struct D1
   {
-    D1(const std::string& a_)
+    D1(const std::string& a_) noexcept
       : a(a_)
     {
       copied = false;
       moved = false;
     }
 
-    D1(const D1& other)
+    D1(const D1& other) noexcept
       : a(other.a)
     {
       copied = true;
       moved = false;
     }
 
-    D1(D1&& other)
+    D1(D1&& other) noexcept
       : a(std::move(other.a))
     {
       copied = false;
@@ -478,6 +482,7 @@ namespace
     //*************************************************************************
     TEST(test_construct_multiple_parameters_by_type)
     {
+#if ETL_USING_CPP17
       test_variant_emplace variant_etl1(etl::in_place_type<D1>, "1");
       CHECK(etl::holds_alternative<D1>(variant_etl1));
       CHECK_EQUAL(D1("1"), etl::get<D1>(variant_etl1));
@@ -493,12 +498,30 @@ namespace
       test_variant_emplace variant_etl4(etl::in_place_type<D4>, "1", "2", "3", "4");
       CHECK(etl::holds_alternative<D4>(variant_etl4));
       CHECK_EQUAL(D4("1", "2", "3", "4"), etl::get<D4>(variant_etl4));
+#else
+      test_variant_emplace variant_etl1(etl::in_place_type_t<D1>{}, "1");
+      CHECK(etl::holds_alternative<D1>(variant_etl1));
+      CHECK_EQUAL(D1("1"), etl::get<D1>(variant_etl1));
+
+      test_variant_emplace variant_etl2(etl::in_place_type_t<D2>{}, "1", "2");
+      CHECK(etl::holds_alternative<D2>(variant_etl2));
+      CHECK_EQUAL(D2("1", "2"), etl::get<D2>(variant_etl2));
+
+      test_variant_emplace variant_etl3(etl::in_place_type_t<D3>{}, "1", "2", "3");
+      CHECK(etl::holds_alternative<D3>(variant_etl3));
+      CHECK_EQUAL(D3("1", "2", "3"), etl::get<D3>(variant_etl3));
+
+      test_variant_emplace variant_etl4(etl::in_place_type_t<D4>{}, "1", "2", "3", "4");
+      CHECK(etl::holds_alternative<D4>(variant_etl4));
+      CHECK_EQUAL(D4("1", "2", "3", "4"), etl::get<D4>(variant_etl4));
+#endif
     }
 
     //*************************************************************************
     TEST(test_construct_multiple_parameters_by_index)
     {
-      test_variant_emplace variant_etl1(etl::in_place_index<1U>, "1");
+#if ETL_USING_CPP17
+      test_variant_emplace variant_etl1(etl::in_place_index<1>, "1");
       CHECK(etl::holds_alternative<D1>(variant_etl1));
       CHECK_EQUAL(D1("1"), etl::get<D1>(variant_etl1));
 
@@ -510,12 +533,29 @@ namespace
       CHECK(etl::holds_alternative<D3>(variant_etl3));
       CHECK_EQUAL(D3("1", "2", "3"), etl::get<D3>(variant_etl3));
 
-      test_variant_emplace variant_etl4(etl::in_place_index<4U>, "1", "2", "3", "4");
+      test_variant_emplace variant_etl4(etl::in_place_index<4>, "1", "2", "3", "4");
       CHECK(etl::holds_alternative<D4>(variant_etl4));
       CHECK_EQUAL(D4("1", "2", "3", "4"), etl::get<D4>(variant_etl4));
+#else
+      test_variant_emplace variant_etl1(etl::in_place_index_t<1>{}, "1");
+      CHECK(etl::holds_alternative<D1>(variant_etl1));
+      CHECK_EQUAL(D1("1"), etl::get<D1>(variant_etl1));
+
+      test_variant_emplace variant_etl2(etl::in_place_index_t<2>{}, "1", "2");
+      CHECK(etl::holds_alternative<D2>(variant_etl2));
+      CHECK_EQUAL(D2("1", "2"), etl::get<D2>(variant_etl2));
+
+      test_variant_emplace variant_etl3(etl::in_place_index_t<3>{}, "1", "2", "3");
+      CHECK(etl::holds_alternative<D3>(variant_etl3));
+      CHECK_EQUAL(D3("1", "2", "3"), etl::get<D3>(variant_etl3));
+
+      test_variant_emplace variant_etl4(etl::in_place_index_t<4>{}, "1", "2", "3", "4");
+      CHECK(etl::holds_alternative<D4>(variant_etl4));
+      CHECK_EQUAL(D4("1", "2", "3", "4"), etl::get<D4>(variant_etl4));
+#endif
     }
 
-#if ETL_USING_STL
+#if ETL_HAS_INITIALIZER_LIST
     //*************************************************************************
     TEST(test_construct_with_initializer_list_by_type)
     {
@@ -542,7 +582,7 @@ namespace
 #endif
 
     //*************************************************************************
-    TEST(test_emplace_value)
+    TEST(test_emplace_value_by_type)
     {
       // Char.
       char c = 'a';
@@ -567,6 +607,37 @@ namespace
       test_variant_etl_3 variant_text_etl;
 
       variant_text_etl.emplace<std::string>(text);
+      CHECK(text == "Some Text");
+      CHECK(etl::holds_alternative<std::string>(variant_text_etl));
+      CHECK_EQUAL(text, etl::get<std::string>(variant_text_etl));
+    }
+
+    //*************************************************************************
+    TEST(test_emplace_value_by_index)
+    {
+      // Char.
+      char c = 'a';
+      test_variant_etl_3 variant_char_etl;
+
+      c = variant_char_etl.emplace<0>(c);
+      CHECK(c == 'a');
+      CHECK(etl::holds_alternative<char>(variant_char_etl));
+      CHECK_EQUAL(c, etl::get<char>(variant_char_etl));
+
+      // Int.
+      int i = 1;
+      test_variant_etl_3 variant_int_etl;
+
+      i = variant_int_etl.emplace<1>(i);
+      CHECK(i == 1);
+      CHECK(etl::holds_alternative<int>(variant_int_etl));
+      CHECK_EQUAL(i, etl::get<int>(variant_int_etl));
+
+      // String.
+      std::string text("Some Text");
+      test_variant_etl_3 variant_text_etl;
+
+      text = variant_text_etl.emplace<2>(text);
       CHECK(text == "Some Text");
       CHECK(etl::holds_alternative<std::string>(variant_text_etl));
       CHECK_EQUAL(text, etl::get<std::string>(variant_text_etl));
@@ -673,7 +744,9 @@ namespace
       test_variant_etl_3 variant_etl;
 
       variant_etl = 1;
+#include "etl/private/diagnostic_self_assign_overloaded_push.h" 
       variant_etl = variant_etl;
+#include "etl/private/diagnostic_pop.h" 
 
       CHECK_EQUAL(1, etl::get<int>(variant_etl));
     }
@@ -737,7 +810,7 @@ namespace
     //*************************************************************************
     TEST(test_variant_accept_visitor)
     {    
-      struct Visitor : public etl::visitor<char, int, std::string>
+      struct Visitor : public etl::visitor<char&, int&, std::string&>
       {
         Visitor()
           : result_c(0)
@@ -749,16 +822,74 @@ namespace
         void visit(char& c)
         {
           result_c = c;
+          ++c;
         }
 
         void visit(int& i)
         {
           result_i = i;
+          ++i;
         }
 
         void visit(std::string& s)
         {
           result_s = s;
+          s = "4";
+        }
+
+        char result_c;
+        int  result_i;
+        std::string result_s;
+      };
+
+      Visitor visitor;
+
+      test_variant_etl_3 variant_etl;
+
+      variant_etl = char(1);
+      variant_etl.accept(visitor);
+      CHECK_EQUAL(1, visitor.result_c);
+      CHECK_EQUAL(2, etl::get<char>(variant_etl));
+      
+      variant_etl = int(2);
+      variant_etl.accept(visitor);
+      CHECK_EQUAL(2, visitor.result_i);
+      CHECK_EQUAL(3, etl::get<int>(variant_etl));
+
+      variant_etl = std::string("3");
+      variant_etl.accept(visitor);
+      CHECK_EQUAL("3", visitor.result_s);
+      CHECK_EQUAL("4", etl::get<std::string>(variant_etl));
+    }
+
+    //*************************************************************************
+    TEST(test_variant_accept_visitor_deprecated)
+    {
+      struct Visitor : public etl::visitor<char&, int&, std::string&>
+      {
+        Visitor()
+          : result_c(0)
+          , result_i(0)
+          , result_s("")
+        {
+        }
+
+        void visit(char& c)
+        {
+          result_c = c;
+          ++c;
+        }
+
+        void visit(int& i)
+        {
+          result_i = i;
+          ++i;
+        }
+
+        void visit(std::string& s)
+        {
+          result_s = s;
+          s = "4";
         }
 
         char result_c;
@@ -773,13 +904,122 @@ namespace
       variant_etl = char(1);
       variant_etl.accept_visitor(visitor);
       CHECK_EQUAL(1, visitor.result_c);
-      
+      CHECK_EQUAL(2, etl::get<char>(variant_etl));
+
       variant_etl = int(2);
       variant_etl.accept_visitor(visitor);
       CHECK_EQUAL(2, visitor.result_i);
+      CHECK_EQUAL(3, etl::get<int>(variant_etl));
 
       variant_etl = std::string("3");
       variant_etl.accept_visitor(visitor);
+      CHECK_EQUAL("3", visitor.result_s);
+      CHECK_EQUAL("4", etl::get<std::string>(variant_etl));
+    }
+
+    //*************************************************************************
+    TEST(test_const_variant_accept_visitor)
+    {
+      struct Visitor : public etl::visitor<const char&, const int&, const std::string&>
+      {
+        Visitor()
+          : result_c(0)
+          , result_i(0)
+          , result_s("")
+        {
+        }
+
+        void visit(const char& c)
+        {
+          result_c = c;
+        }
+
+        void visit(const int& i)
+        {
+          result_i = i;
+        }
+
+        void visit(const std::string& s)
+        {
+          result_s = s;
+        }
+
+        char result_c;
+        int  result_i;
+        std::string result_s;
+      };
+
+      Visitor visitor;
+
+      test_variant_etl_3 variant_etl;
+
+      variant_etl = char(1);
+      const test_variant_etl_3 const_variant_etl1(variant_etl);
+      const_variant_etl1.accept(visitor);
+      CHECK_EQUAL(1, visitor.result_c);
+
+      variant_etl = int(2);
+      const test_variant_etl_3 const_variant_etl2(variant_etl);
+      const_variant_etl2.accept(visitor);
+      CHECK_EQUAL(2, visitor.result_i);
+
+      variant_etl = std::string("3");
+      const test_variant_etl_3 const_variant_etl3(variant_etl);
+      const_variant_etl3.accept(visitor);
+      CHECK_EQUAL("3", visitor.result_s);
+    }
+
+    //*************************************************************************
+    TEST(test_const_variant_accept_visitor_deprecated)
+    {
+      struct Visitor : public etl::visitor<char, int, const std::string&>
+      {
+        Visitor()
+          : result_c(0)
+          , result_i(0)
+          , result_s("")
+        {
+        }
+
+        void visit(char c)
+        {
+          result_c = c;
+        }
+
+        void visit(int i)
+        {
+          result_i = i;
+        }
+
+        void visit(const std::string& s)
+        {
+          result_s = s;
+        }
+
+        char result_c;
+        int  result_i;
+        std::string result_s;
+      };
+
+      Visitor visitor;
+
+      test_variant_etl_3 variant_etl;
+
+      variant_etl = char(1);
+      const test_variant_etl_3 const_variant_etl1(variant_etl);
+      const_variant_etl1.accept(visitor);
+      CHECK_EQUAL(1, visitor.result_c);
+
+      variant_etl = int(2);
+      const test_variant_etl_3 const_variant_etl2(variant_etl);
+      //const_variant_etl2.accept_visitor(visitor);
+      const_variant_etl2.accept(visitor);
+      CHECK_EQUAL(2, visitor.result_i);
+
+      variant_etl = std::string("3");
+      const test_variant_etl_3 const_variant_etl3(variant_etl);
+      //const_variant_etl3.accept_visitor(visitor);
+      const_variant_etl3.accept(visitor);
       CHECK_EQUAL("3", visitor.result_s);
     }
 
@@ -798,9 +1038,64 @@ namespace
         void operator()(char& c)
         {
           result_c = c;
+          ++c;
         }
 
         void operator()(int& i)
+        {
+          result_i = i;
+          ++i;
+        }
+
+        void operator()(std::string& s)
+        {
+          result_s = s;
+          s = "4";
+        }
+
+        char result_c;
+        int  result_i;
+        std::string result_s;
+      };
+
+      Visitor visitor;
+
+      test_variant_etl_3 variant_etl;      
+
+      variant_etl = char(1);
+      variant_etl.accept(visitor);
+      CHECK_EQUAL(1, visitor.result_c);
+      CHECK_EQUAL(2, etl::get<char>(variant_etl));
+
+      variant_etl = int(2);
+      variant_etl.accept(visitor);
+      CHECK_EQUAL(2, visitor.result_i);
+      CHECK_EQUAL(3, etl::get<int>(variant_etl));
+
+      variant_etl = std::string("3");
+      variant_etl.accept(visitor);
+      CHECK_EQUAL("3", visitor.result_s);
+      CHECK_EQUAL("4", etl::get<std::string>(variant_etl));
+    }
+
+    //*************************************************************************
+    TEST(test_variant_accept_functor_with_functor_class_deprecated)
+    {
+      struct Visitor
+      {
+        Visitor()
+          : result_c(0)
+          , result_i(0)
+          , result_s("")
+        {
+        }
+
+        void operator()(char c)
+        {
+          result_c = c;
+        }
+
+        void operator()(int i)
         {
           result_i = i;
         }
@@ -817,24 +1112,184 @@ namespace
 
       Visitor visitor;
 
-      test_variant_etl_3 variant_etl;      
+      test_variant_etl_3 variant_etl;
 
       variant_etl = char(1);
       variant_etl.accept_functor(visitor);
       CHECK_EQUAL(1, visitor.result_c);
-      
+
       variant_etl = int(2);
       variant_etl.accept_functor(visitor);
       CHECK_EQUAL(2, visitor.result_i);
 
       variant_etl = std::string("3");
-      variant_etl.accept_functor(visitor);
+      //variant_etl.accept_functor(visitor);
+      variant_etl.accept(visitor);
       CHECK_EQUAL("3", visitor.result_s);
     }
 
     //*************************************************************************
+    TEST(test_const_variant_accept_functor_with_functor_class)
+    {
+      struct Visitor
+      {
+        Visitor()
+          : result_c(0)
+          , result_i(0)
+          , result_s("")
+        {
+        }
 
-    TEST(test_variant__accept_functor_with_overload)
+        void operator()(char c)
+        {
+          result_c = c;
+        }
+
+        void operator()(int i)
+        {
+          result_i = i;
+        }
+
+        void operator()(const std::string& s)
+        {
+          result_s = s;
+        }
+
+        char result_c;
+        int  result_i;
+        std::string result_s;
+      };
+
+      Visitor visitor;
+
+      test_variant_etl_3 variant_etl;
+
+      variant_etl = char(1);
+      const test_variant_etl_3 const_variant_etl1(variant_etl);
+      const_variant_etl1.accept(visitor);
+      CHECK_EQUAL(1, int(visitor.result_c));
+
+      variant_etl = int(2);
+      const test_variant_etl_3 const_variant_etl2(variant_etl);
+      const_variant_etl2.accept(visitor);
+      CHECK_EQUAL(2, visitor.result_i);
+
+      variant_etl = std::string("3");
+      const test_variant_etl_3 const_variant_etl3(variant_etl);
+      const_variant_etl3.accept(visitor);
+      CHECK_EQUAL("3", visitor.result_s);
+    }
+
+    //*************************************************************************
+    TEST(test_const_variant_accept_functor_with_functor_class_deprecated)
+    {
+      struct Visitor
+      {
+        Visitor()
+          : result_c(0)
+          , result_i(0)
+          , result_s("")
+        {
+        }
+
+        void operator()(char c)
+        {
+          result_c = c;
+        }
+
+        void operator()(int i)
+        {
+          result_i = i;
+        }
+
+        void operator()(const std::string& s)
+        {
+          result_s = s;
+        }
+
+        char result_c;
+        int  result_i;
+        std::string result_s;
+      };
+
+      Visitor visitor;
+
+      test_variant_etl_3 variant_etl;
+
+      variant_etl = char(1);
+      const test_variant_etl_3 const_variant_etl1(variant_etl);
+      const_variant_etl1.accept_functor(visitor);
+      CHECK_EQUAL(1, visitor.result_c);
+
+      variant_etl = int(2);
+      const test_variant_etl_3 const_variant_etl2(variant_etl);
+      const_variant_etl2.accept(visitor);
+      CHECK_EQUAL(2, visitor.result_i);
+
+      variant_etl = std::string("3");
+      const test_variant_etl_3 const_variant_etl3(variant_etl);
+      const_variant_etl3.accept(visitor);
+      CHECK_EQUAL("3", visitor.result_s);
+    }
+
+    //*************************************************************************
+#if ETL_USING_CPP17
+    TEST(test_variant_accept_functor_with_overload)
+    {
+      char result_c;
+      int  result_i;
+      std::string result_s;
+
+      auto visitor = etl::make_overload([&result_c](char& c) { result_c = 1; ++c; },
+                                        [&result_i](int& i) { result_i = 2; ++i; },
+                                        [&result_s](std::string& s) { result_s = "3"; s = "4"; });
+
+      test_variant_etl_3 variant_etl;
+
+      variant_etl = char(1);
+      variant_etl.accept(visitor);
+      CHECK_EQUAL(1, result_c);
+      CHECK_EQUAL(2, etl::get<char>(variant_etl));
+
+      variant_etl = int(2);
+      variant_etl.accept(visitor);
+      CHECK_EQUAL(2, result_i);
+      CHECK_EQUAL(3, etl::get<int>(variant_etl));
+
+      variant_etl = std::string("3");
+      variant_etl.accept(visitor);
+      CHECK_EQUAL("3", result_s);
+      CHECK_EQUAL("4", etl::get<std::string>(variant_etl));
+    }
+
+    //*************************************************************************
+    TEST(test_variant_accept_functor_with_overload_deprecated)
+    {
+      char result_c;
+      int  result_i;
+      std::string result_s;
+
+      auto visitor = etl::make_overload([&result_c](char) { result_c = 1; },
+        [&result_i](int) { result_i = 2; },
+        [&result_s](const std::string&) { result_s = "3"; });
+
+      test_variant_etl_3 variant_etl;
+
+      variant_etl = char(1);
+      variant_etl.accept_functor(visitor);
+      CHECK_EQUAL(1, result_c);
+
+      variant_etl = int(2);
+      variant_etl.accept(visitor);
+      CHECK_EQUAL(2, result_i);
+
+      variant_etl = std::string("3");
+      variant_etl.accept(visitor);
+      CHECK_EQUAL("3", result_s);
+    }
+
+    //*************************************************************************
+    TEST(test_const_variant_accept_functor_with_overload)
     {
       char result_c;
       int  result_i;
@@ -847,17 +1302,50 @@ namespace
       test_variant_etl_3 variant_etl;
 
       variant_etl = char(1);
-      variant_etl.accept_functor(visitor);
+      const test_variant_etl_3 const_variant_etl1(variant_etl);
+      const_variant_etl1.accept(visitor);
       CHECK_EQUAL(1, result_c);
 
       variant_etl = int(2);
-      variant_etl.accept_functor(visitor);
+      const test_variant_etl_3 const_variant_etl2(variant_etl);
+      const_variant_etl2.accept(visitor);
       CHECK_EQUAL(2, result_i);
 
       variant_etl = std::string("3");
-      variant_etl.accept_functor(visitor);
+      const test_variant_etl_3 const_variant_etl3(variant_etl);
+      const_variant_etl3.accept(visitor);
       CHECK_EQUAL("3", result_s);
     }
+
+    //*************************************************************************
+    TEST(test_const_variant_accept_functor_with_overload_deprecated)
+    {
+      char result_c;
+      int  result_i;
+      std::string result_s;
+
+      auto visitor = etl::make_overload([&result_c](char) { result_c = 1; },
+                                        [&result_i](int) { result_i = 2; },
+                                        [&result_s](const std::string&) { result_s = "3"; });
+
+      test_variant_etl_3 variant_etl;
+
+      variant_etl = char(1);
+      const test_variant_etl_3 const_variant_etl1(variant_etl);
+      const_variant_etl1.accept_functor(visitor);
+      CHECK_EQUAL(1, result_c);
+
+      variant_etl = int(2);
+      const test_variant_etl_3 const_variant_etl2(variant_etl);
+      const_variant_etl2.accept(visitor);
+      CHECK_EQUAL(2, result_i);
+
+      variant_etl = std::string("3");
+      const test_variant_etl_3 const_variant_etl3(variant_etl);
+      const_variant_etl3.accept(visitor);
+      CHECK_EQUAL("3", result_s);
+    }
+#endif
 
     //*************************************************************************
     TEST(test_get_if_index)
@@ -906,9 +1394,14 @@ namespace
     {
       test_variant_etl_3 variant_etl;
 
+#if ETL_USING_CPP17
       CHECK_EQUAL(3U, etl::variant_size_v<test_variant_etl_3>);
+#else
+      CHECK_EQUAL(3U, etl::variant_size<test_variant_etl_3>::value);
+#endif
     }
 
+#if ETL_USING_CPP17
     //*************************************************************************
     TEST(test_compare_etl_and_stl_variant_with_moveable_type)
     {
@@ -1095,6 +1588,7 @@ namespace
       CHECK_EQUAL(value_vcrr_std.moved_to,   value_vcrr_etl.moved_to);
       CHECK_EQUAL(value_vcrr_std.copied_to,  value_vcrr_etl.copied_to);
     }
+#endif
 
     //*************************************************************************
     TEST(test_get_if_by_type)
@@ -1167,5 +1661,260 @@ namespace
       pcd = etl::get_if<1U>(&crv);
       CHECK(pcd == nullptr);
     }
+
+    //*************************************************************************
+    struct variant_test_visit_dispatcher
+    {
+      // const overloads
+      int8_t operator()(int8_t&) const
+      {
+        return 1;
+      }
+
+      int8_t operator()(int8_t const&) const
+      {
+        return 10;
+      }
+
+      int8_t operator()(uint8_t&) const
+      {
+        return 2;
+      }
+
+      int8_t operator()(uint8_t const&) const
+      {
+        return 20;
+      }
+
+      int8_t operator()(int16_t&) const
+      {
+        return 3;
+      }
+
+      int8_t operator()(int16_t const&) const
+      {
+        return 30;
+      }
+
+      // non-const overloads
+      int8_t operator()(int8_t&)
+      {
+        return 5;
+      }
+
+      int8_t operator()(int8_t const&)
+      {
+        return 50;
+      }
+
+      int8_t operator()(uint8_t&)
+      {
+        return 6;
+      }
+
+      int8_t operator()(uint8_t const&)
+      {
+        return 60;
+      }
+
+      int8_t operator()(int16_t&)
+      {
+        return 7;
+      }
+
+      int8_t operator()(int16_t const&)
+      {
+        return 70;
+      }
+
+      template <typename T>
+      int8_t operator()(T const&) const
+      {
+        return -1;
+      }
+    };
+
+    TEST(test_variant_visit)
+    {
+      etl::variant<int8_t, uint8_t, int16_t> variant;
+      variant = int8_t{};
+      variant_test_visit_dispatcher visitor;
+      auto const&                   visitor_const = visitor;
+      int16_t                       type = etl::visit(visitor_const, variant);
+      CHECK_EQUAL(1, type);
+
+      auto const& variant_const = variant;
+      type = etl::visit(visitor_const, variant_const);
+      CHECK_EQUAL(10, type);
+
+      type = etl::visit(visitor, variant_const);
+      CHECK_EQUAL(50, type);
+
+      variant = int16_t{};
+      type = etl::visit(visitor_const, variant);
+      CHECK_EQUAL(3, type);
+
+      type = etl::visit(visitor_const, variant_const);
+      CHECK_EQUAL(30, type);
+
+      type = etl::visit(visitor, variant_const);
+      CHECK_EQUAL(70, type);
+    }
+
+    //*************************************************************************
+    struct test_variant_multiple_visit_helper
+    {
+      template <typename T1, typename T2>
+      int16_t operator()(T1 v1, T2 v2) const
+      {
+        int16_t res{};
+
+        if (std::is_same<T1, int8_t>::value)
+          res = 1;
+        else if (std::is_same<T1, uint8_t>::value)
+          res = 2;
+        if (std::is_same<T2, int8_t>::value)
+          res += 10;
+        else if (std::is_same<T2, uint16_t>::value)
+          res += 20;
+        else if (std::is_same<T2, uint8_t>::value)
+          res += 30;
+        return res - static_cast<int16_t>(v1) * static_cast<int16_t>(v2);
+      }
+    };
+
+    TEST(test_variant_multiple_visit)
+    {
+      etl::variant<int8_t, uint8_t>           variant1;
+      etl::variant<int8_t, uint16_t, uint8_t> variant2;
+      variant1 = int8_t{3};
+      variant2 = int8_t{1};
+      
+      auto res = etl::visit<int16_t>(test_variant_multiple_visit_helper{}, variant1, variant2);
+      CHECK_EQUAL(11 - 3, res);
+      
+      variant2 = uint16_t{2};
+      res = etl::visit<int16_t>(test_variant_multiple_visit_helper{}, variant1, variant2);
+      CHECK_EQUAL(21 - 3 * 2, res);
+      
+      variant1 = uint8_t{};
+      variant2 = uint8_t{};
+      res = etl::visit<int16_t>(test_variant_multiple_visit_helper{}, variant1, variant2);
+      CHECK_EQUAL(32, res);
+    }
+
+    //*************************************************************************
+    TEST(test_variant_multiple_visit_auto_return)
+    {
+      etl::variant<int8_t, uint8_t>           variant1;
+      etl::variant<int8_t, uint16_t, uint8_t> variant2;
+      variant1 = int8_t{3};
+      variant2 = int8_t{1};
+      auto const f = [](auto v1, auto v2)
+      {
+        return v1 * v2;
+      };
+
+      auto res = etl::visit(f, variant1, variant2);
+      CHECK_EQUAL(3, res);
+      
+      variant2 = uint16_t{2};
+      res = etl::visit(f, variant1, variant2);
+      CHECK_EQUAL(3 * 2, res);
+    }
+    
+    //*************************************************************************
+    TEST(test_variant_visit_void)
+    {
+      etl::variant<int8_t, uint8_t> variant1;
+
+      bool       variant_was_signed{};
+      auto const f = [&variant_was_signed](auto v)
+      {
+        variant_was_signed = etl::is_signed<etl::remove_reference_t<decltype(v)>>::value;
+      };
+
+      etl::visit(f, variant1);
+      CHECK_EQUAL(true, variant_was_signed);
+
+      variant1 = uint8_t{};
+      etl::visit<void>(f, variant1);
+      CHECK_EQUAL(false, variant_was_signed);
+    }
+
+#if ETL_USING_CPP17
+    //*************************************************************************
+    TEST(test_variant_visit_with_overload)
+    {
+      struct TypeA { };
+      struct TypeB { };
+      struct TypeC { };
+      struct TypeD { };
+
+      std::string result = "?";
+
+      etl::variant<TypeA, TypeB, TypeC, TypeD> package;
+
+      etl::visit(etl::overload
+        {
+          [&result](TypeA&) { result = "TypeA"; },
+          [&result](TypeB&) { result = "TypeB"; },
+          [&result](TypeC&) { result = "TypeC"; },
+          [&result](TypeD&) { result = "TypeD"; }
+        }, package);
+
+      CHECK_EQUAL(std::string("TypeA"), result);
+
+      package = TypeA{};
+
+      etl::visit(etl::overload
+        {
+          [&result](TypeA&) { result = "TypeA"; },
+          [&result](TypeB&) { result = "TypeB"; },
+          [&result](TypeC&) { result = "TypeC"; },
+          [&result](TypeD&) { result = "TypeD"; }
+        }, package);
+
+      CHECK_EQUAL(std::string("TypeA"), result);
+
+      package = TypeB{};
+
+      etl::visit(etl::overload
+        {
+          [&result](TypeA&) { result = "TypeA"; },
+          [&result](TypeB&) { result = "TypeB"; },
+          [&result](TypeC&) { result = "TypeC"; },
+          [&result](TypeD&) { result = "TypeD"; }
+        }, package);
+
+      CHECK_EQUAL(std::string("TypeB"), result);
+
+      package = TypeC{};
+
+      etl::visit(etl::overload
+        {
+          [&result](TypeA&) { result = "TypeA"; },
+          [&result](TypeB&) { result = "TypeB"; },
+          [&result](TypeC&) { result = "TypeC"; },
+          [&result](TypeD&) { result = "TypeD"; }
+        }, package);
+
+      CHECK_EQUAL(std::string("TypeC"), result);
+
+      package = TypeD{};
+
+      etl::visit(etl::overload
+        {
+          [&result](TypeA&) { result = "TypeA"; },
+          [&result](TypeB&) { result = "TypeB"; },
+          [&result](TypeC&) { result = "TypeC"; },
+          [&result](TypeD&) { result = "TypeD"; }
+        }, package);
+
+      CHECK_EQUAL(std::string("TypeD"), result);
+    }
+#endif
   };
 }
+
+#endif

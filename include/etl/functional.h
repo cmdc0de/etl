@@ -7,7 +7,7 @@ Embedded Template Library.
 https://github.com/ETLCPP/etl
 https://www.etlcpp.com
 
-Copyright(c) 2014 jwellbelove
+Copyright(c) 2014 John Wellbelove
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files(the "Software"), to deal
@@ -54,6 +54,11 @@ namespace etl
 
     ETL_CONSTEXPR20 explicit reference_wrapper(T& t_) ETL_NOEXCEPT
       : t(&t_)
+    {
+    }
+
+    ETL_CONSTEXPR20 reference_wrapper(const reference_wrapper& rhs) ETL_NOEXCEPT
+      : t(rhs.t)
     {
     }
 

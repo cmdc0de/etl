@@ -7,7 +7,7 @@ Embedded Template Library.
 https://github.com/ETLCPP/etl
 https://www.etlcpp.com
 
-Copyright(c) 2015 jwellbelove
+Copyright(c) 2015 John Wellbelove
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files(the "Software"), to deal
@@ -267,7 +267,7 @@ namespace etl
         value_type* pvalue = storage.allocate<value_type>();
         ::new (pvalue) value_type(etl::move(value));
         ETL_INCREMENT_DEBUG_COUNT
-          result = refset_t::insert_at(i_element, *pvalue);
+        result = refset_t::insert_at(i_element, *pvalue);
       }
 
       return result;
@@ -280,7 +280,7 @@ namespace etl
     ///\param position The position to insert at.
     ///\param value    The value to insert.
     //*********************************************************************
-    iterator insert(const_iterator position, const_reference value)
+    iterator insert(const_iterator /*position*/, const_reference value)
     {
       return insert(value).first;
     }
@@ -292,7 +292,7 @@ namespace etl
     ///\param position The position to insert at.
     ///\param value    The value to insert.
     //*********************************************************************
-    iterator insert(const_iterator position, rvalue_reference value)
+    iterator insert(const_iterator /*position*/, rvalue_reference value)
     {
       return insert(etl::move(value)).first;
     }
@@ -888,7 +888,7 @@ namespace etl
 #if ETL_USING_CPP11
     //*************************************************************************
     /// Move a flat_set.
-    /// Assumes the rhs is initialised and empty.
+    /// Assumes the flat_set is initialised and empty.
     //*************************************************************************
     void move_container(iflat_set&& rhs)
     {
@@ -1081,6 +1081,9 @@ namespace etl
     // The vector that stores pointers to the nodes.
     etl::vector<node_t*, MAX_SIZE> lookup;
   };
+
+  template <typename T, const size_t MAX_SIZE_, typename TCompare>
+  ETL_CONSTANT size_t flat_set<T, MAX_SIZE_, TCompare>::MAX_SIZE;
 
   //*************************************************************************
   /// Template deduction guides.

@@ -5,7 +5,7 @@ Embedded Template Library.
 https://github.com/ETLCPP/etl
 https://www.etlcpp.com
 
-Copyright(c) 2014 jwellbelove, rlindeman
+Copyright(c) 2014 John Wellbelove, rlindeman
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files(the "Software"), to deal
@@ -98,10 +98,10 @@ namespace
     return (lhs < rhs.k);
   }
 
-  bool operator <(const Key& lhs, const Key& rhs)
-  {
-    return (lhs.k < rhs.k);
-  }
+  //bool operator <(const Key& lhs, const Key& rhs)
+  //{
+  //  return (lhs.k < rhs.k);
+  //}
 
   SUITE(test_set)
   {
@@ -330,7 +330,9 @@ namespace
       Data data(initial_data.begin(), initial_data.end());
       Data otherData(data);
 
+#include "etl/private/diagnostic_self_assign_overloaded_push.h" 
       data = data;
+#include "etl/private/diagnostic_pop.h" 
 
       bool isEqual = Check_Equal(data.begin(),
                                  data.end(),
@@ -1415,7 +1417,7 @@ namespace
 
       auto v = *data.begin();
       using Type = decltype(v);
-      CHECK((std::is_same_v<std::string, Type>));
+      CHECK((std::is_same<std::string, Type>::value));
 
       decltype(data)::const_iterator itr = data.begin();
 

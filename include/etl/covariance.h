@@ -7,7 +7,7 @@ Embedded Template Library.
 https://github.com/ETLCPP/etl
 https://www.etlcpp.com
 
-Copyright(c) 2021 jwellbelove
+Copyright(c) 2021 John Wellbelove
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files(the "Software"), to deal
@@ -73,10 +73,24 @@ namespace etl
   //***************************************************************************
   /// Covariance Type.
   //***************************************************************************
-  struct covariance_type
+  namespace private_covariance
   {
-    static ETL_CONSTANT bool Sample     = false;
-    static ETL_CONSTANT bool Population = true;
+    template<typename T = void>
+    struct covariance_type_statics
+    {
+      static ETL_CONSTANT bool Sample = false;
+      static ETL_CONSTANT bool Population = true;
+    };
+
+    template<typename T>
+    ETL_CONSTANT bool covariance_type_statics<T>::Sample;
+    
+    template<typename T>
+    ETL_CONSTANT bool covariance_type_statics<T>::Population;
+  }
+
+  struct covariance_type : public private_covariance::covariance_type_statics<>
+  {
   };
 
   //***************************************************************************
@@ -219,6 +233,9 @@ namespace etl
     mutable double covariance_value;
     mutable bool   recalculate;
   };
+
+  template <bool Covariance_Type, typename TInput, typename TCalc>
+  ETL_CONSTANT int covariance<Covariance_Type, TInput, TCalc>::Adjustment;
 }
 
 #endif

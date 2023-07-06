@@ -5,7 +5,7 @@ Embedded Template Library.
 https://github.com/ETLCPP/etl
 https://www.etlcpp.com
 
-Copyright(c) 2022 jwellbelove
+Copyright(c) 2022 John Wellbelove
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files(the "Software"), to deal
@@ -30,6 +30,8 @@ SOFTWARE.
 
 #include "etl/unaligned_type.h"
 #include "etl/integral_limits.h"
+
+#if ETL_USING_CPP14
 
 namespace
 {
@@ -544,8 +546,8 @@ namespace
     {
       static constexpr etl::be_uint16_t test(0x1234);
       
-      constexpr const char* p1 = test.data();
-      constexpr const char* p2 = test.data() + 1U;
+      constexpr etl::be_uint16_t::const_pointer p1 = test.data();
+      constexpr etl::be_uint16_t::const_pointer p2 = test.data() + 1U;
 
       CHECK_EQUAL(0x12, *p1);
       CHECK_EQUAL(0x34, *p2);
@@ -618,5 +620,25 @@ namespace
       CHECK_EQUAL(0x1234, lev);
       CHECK_EQUAL(0x1234, bev);
     }
+
+    //*************************************************************************
+    TEST(test_storage_bytes)
+    {
+      constexpr etl::le_uint16_t test_le(0x1234);
+      constexpr etl::be_uint16_t test_be(0x1234);
+
+      constexpr int lev0 = test_le[0];
+      constexpr int lev1 = test_le[1];
+      
+      constexpr int bev0 = test_be[0];
+      constexpr int bev1 = test_be[1];
+
+      CHECK_EQUAL(0x34, lev0);
+      CHECK_EQUAL(0x12, lev1);
+      CHECK_EQUAL(0x12, bev0);
+      CHECK_EQUAL(0x34, bev1);
+    }
   };
 }
+
+#endif

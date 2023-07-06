@@ -5,7 +5,7 @@ Embedded Template Library.
 https://github.com/ETLCPP/etl
 https://www.etlcpp.com
 
-Copyright(c) 2020 jwellbelove
+Copyright(c) 2020 John Wellbelove
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files(the "Software"), to deal
@@ -53,6 +53,11 @@ namespace
     {
     }
 
+    Index(const Index& other)
+      : index(other.index)
+    {
+    }
+
     Index& operator ++()
     {
       ++index;
@@ -71,7 +76,7 @@ namespace
       return *this;
     }
 
-    bool operator = (const Index& other)
+    Index& operator = (const Index& other)
     {
       index = other.index;
 
@@ -285,7 +290,7 @@ namespace
         std::string inner;
       };
 
-      std::array results
+      std::array<result, 64U> results
       {
           result{ 0,  2, "zero" }, result{ 0,  2, "one" }, result{ 0,  2, "two" }, result{ 0,  2, "three" },
           result{ 0,  1, "zero" }, result{ 0,  1, "one" }, result{ 0,  1, "two" }, result{ 0,  1, "three" },
@@ -368,7 +373,7 @@ namespace
         std::string inner;
       };
 
-      std::array results
+      std::array<result, 16U> results
       {
           result{ 0,  2, "zero" }, result{ 0,  2, "one" }, result{ 0,  2, "two" }, result{ 0,  2, "three" },
           result{ 0,  1, "zero" }, result{ 0,  1, "one" }, result{ 0,  1, "two" }, result{ 0,  1, "three" },

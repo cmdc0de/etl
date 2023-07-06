@@ -36,9 +36,9 @@ class Container
 public:
 
 //#if ETL_USING_INITIALIZER_LIST
-  constexpr Container(std::initializer_list<T> init)
-    : buffer()
-    , length(init.size())
+  ETL_CONSTEXPR14 Container(std::initializer_list<T> init)
+    : length(init.size())
+    , buffer()
   {
     typename std::initializer_list<T>::const_iterator itr = std::begin(init);
     T* p = buffer;
@@ -76,7 +76,7 @@ int main()
 
   if (c.length != 5) result =  6;
 
-  constexpr Container<int> cc = { 1, 2, 3, 4, 5 };
+  ETL_CONSTEXPR14 Container<int> cc = { 1, 2, 3, 4, 5 };
 
   if (cc[0] != 1) result =  7;
   if (cc[1] != 2) result =  8;

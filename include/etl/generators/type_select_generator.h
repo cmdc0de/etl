@@ -5,7 +5,7 @@ Embedded Template Library.
 https://github.com/ETLCPP/etl
 https://www.etlcpp.com
 
-Copyright(c) 2018 jwellbelove
+Copyright(c) 2018 John Wellbelove
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files(the "Software"), to deal
@@ -116,7 +116,7 @@ namespace etl
   cog.outl("{")
   cog.outl("public:")
   cog.outl("")
-  cog.outl("  template <const size_t ID>")
+  cog.outl("  template <size_t ID>")
   cog.outl("  struct select")
   cog.outl("  {")
   cog.outl("    typedef typename etl::conditional<ID == 0, T0,")
@@ -151,7 +151,7 @@ namespace etl
       cog.outl("T%s>" % (s - 1))
       cog.outl("{")
       cog.outl("public:")
-      cog.outl("  template <const size_t ID>")
+      cog.outl("  template <size_t ID>")
       cog.outl("  struct select")
       cog.outl("  {")
       cog.outl("    typedef typename etl::conditional<ID == 0, T0,")

@@ -7,7 +7,7 @@ Embedded Template Library.
 https://github.com/ETLCPP/etl
 https://www.etlcpp.com
 
-Copyright(c) 2016 jwellbelove
+Copyright(c) 2016 John Wellbelove
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files(the "Software"), to deal
@@ -31,12 +31,7 @@ SOFTWARE.
 #ifndef ETL_BASIC_STRING_INCLUDED
 #define ETL_BASIC_STRING_INCLUDED
 
-#include <stddef.h>
-#include <stdint.h>
-#include <string.h>
-
 #include "platform.h"
-
 #include "algorithm.h"
 #include "iterator.h"
 #include "functional.h"
@@ -53,10 +48,9 @@ SOFTWARE.
 #include "binary.h"
 #include "flags.h"
 
-#ifdef ETL_COMPILER_GCC
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-variable"
-#endif
+#include <stddef.h>
+#include <stdint.h>
+#include <string.h>
 
 #include "private/minmax_push.h"
 
@@ -142,20 +136,38 @@ namespace etl
   ///\ingroup string
   /// The base class for all templated string types.
   //***************************************************************************
-  class string_base
+  namespace private_basic_string
+  {
+    //*************************************************************************
+    template <typename T = void>
+    class string_base_statics
+    {
+    public:
+
+      typedef size_t size_type;
+
+      static ETL_CONSTANT uint_least8_t IS_TRUNCATED    = etl::bit<0>::value;
+      static ETL_CONSTANT uint_least8_t CLEAR_AFTER_USE = etl::bit<1>::value;
+      
+      static ETL_CONSTANT size_type npos = etl::integral_limits<size_type>::max;
+    };
+
+    template <typename T>
+    ETL_CONSTANT uint_least8_t string_base_statics<T>::IS_TRUNCATED;
+
+    template <typename T>
+    ETL_CONSTANT uint_least8_t string_base_statics<T>::CLEAR_AFTER_USE;
+
+    template <typename T>
+    ETL_CONSTANT typename string_base_statics<T>::size_type string_base_statics<T>::npos;
+  }
+
+  //***************************************************************************
+  class string_base : public private_basic_string::string_base_statics<>
   {
   public:
 
     typedef size_t size_type;
-
-#if ETL_USING_CPP11
-    static constexpr size_type npos = etl::integral_limits<size_type>::max;
-#else
-    enum
-    {
-      npos = etl::integral_limits<size_type>::max
-    };
-#endif
 
     //*************************************************************************
     /// Gets the current size of the string.
@@ -295,9 +307,6 @@ namespace etl
     ~string_base()
     {
     }
-
-    static ETL_CONSTANT uint_least8_t IS_TRUNCATED    = etl::bit<0>::value;
-    static ETL_CONSTANT uint_least8_t CLEAR_AFTER_USE = etl::bit<1>::value;
 
     size_type       current_size;   ///< The current number of elements in the string.
     const size_type CAPACITY;       ///< The maximum number of elements in the string.
@@ -462,7 +471,7 @@ namespace etl
         set_truncated(true);
 
 #if ETL_HAS_ERROR_ON_STRING_TRUNCATION
-        ETL_ALWAYS_ASSERT(ETL_ERROR(string_truncation));
+        ETL_ASSERT_FAIL(ETL_ERROR(string_truncation));
 #endif
 #endif
       }
@@ -624,7 +633,7 @@ namespace etl
         set_truncated(true);
 
 #if ETL_HAS_ERROR_ON_STRING_TRUNCATION
-        ETL_ALWAYS_ASSERT(ETL_ERROR(string_truncation));
+        ETL_ASSERT_FAIL(ETL_ERROR(string_truncation));
 #endif
       }
 #endif
@@ -663,7 +672,7 @@ namespace etl
         this->set_truncated(true);
 
 #if ETL_HAS_ERROR_ON_STRING_TRUNCATION
-        ETL_ALWAYS_ASSERT(ETL_ERROR(string_truncation));
+        ETL_ASSERT_FAIL(ETL_ERROR(string_truncation));
 #endif
       }
 #endif
@@ -811,7 +820,7 @@ namespace etl
         set_truncated(true);
 
 #if ETL_HAS_ERROR_ON_STRING_TRUNCATION
-        ETL_ALWAYS_ASSERT(ETL_ERROR(string_truncation));
+        ETL_ASSERT_FAIL(ETL_ERROR(string_truncation));
 #endif
 #endif
       }
@@ -843,7 +852,7 @@ namespace etl
         set_truncated(true);
 
 #if ETL_HAS_ERROR_ON_STRING_TRUNCATION
-        ETL_ALWAYS_ASSERT(ETL_ERROR(string_truncation));
+        ETL_ASSERT_FAIL(ETL_ERROR(string_truncation));
 #endif
       }
 #endif
@@ -951,7 +960,7 @@ namespace etl
         set_truncated(true);
 
 #if ETL_HAS_ERROR_ON_STRING_TRUNCATION
-        ETL_ALWAYS_ASSERT(ETL_ERROR(string_truncation));
+        ETL_ASSERT_FAIL(ETL_ERROR(string_truncation));
 #endif
 #endif
       }
@@ -987,7 +996,7 @@ namespace etl
         set_truncated(true);
 
 #if ETL_HAS_ERROR_ON_STRING_TRUNCATION
-        ETL_ALWAYS_ASSERT(ETL_ERROR(string_truncation));
+        ETL_ASSERT_FAIL(ETL_ERROR(string_truncation));
 #endif
 #endif
         return to_iterator(position);;
@@ -1002,7 +1011,7 @@ namespace etl
           set_truncated(true);
 
 #if ETL_HAS_ERROR_ON_STRING_TRUNCATION
-          ETL_ALWAYS_ASSERT(ETL_ERROR(string_truncation));
+          ETL_ASSERT_FAIL(ETL_ERROR(string_truncation));
 #endif
 #endif
         }
@@ -1028,7 +1037,7 @@ namespace etl
           set_truncated(true);
 
 #if ETL_HAS_ERROR_ON_STRING_TRUNCATION
-          ETL_ALWAYS_ASSERT(ETL_ERROR(string_truncation));
+          ETL_ASSERT_FAIL(ETL_ERROR(string_truncation));
 #endif
 #endif
         }
@@ -1073,7 +1082,7 @@ namespace etl
         set_truncated(true);
 
 #if ETL_HAS_ERROR_ON_STRING_TRUNCATION
-        ETL_ALWAYS_ASSERT(ETL_ERROR(string_truncation));
+        ETL_ASSERT_FAIL(ETL_ERROR(string_truncation));
 #endif
 #endif
         return position_;
@@ -1088,7 +1097,7 @@ namespace etl
           set_truncated(true);
 
 #if ETL_HAS_ERROR_ON_STRING_TRUNCATION
-          ETL_ALWAYS_ASSERT(ETL_ERROR(string_truncation));
+          ETL_ASSERT_FAIL(ETL_ERROR(string_truncation));
 #endif
 #endif
         }
@@ -1118,7 +1127,7 @@ namespace etl
           set_truncated(true);
 
 #if ETL_HAS_ERROR_ON_STRING_TRUNCATION
-          ETL_ALWAYS_ASSERT(ETL_ERROR(string_truncation));
+          ETL_ASSERT_FAIL(ETL_ERROR(string_truncation));
 #endif
 #endif
         }
@@ -1157,7 +1166,7 @@ namespace etl
         set_truncated(true);
 
 #if ETL_HAS_ERROR_ON_STRING_TRUNCATION
-        ETL_ALWAYS_ASSERT(ETL_ERROR(string_truncation));
+        ETL_ASSERT_FAIL(ETL_ERROR(string_truncation));
 #endif
       }
 #endif
@@ -1190,7 +1199,7 @@ namespace etl
         set_truncated(true);
 
 #if ETL_HAS_ERROR_ON_STRING_TRUNCATION
-        ETL_ALWAYS_ASSERT(ETL_ERROR(string_truncation));
+        ETL_ASSERT_FAIL(ETL_ERROR(string_truncation));
 #endif
       }
 #endif
@@ -1321,7 +1330,7 @@ namespace etl
 
     //*********************************************************************
     /// Copies a portion of a string.
-    ///\param s     Pointer to the string to copy.
+    ///\param dest  Pointer to the destination buffer.
     ///\param count The number of characters to copy.
     ///\param pos   The position to start copying from.
     //*********************************************************************
@@ -1617,7 +1626,7 @@ namespace etl
         set_truncated(true);
 
 #if ETL_HAS_ERROR_ON_STRING_TRUNCATION
-        ETL_ALWAYS_ASSERT(ETL_ERROR(string_truncation));
+        ETL_ASSERT_FAIL(ETL_ERROR(string_truncation));
 #endif
       }
 #endif
@@ -1649,7 +1658,7 @@ namespace etl
         set_truncated(true);
 
 #if ETL_HAS_ERROR_ON_STRING_TRUNCATION
-        ETL_ALWAYS_ASSERT(ETL_ERROR(string_truncation));
+        ETL_ASSERT_FAIL(ETL_ERROR(string_truncation));
 #endif
       }
 #endif
@@ -2629,9 +2638,5 @@ namespace etl
 }
 
 #include "private/minmax_pop.h"
-
-#ifdef ETL_COMPILER_GCC
-#pragma GCC diagnostic pop
-#endif
 
 #endif

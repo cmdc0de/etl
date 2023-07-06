@@ -7,7 +7,7 @@ Embedded Template Library.
 https://github.com/ETLCPP/etl
 https://www.etlcpp.com
 
-Copyright(c) 2017 jwellbelove
+Copyright(c) 2017 John Wellbelove
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files(the "Software"), to deal
@@ -34,6 +34,7 @@ SOFTWARE.
 #include "platform.h"
 #include "type_traits.h"
 #include "utility.h"
+#include "private/addressof.h"
 
 #if ETL_USING_STL || defined(ETL_IN_UNIT_TEST)
   #include <iterator>
@@ -51,7 +52,7 @@ namespace etl
   struct forward_iterator_tag : public input_iterator_tag {};
   struct bidirectional_iterator_tag : public forward_iterator_tag {};
   struct random_access_iterator_tag : public bidirectional_iterator_tag {};
-  struct contiguous_iterator_tag : public random_access_iterator_tag {};
+  //struct contiguous_iterator_tag : public random_access_iterator_tag {};
 
   //***************************************************************************
   // iterator_traits
@@ -91,10 +92,8 @@ namespace etl
 
   //***************************************************************************
   // advance
-#if ETL_NOT_USING_STL
-
   template <typename TIterator, typename TDistance>
-  ETL_CONSTEXPR17 void advance_helper(TIterator& itr, TDistance n, ETL_OR_STD::output_iterator_tag)
+  ETL_CONSTEXPR14 void advance_helper(TIterator& itr, TDistance n, ETL_OR_STD::output_iterator_tag)
   {
     while (n--)
     {
@@ -103,7 +102,7 @@ namespace etl
   }
 
   template <typename TIterator, typename TDistance>
-  ETL_CONSTEXPR17 void advance_helper(TIterator& itr, TDistance n, ETL_OR_STD::forward_iterator_tag)
+  ETL_CONSTEXPR14 void advance_helper(TIterator& itr, TDistance n, ETL_OR_STD::forward_iterator_tag)
   {
     while (n--)
     {
@@ -112,7 +111,7 @@ namespace etl
   }
 
   template <typename TIterator, typename TDistance>
-  ETL_CONSTEXPR17 void advance_helper(TIterator& itr, TDistance n, ETL_OR_STD::bidirectional_iterator_tag)
+  ETL_CONSTEXPR14 void advance_helper(TIterator& itr, TDistance n, ETL_OR_STD::bidirectional_iterator_tag)
   {
     if (n > 0)
     {
@@ -131,34 +130,23 @@ namespace etl
   }
 
   template <typename TIterator, typename TDistance>
-  ETL_CONSTEXPR17 void advance_helper(TIterator& itr, TDistance n, ETL_OR_STD::random_access_iterator_tag)
+  ETL_CONSTEXPR14 void advance_helper(TIterator& itr, TDistance n, ETL_OR_STD::random_access_iterator_tag)
   {
     itr += n;
   }
 
   template <typename TIterator, typename TDistance>
-  ETL_CONSTEXPR17 void advance(TIterator& itr, TDistance n)
+  ETL_CONSTEXPR14 void advance(TIterator& itr, TDistance n)
   {
     typedef typename etl::iterator_traits<TIterator>::iterator_category tag;
 
     advance_helper(itr, n, tag());
   }
 
-#else
-
-  template <typename TIterator, typename TDistance>
-  ETL_CONSTEXPR17 void advance(TIterator& itr, TDistance n)
-  {
-    std::advance(itr, n);
-  }
-
-#endif
-
   //***************************************************************************
   // distance
-#if ETL_NOT_USING_STL
   template<typename TIterator>
-  ETL_CONSTEXPR17 typename etl::iterator_traits<TIterator>::difference_type distance_helper(TIterator first, TIterator last, ETL_OR_STD::input_iterator_tag)
+  ETL_CONSTEXPR14 typename etl::iterator_traits<TIterator>::difference_type distance_helper(TIterator first, TIterator last, ETL_OR_STD::input_iterator_tag)
   {
     typename etl::iterator_traits<TIterator>::difference_type d = 0;
 
@@ -172,7 +160,7 @@ namespace etl
   }
 
   template<typename TIterator>
-  ETL_CONSTEXPR17 typename etl::iterator_traits<TIterator>::difference_type distance_helper(TIterator first, TIterator last, ETL_OR_STD::forward_iterator_tag)
+  ETL_CONSTEXPR14 typename etl::iterator_traits<TIterator>::difference_type distance_helper(TIterator first, TIterator last, ETL_OR_STD::forward_iterator_tag)
   {
     typename etl::iterator_traits<TIterator>::difference_type d = 0;
 
@@ -186,7 +174,7 @@ namespace etl
   }
 
   template<typename TIterator>
-  ETL_CONSTEXPR17 typename etl::iterator_traits<TIterator>::difference_type distance_helper(TIterator first, TIterator last, ETL_OR_STD::bidirectional_iterator_tag)
+  ETL_CONSTEXPR14 typename etl::iterator_traits<TIterator>::difference_type distance_helper(TIterator first, TIterator last, ETL_OR_STD::bidirectional_iterator_tag)
   {
     typename etl::iterator_traits<TIterator>::difference_type d = 0;
 
@@ -200,52 +188,36 @@ namespace etl
   }
 
   template<typename TIterator>
-  ETL_CONSTEXPR17 typename etl::iterator_traits<TIterator>::difference_type distance_helper(TIterator first, TIterator last, ETL_OR_STD::random_access_iterator_tag)
+  ETL_CONSTEXPR14 typename etl::iterator_traits<TIterator>::difference_type distance_helper(TIterator first, TIterator last, ETL_OR_STD::random_access_iterator_tag)
   {
     return last - first;
   }
 
   template<typename TIterator>
-  ETL_CONSTEXPR17 typename etl::iterator_traits<TIterator>::difference_type distance(TIterator first, TIterator last)
+  ETL_CONSTEXPR14 typename etl::iterator_traits<TIterator>::difference_type distance(TIterator first, TIterator last)
   {
     typedef typename etl::iterator_traits<TIterator>::iterator_category tag;
 
     return distance_helper(first, last, tag());
   }
 
-#else
-
-  template<typename TIterator>
-  ETL_CONSTEXPR17 typename std::iterator_traits<TIterator>::difference_type distance(TIterator first, TIterator last)
-  {
-    return std::distance(first, last);
-  }
-
-#endif
-
   //***************************************************************************
   // Previous
   template<typename TIterator>
-  ETL_CONSTEXPR17 TIterator prev(TIterator itr, typename etl::iterator_traits<TIterator>::difference_type n = 1)
+  ETL_CONSTEXPR14 TIterator prev(TIterator itr, typename etl::iterator_traits<TIterator>::difference_type n = 1)
   {
-#if ETL_NOT_USING_STL || ETL_CPP11_NOT_SUPPORTED
     etl::advance(itr, -n);
-#else
-    std::advance(itr, -n);
-#endif
+
     return itr;
   }
 
   //***************************************************************************
   // Next
   template<typename TIterator>
-  ETL_CONSTEXPR17 TIterator next(TIterator itr, typename etl::iterator_traits<TIterator>::difference_type n = 1)
+  ETL_CONSTEXPR14 TIterator next(TIterator itr, typename etl::iterator_traits<TIterator>::difference_type n = 1)
   {
-#if ETL_NOT_USING_STL || ETL_CPP11_NOT_SUPPORTED
     etl::advance(itr, n);
-#else
-    std::advance(itr, n);
-#endif
+
     return itr;
   }
 
@@ -281,7 +253,7 @@ namespace etl
     }
 
     template<class TOther>
-    ETL_CONSTEXPR14 reverse_iterator& operator=(const reverse_iterator<TOther>& other)
+    ETL_CONSTEXPR14 reverse_iterator& operator =(const reverse_iterator<TOther>& other)
     {
       current = other.base();
 
@@ -371,49 +343,49 @@ namespace etl
     TIterator current;
   };
 
-  template <class TIterator>
+  template <typename TIterator>
   ETL_CONSTEXPR14 bool operator ==(const reverse_iterator<TIterator>& lhs, const reverse_iterator<TIterator>& rhs)
   {
     return lhs.base() == rhs.base();
   }
 
-  template <class TIterator>
+  template <typename TIterator>
   ETL_CONSTEXPR14 bool operator !=(const reverse_iterator<TIterator>& lhs, const reverse_iterator<TIterator>& rhs)
   {
     return !(lhs == rhs);
   }
 
-  template <class TIterator>
+  template <typename TIterator>
   ETL_CONSTEXPR14 bool operator <(const reverse_iterator<TIterator>& lhs, const reverse_iterator<TIterator>& rhs)
   {
     return rhs.base() < lhs.base();
   }
 
-  template <class TIterator>
+  template <typename TIterator>
   ETL_CONSTEXPR14 bool operator >(const reverse_iterator<TIterator>& lhs, const reverse_iterator<TIterator>& rhs)
   {
     return rhs < lhs;
   }
 
-  template <class TIterator>
+  template <typename TIterator>
   ETL_CONSTEXPR14 bool operator <=(const reverse_iterator<TIterator>& lhs, const reverse_iterator<TIterator>& rhs)
   {
     return !(rhs < lhs);
   }
 
-  template <class TIterator>
+  template <typename TIterator>
   ETL_CONSTEXPR14 bool operator >=(const reverse_iterator<TIterator>& lhs, const reverse_iterator<TIterator>& rhs)
   {
     return !(lhs < rhs);
   }
 
-  template <class TIterator>
+  template <typename TIterator>
   ETL_CONSTEXPR14 typename reverse_iterator<TIterator>::difference_type operator -(const reverse_iterator<TIterator>& lhs, const reverse_iterator<TIterator>& rhs)
   {
     return rhs.base() - lhs.base();
   }
 
-  template <class TIterator, class TDifference>
+  template <typename TIterator, class TDifference>
   ETL_CONSTEXPR14 reverse_iterator<TIterator> operator +(TDifference n, const reverse_iterator<TIterator>& itr)
   {
     return itr.operator +(n);
@@ -604,7 +576,226 @@ namespace etl
     return etl::move_iterator<TIterator>(itr);
   }
 
-#endif
+#endif //ETL_USING_CPP11
+
+  //***************************************************************************
+  // back_insert_iterator
+  //***************************************************************************
+
+  //***************************************************************************
+  ///\brief  Turns assignment into insertion.
+  ///
+  /// These are output iterators, constructed from a container-of-T.
+  /// Assigning a T to the iterator appends it to the container using push_back.
+  ///
+  /// @tparam TContainer
+  //***************************************************************************
+  template <typename TContainer>
+  class back_insert_iterator : public etl::iterator<ETL_OR_STD::output_iterator_tag, void, void, void, void>
+  {
+  public:
+
+    /// A nested typedef for the type of whatever container you used.
+    typedef TContainer container_type;
+
+    /// The only way to create this %iterator is with a container.
+    explicit ETL_CONSTEXPR14 back_insert_iterator(TContainer& c)
+      : container(etl::addressof(c))
+    {
+    }
+
+    //***************************************************************************
+    /// This kind of %iterator doesn't really have a @a position in the
+    /// container (you can think of the position as being permanently at
+    /// the end, if you like).  Assigning a value to the %iterator will
+    /// always append the value to the end of the container.
+    ///
+    /// @param value An instance of whatever type container_type::const_reference is;
+    ///              presumably a reference-to-const T for container<T>.
+    /// @return This %iterator, for chained operations.
+    //***************************************************************************
+    ETL_CONSTEXPR14 back_insert_iterator& operator =(const typename TContainer::value_type& value)
+    {
+      container->push_back(value);
+      
+      return (*this);
+    }
+
+#if ETL_USING_CPP11
+    //***************************************************************************
+    /// Move assignment operator.
+    //***************************************************************************
+    ETL_CONSTEXPR14 back_insert_iterator& operator =(typename TContainer::value_type&& value)
+    {
+      container->push_back(etl::move(value));
+      
+      return (*this);
+    }
+#endif  // ETL_USING_CPP11
+
+    //***************************************************************************
+    /// Dereference operator.
+    /// Simply returns *this.
+    //***************************************************************************
+    ETL_NODISCARD ETL_CONSTEXPR14 back_insert_iterator& operator *()
+    {
+      return (*this);
+    }
+
+    //***************************************************************************
+    /// Pre-increment operator.
+    /// Simply returns *this.  (This %iterator does not @a move.)
+    //***************************************************************************
+    ETL_CONSTEXPR14 back_insert_iterator& operator ++()
+    {
+      return (*this);
+    }
+
+    //***************************************************************************
+    /// Post-increment operator.
+    /// Simply returns *this.  (This %iterator does not @a move.)
+    //***************************************************************************
+    ETL_CONSTEXPR14 back_insert_iterator operator ++(int)
+    {
+      return (*this);
+    }
+
+  protected:
+
+    TContainer* container;
+  };
+
+  //***************************************************************************
+  /// This wrapper function helps in creating back_insert_iterator instances.
+  /// Typing the name of the %iterator requires knowing the precise full
+  /// type of the container, which can be tedious and impedes generic
+  /// programming.  Using this function lets you take advantage of automatic
+  /// template parameter deduction, making the compiler match the correct types for you.
+  ///
+  /// @tparam TContainer The container type.
+  /// @param container A container of arbitrary type.
+  /// @return An instance of back_insert_iterator working on @p container.
+  //***************************************************************************
+  template <typename TContainer>
+  ETL_NODISCARD 
+  ETL_CONSTEXPR14 
+  etl::back_insert_iterator<TContainer> back_inserter(TContainer& container)
+  {
+    return etl::back_insert_iterator<TContainer>(container);
+  }
+
+  //***************************************************************************
+  // front_insert_iterator
+  //***************************************************************************
+
+  //***************************************************************************
+  ///\brief Turns assignment into insertion.
+  ///
+  /// These are output iterators, constructed from a container-of-T.
+  /// Assigning a T to the iterator prepends it to the container using
+  /// push_front.
+  ///
+  /// Tip:  Using the front_inserter function to create these iterators can
+  /// save typing.
+  ///
+  ///\tparam TContainer The container type.
+  //***************************************************************************
+  template <typename TContainer>
+  class front_insert_iterator : public etl::iterator<ETL_OR_STD::output_iterator_tag, void, void, void, void>
+  {
+  public:
+
+    /// A nested typedef for the type of whatever container you used.
+    typedef TContainer container_type;
+
+    //***************************************************************************
+    /// Constructor
+    /// The only way to create this %iterator is with a container.
+    //***************************************************************************
+    explicit ETL_CONSTEXPR14 front_insert_iterator(TContainer& c)
+      : container(etl::addressof(c))
+    {
+    }
+
+    //***************************************************************************
+    /// This kind of %iterator doesn't really have a @a position in the
+    /// container (you can think of the position as being permanently at
+    /// the front, if you like).  Assigning a value to the %iterator will
+    /// always prepend the value to the front of the container.
+    ///
+    /// @param  value  An instance of whatever type
+    ///                container_type::const_reference is; presumably a
+    ///                reference-to-const T for container<T>.
+    /// @return  This %iterator, for chained operations.
+    //***************************************************************************
+    ETL_CONSTEXPR14 front_insert_iterator& operator =(const typename TContainer::value_type& value)
+    {
+      container->push_front(value);
+      return (*this);
+    }
+
+#if ETL_USING_CPP11
+    //***************************************************************************
+    /// Move assignment operator.
+    //***************************************************************************
+    ETL_CONSTEXPR14 front_insert_iterator& operator =(typename TContainer::value_type&& value)
+    {
+      container->push_front(etl::move(value));
+      return (*this);
+    }
+#endif  // ETL_USING_CPP11
+
+    //***************************************************************************
+    /// Dereference operator.
+    /// Simply returns *this.
+    //***************************************************************************
+    ETL_NODISCARD ETL_CONSTEXPR14 front_insert_iterator& operator *()
+    {
+      return (*this);
+    }
+
+    //***************************************************************************
+    /// Pre-increment operator.
+    /// Simply returns *this.  (This %iterator does not @a move.)
+    //***************************************************************************
+    ETL_CONSTEXPR14 front_insert_iterator& operator ++()
+    {
+      return (*this);
+    }
+
+    //***************************************************************************
+    /// Post-increment operator.
+    /// Simply returns *this.  (This %iterator does not @a move.)
+    //***************************************************************************
+    ETL_CONSTEXPR14 front_insert_iterator operator ++(int)
+    {
+      return (*this);
+    }
+
+  protected:
+
+    TContainer* container;
+  };
+
+  //***************************************************************************
+  /// This wrapper function helps in creating front_insert_iterator instances.
+  /// Typing the name of the %iterator requires knowing the precise full
+  /// type of the container, which can be tedious and impedes generic
+  /// programming.  Using this function lets you take advantage of automatic
+  /// template parameter deduction, making the compiler match the correct
+  /// types for you.
+  ///
+  ///\tparam TContainer The container type.
+  ///\param container A container of arbitrary type.
+  ///\return An instance of front_insert_iterator working on @p x.
+  //***************************************************************************
+  template <typename TContainer>
+  ETL_NODISCARD
+  ETL_CONSTEXPR14
+  etl::front_insert_iterator<TContainer> front_inserter(TContainer& container)
+  {
+    return etl::front_insert_iterator<TContainer>(container);
+  }
 
   //***************************************************************************
   // Helper templates.
@@ -616,10 +807,16 @@ namespace etl
   };
 
   template <typename T>
+  ETL_CONSTANT bool is_input_iterator<T>::value;
+
+  template <typename T>
   struct is_output_iterator
   {
     static ETL_CONSTANT bool value = etl::is_same<typename etl::iterator_traits<T>::iterator_category, ETL_OR_STD::output_iterator_tag>::value;
   };
+
+  template <typename T>
+  ETL_CONSTANT bool is_output_iterator<T>::value;
 
   template <typename T>
   struct is_forward_iterator
@@ -628,10 +825,16 @@ namespace etl
   };
 
   template <typename T>
+  ETL_CONSTANT bool is_forward_iterator<T>::value;
+
+  template <typename T>
   struct is_bidirectional_iterator
   {
     static ETL_CONSTANT bool value = etl::is_same<typename etl::iterator_traits<T>::iterator_category, ETL_OR_STD::bidirectional_iterator_tag>::value;
   };
+
+  template <typename T>
+  ETL_CONSTANT bool is_bidirectional_iterator<T>::value;
 
   // Deprecated
   template <typename T>
@@ -641,10 +844,16 @@ namespace etl
   };
 
   template <typename T>
+  ETL_CONSTANT bool is_random_iterator<T>::value;
+
+  template <typename T>
   struct is_random_access_iterator
   {
     static ETL_CONSTANT bool value = etl::is_same<typename etl::iterator_traits<T>::iterator_category, ETL_OR_STD::random_access_iterator_tag>::value;
   };
+
+  template <typename T>
+  ETL_CONSTANT bool is_random_access_iterator<T>::value;
 
   template <typename T>
   struct is_input_iterator_concept
@@ -656,6 +865,9 @@ namespace etl
   };
 
   template <typename T>
+  ETL_CONSTANT bool is_input_iterator_concept<T>::value;
+
+  template <typename T>
   struct is_output_iterator_concept
   {
     static ETL_CONSTANT bool value = etl::is_output_iterator<T>::value ||
@@ -663,6 +875,9 @@ namespace etl
                                                etl::is_bidirectional_iterator<T>::value ||
                                                etl::is_random_iterator<T>::value;
   };
+
+  template <typename T>
+  ETL_CONSTANT bool is_output_iterator_concept<T>::value;
 
   template <typename T>
   struct is_forward_iterator_concept
@@ -673,11 +888,17 @@ namespace etl
   };
 
   template <typename T>
+  ETL_CONSTANT bool is_forward_iterator_concept<T>::value;
+
+  template <typename T>
   struct is_bidirectional_iterator_concept
   {
     static ETL_CONSTANT bool value = etl::is_bidirectional_iterator<T>::value ||
                                                etl::is_random_iterator<T>::value;
   };
+
+  template <typename T>
+  ETL_CONSTANT bool is_bidirectional_iterator_concept<T>::value;
 
   // Deprecated
   template <typename T>
@@ -686,11 +907,20 @@ namespace etl
     static ETL_CONSTANT bool value = etl::is_random_iterator<T>::value;
   };
 
+  // Deprecated
+  template <typename T>
+  ETL_CONSTANT bool is_random_iterator_concept<T>::value;
+
+  // Deprecated
   template <typename T>
   struct is_random_access_iterator_concept
   {
     static ETL_CONSTANT bool value = etl::is_random_access_iterator<T>::value;
   };
+
+  // Deprecated
+  template <typename T>
+  ETL_CONSTANT bool is_random_access_iterator_concept<T>::value;
 
 #if ETL_NOT_USING_STL || ETL_CPP11_NOT_SUPPORTED
   //*****************************************************************************
@@ -724,26 +954,6 @@ namespace etl
   }
 
   //*****************************************************************************
-  /// Get the 'begin' reverse_iterator for a container.
-  ///\ingroup container
-  //*****************************************************************************
-  template<typename TContainer>
-  ETL_CONSTEXPR typename TContainer::reverse_iterator rbegin(const TContainer& container)
-  {
-    return container.rbegin();
-  }
-
-  //*****************************************************************************
-  /// Get the 'begin' reverse_iterator for a container.
-  ///\ingroup container
-  //*****************************************************************************
-  template<typename TContainer>
-  ETL_CONSTEXPR typename TContainer::reverse_iterator crbegin(const TContainer& container)
-  {
-    return container.crbegin();
-  }
-
-  //*****************************************************************************
   /// Get the 'end' iterator for a container.
   ///\ingroup container
   //*****************************************************************************
@@ -774,11 +984,103 @@ namespace etl
   }
 
   //*****************************************************************************
+  /// Get the 'begin' pointer for an array.
+  ///\ingroup container
+  //*****************************************************************************
+  template<typename TValue, size_t Array_Size>
+  ETL_CONSTEXPR TValue* begin(TValue(&data)[Array_Size])
+  {
+    return &data[0];
+  }
+
+  //*****************************************************************************
+  /// Get the 'begin' const iterator for an array.
+  ///\ingroup container
+  //*****************************************************************************
+  template<typename TValue, size_t Array_Size>
+  ETL_CONSTEXPR const TValue* begin(const TValue(&data)[Array_Size])
+  {
+    return &data[0];
+  }
+
+  //*****************************************************************************
+  /// Get the 'begin' const iterator for an array.
+  ///\ingroup container
+  //*****************************************************************************
+  template<typename TValue, size_t Array_Size>
+  ETL_CONSTEXPR const TValue* cbegin(const TValue(&data)[Array_Size])
+  {
+    return &data[0];
+  }
+
+  //*****************************************************************************
+  /// Get the 'end' iterator for an array.
+  ///\ingroup container
+  //*****************************************************************************
+  template<typename TValue, size_t Array_Size>
+  ETL_CONSTEXPR TValue* end(TValue(&data)[Array_Size])
+  {
+    return &data[Array_Size];
+  }
+
+  //*****************************************************************************
+  /// Get the 'end' const iterator for an array.
+  ///\ingroup container
+  //*****************************************************************************
+  template<typename TValue, size_t Array_Size>
+  ETL_CONSTEXPR const TValue* end(const TValue(&data)[Array_Size])
+  {
+    return &data[Array_Size];
+  }
+
+  //*****************************************************************************
+  /// Get the 'end' const iterator for an array.
+  ///\ingroup container
+  //*****************************************************************************
+  template<typename TValue, size_t Array_Size>
+  ETL_CONSTEXPR const TValue* cend(const TValue(&data)[Array_Size])
+  {
+    return &data[Array_Size];
+  }
+#endif
+
+#if ETL_NOT_USING_STL || ETL_CPP14_NOT_SUPPORTED
+  //*****************************************************************************
+  /// Get the 'begin' reverse_iterator for a container.
+  ///\ingroup container
+  //*****************************************************************************
+  template<typename TContainer>
+  ETL_CONSTEXPR typename TContainer::reverse_iterator rbegin(TContainer& container)
+  {
+    return container.rbegin();
+  }
+
+  //*****************************************************************************
+  /// Get the 'begin' reverse_iterator for a container.
+  ///\ingroup container
+  //*****************************************************************************
+  template<typename TContainer>
+  ETL_CONSTEXPR typename TContainer::const_reverse_iterator rbegin(const TContainer& container)
+  {
+    return container.rbegin();
+  }
+
+  //*****************************************************************************
+  /// Get the 'begin' reverse_iterator for a container.
+  ///\ingroup container
+  //*****************************************************************************
+  template<typename TContainer>
+  ETL_CONSTEXPR typename TContainer::const_reverse_iterator crbegin(const TContainer& container)
+  {
+    return container.crbegin();
+  }
+
+  //*****************************************************************************
   /// Get the 'end' reverse_iterator for a container.
   ///\ingroup container
   //*****************************************************************************
   template<typename TContainer>
-  ETL_CONSTEXPR typename TContainer::const_iterator rend(const TContainer& container)
+  ETL_CONSTEXPR typename TContainer::reverse_iterator rend(TContainer& container)
   {
     return container.rend();
   }
@@ -788,97 +1090,47 @@ namespace etl
   ///\ingroup container
   //*****************************************************************************
   template<typename TContainer>
-  ETL_CONSTEXPR typename TContainer::reverse_iterator crend(const TContainer& container)
+  ETL_CONSTEXPR typename TContainer::const_reverse_iterator rend(const TContainer& container)
+  {
+    return container.rend();
+  }
+
+  //*****************************************************************************
+  /// Get the 'end' reverse_iterator for a container.
+  ///\ingroup container
+  //*****************************************************************************
+  template<typename TContainer>
+  ETL_CONSTEXPR typename TContainer::const_reverse_iterator crend(const TContainer& container)
   {
     return container.crend();
-  }
-
-  //*****************************************************************************
-  /// Get the 'begin' pointer for an array.
-  ///\ingroup container
-  //*****************************************************************************
-  template<typename TValue, const size_t ARRAY_SIZE>
-  ETL_CONSTEXPR TValue* begin(TValue(&data)[ARRAY_SIZE])
-  {
-    return &data[0];
-  }
-
-  //*****************************************************************************
-  /// Get the 'begin' const iterator for an array.
-  ///\ingroup container
-  //*****************************************************************************
-  template<typename TValue, const size_t ARRAY_SIZE>
-  ETL_CONSTEXPR const TValue* begin(const TValue(&data)[ARRAY_SIZE])
-  {
-    return &data[0];
-  }
-
-  //*****************************************************************************
-  /// Get the 'begin' const iterator for an array.
-  ///\ingroup container
-  //*****************************************************************************
-  template<typename TValue, const size_t ARRAY_SIZE>
-  ETL_CONSTEXPR const TValue* cbegin(const TValue(&data)[ARRAY_SIZE])
-  {
-    return &data[0];
   }
 
   //*****************************************************************************
   /// Get the 'begin' reverse_iterator for an array.
   ///\ingroup container
   //*****************************************************************************
-  template<typename TValue, const size_t ARRAY_SIZE>
-  ETL_OR_STD::reverse_iterator<TValue*> rbegin(const TValue(&data)[ARRAY_SIZE])
+  template<typename TValue, size_t Array_Size>
+  ETL_OR_STD::reverse_iterator<TValue*> rbegin(TValue(&data)[Array_Size])
   {
-    return ETL_OR_STD::reverse_iterator<TValue*>(&data[ARRAY_SIZE]);
+    return ETL_OR_STD::reverse_iterator<TValue*>(&data[Array_Size]);
   }
 
   //*****************************************************************************
   /// Get the 'begin' const reverse_iterator for an array.
   ///\ingroup container
   //*****************************************************************************
-  template<typename TValue, const size_t ARRAY_SIZE>
-  ETL_CONSTEXPR ETL_OR_STD::reverse_iterator<const TValue*> crbegin(const TValue(&data)[ARRAY_SIZE])
+  template<typename TValue, size_t Array_Size>
+  ETL_CONSTEXPR ETL_OR_STD::reverse_iterator<const TValue*> crbegin(const TValue(&data)[Array_Size])
   {
-    return ETL_OR_STD::reverse_iterator<const TValue*>(&data[ARRAY_SIZE]);
-  }
-
-  //*****************************************************************************
-  /// Get the 'end' iterator for an array.
-  ///\ingroup container
-  //*****************************************************************************
-  template<typename TValue, const size_t ARRAY_SIZE>
-  ETL_CONSTEXPR TValue* end(TValue(&data)[ARRAY_SIZE])
-  {
-    return &data[ARRAY_SIZE];
-  }
-
-  //*****************************************************************************
-  /// Get the 'end' const iterator for an array.
-  ///\ingroup container
-  //*****************************************************************************
-  template<typename TValue, const size_t ARRAY_SIZE>
-  ETL_CONSTEXPR const TValue* end(const TValue(&data)[ARRAY_SIZE])
-  {
-    return &data[ARRAY_SIZE];
-  }
-
-  //*****************************************************************************
-  /// Get the 'end' const iterator for an array.
-  ///\ingroup container
-  //*****************************************************************************
-  template<typename TValue, const size_t ARRAY_SIZE>
-  ETL_CONSTEXPR const TValue* cend(const TValue(&data)[ARRAY_SIZE])
-  {
-    return &data[ARRAY_SIZE];
+    return ETL_OR_STD::reverse_iterator<const TValue*>(&data[Array_Size]);
   }
 
   //*****************************************************************************
   /// Get the 'end' reverse_iterator for an array.
   ///\ingroup container
   //*****************************************************************************
-  template<typename TValue, const size_t ARRAY_SIZE>
-  ETL_CONSTEXPR ETL_OR_STD::reverse_iterator<TValue*> rend(const TValue(&data)[ARRAY_SIZE])
+  template<typename TValue, size_t Array_Size>
+  ETL_CONSTEXPR ETL_OR_STD::reverse_iterator<TValue*> rend(TValue(&data)[Array_Size])
   {
     return ETL_OR_STD::reverse_iterator<TValue*>(&data[0]);
   }
@@ -887,8 +1139,8 @@ namespace etl
   /// Get the 'end' const reverse_iterator for an array.
   ///\ingroup container
   //*****************************************************************************
-  template<typename TValue, const size_t ARRAY_SIZE>
-  ETL_CONSTEXPR ETL_OR_STD::reverse_iterator<const TValue*> crend(const TValue(&data)[ARRAY_SIZE])
+  template<typename TValue, size_t Array_Size>
+  ETL_CONSTEXPR ETL_OR_STD::reverse_iterator<const TValue*> crend(const TValue(&data)[Array_Size])
   {
     return ETL_OR_STD::reverse_iterator<const TValue*>(&data[0]);
   }
@@ -910,10 +1162,10 @@ namespace etl
   /// Get the size of an array in elements at run time, or compile time if C++11 or above.
   ///\ingroup container
   ///**************************************************************************
-  template<typename TValue, const size_t ARRAY_SIZE>
-  ETL_CONSTEXPR size_t size(TValue(&)[ARRAY_SIZE])
+  template<typename TValue, size_t Array_Size>
+  ETL_CONSTEXPR size_t size(TValue(&)[Array_Size])
   {
-    return ARRAY_SIZE;
+    return Array_Size;
   }
 #endif
 
@@ -924,11 +1176,11 @@ namespace etl
   ///\endcode
   ///\ingroup container
   ///**************************************************************************
-  template <typename T, const size_t ARRAY_SIZE>
-  char(&array_size(T(&array)[ARRAY_SIZE]))[ARRAY_SIZE];
-}
+  template <typename T, size_t Array_Size>
+  char(&array_size(T(&array)[Array_Size]))[Array_Size];
 
 #define ETL_ARRAY_SIZE(a) sizeof(etl::array_size(a))
+}
 
 #endif
 

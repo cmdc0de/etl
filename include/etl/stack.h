@@ -7,7 +7,7 @@ Embedded Template Library.
 https://github.com/ETLCPP/etl
 https://www.etlcpp.com
 
-Copyright(c) 2014 jwellbelove, Mark Kitson
+Copyright(c) 2014 John Wellbelove, Mark Kitson
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files(the "Software"), to deal
@@ -31,9 +31,6 @@ SOFTWARE.
 #ifndef ETL_STACK_INCLUDED
 #define ETL_STACK_INCLUDED
 
-#include <stddef.h>
-#include <stdint.h>
-
 #include "platform.h"
 #include "algorithm.h"
 #include "utility.h"
@@ -45,6 +42,9 @@ SOFTWARE.
 #include "debug_count.h"
 #include "type_traits.h"
 #include "placement_new.h"
+
+#include <stddef.h>
+#include <stdint.h>
 
 //*****************************************************************************
 ///\defgroup stack stack
@@ -601,6 +601,9 @@ namespace etl
     /// The uninitialised buffer of T used in the stack.
     container_type buffer[SIZE];
   };
+
+  template <typename T, const size_t SIZE>
+  ETL_CONSTANT size_t stack<T, SIZE>::MAX_SIZE;
 }
 
 #endif

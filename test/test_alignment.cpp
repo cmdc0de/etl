@@ -5,7 +5,7 @@ Embedded Template Library.
 https://github.com/ETLCPP/etl
 https://www.etlcpp.com
 
-Copyright(c) 2014 jwellbelove
+Copyright(c) 2014 John Wellbelove
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files(the "Software"), to deal
@@ -125,6 +125,23 @@ namespace
 
       etl::aligned_storage<100, 8>::type data9;
       f(static_cast<int>(data9));
+    }
+
+    //*************************************************************************
+    TEST(test_is_aligned_tests)
+    {
+      alignas(uint32_t) char buffer[2U * sizeof(uint32_t)];
+
+      char* p = buffer;
+
+      CHECK_TRUE(etl::is_aligned(p, std::alignment_of<uint32_t>()));
+      CHECK_TRUE(etl::is_aligned<alignof(uint32_t)>(p));
+      CHECK_TRUE(etl::is_aligned<uint32_t>(p));
+
+      ++p;
+      CHECK_FALSE(etl::is_aligned(p, std::alignment_of<uint32_t>()));
+      CHECK_FALSE(etl::is_aligned<alignof(uint32_t)>(p));
+      CHECK_FALSE(etl::is_aligned<uint32_t>(p));
     }
   };
 }

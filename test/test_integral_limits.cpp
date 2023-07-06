@@ -5,7 +5,7 @@ Embedded Template Library.
 https://github.com/ETLCPP/etl
 https://www.etlcpp.com
 
-Copyright(c) 2014 jwellbelove
+Copyright(c) 2014 John Wellbelove
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files(the "Software"), to deal
@@ -41,7 +41,7 @@ namespace
     //*************************************************************************
     TEST(test_min)
     {
-      CHECK_EQUAL(std::numeric_limits<char>::min(),               (char)etl::integral_limits<char>::min);
+      CHECK_EQUAL(std::numeric_limits<char>::min(),               etl::integral_limits<char>::min);
       CHECK_EQUAL(std::numeric_limits<signed char>::min(),        (signed char)etl::integral_limits<signed char>::min);
       CHECK_EQUAL(std::numeric_limits<unsigned char>::min(),      (unsigned char)etl::integral_limits<unsigned char>::min);
       CHECK_EQUAL(std::numeric_limits<short>::min(),              (short)etl::integral_limits<short>::min);

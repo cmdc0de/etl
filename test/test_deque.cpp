@@ -5,7 +5,7 @@ Embedded Template Library.
 https://github.com/ETLCPP/etl
 https://www.etlcpp.com
 
-Copyright(c) 2014 jwellbelove
+Copyright(c) 2014 John Wellbelove
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files(the "Software"), to deal
@@ -327,7 +327,9 @@ namespace
       DataNDC deque1(initial_data.begin(), initial_data.end());
       DataNDC deque2(deque1);
 
+#include "etl/private/diagnostic_self_assign_overloaded_push.h" 
       deque2 = deque2;
+#include "etl/private/diagnostic_pop.h"
 
       CHECK_EQUAL(deque1.size(), deque2.size());
       CHECK(std::equal(deque1.begin(), deque1.end(), deque2.begin()));
@@ -1489,6 +1491,16 @@ namespace
     }
 
     //*************************************************************************
+    TEST(test_emplace_back_return)
+    {
+      DataNDC data;
+
+      data.emplace_back("24");
+      auto& back = data.emplace_back("42");
+      CHECK_EQUAL(back, data.back());
+    }
+
+    //*************************************************************************
     TEST(test_push_back_excess)
     {
       DataNDC data;
@@ -1598,6 +1610,16 @@ namespace
       CHECK_NO_THROW(data.emplace_front("5"));
       CHECK_EQUAL(size_t(5), data.size());
       CHECK(std::equal(compare_data.begin(), compare_data.end(), data.begin()));
+    }
+
+    //*************************************************************************
+    TEST(test_emplace_front_return)
+    {
+      DataNDC data;
+
+      data.emplace_front("24");
+      auto& front = data.emplace_front("42");
+      CHECK_EQUAL(front, data.front());
     }
 
     //*************************************************************************

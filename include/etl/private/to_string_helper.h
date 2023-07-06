@@ -7,7 +7,7 @@ Embedded Template Library.
 https://github.com/ETLCPP/etl
 https://www.etlcpp.com
 
-Copyright(c) 2019 jwellbelove
+Copyright(c) 2019 John Wellbelove
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files(the "Software"), to deal
@@ -33,8 +33,6 @@ SOFTWARE.
 
 ///\ingroup private
 
-#include <math.h>
-
 #include "../platform.h"
 #include "../absolute.h"
 #include "../negative.h"
@@ -45,6 +43,8 @@ SOFTWARE.
 #include "../algorithm.h"
 #include "../iterator.h"
 #include "../limits.h"
+
+#include <math.h>
 
 #if ETL_USING_STL && ETL_USING_CPP11
   #include <iterator> // For std::begin, std::end and std::size

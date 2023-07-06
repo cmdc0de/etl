@@ -7,7 +7,7 @@ Embedded Template Library.
 https://github.com/ETLCPP/etl
 https://www.etlcpp.com
 
-Copyright(c) 2021 jwellbelove
+Copyright(c) 2021 John Wellbelove
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files(the "Software"), to deal
@@ -35,11 +35,10 @@ SOFTWARE.
 #include "utility.h"
 #include "type_traits.h"
 
+#if ETL_USING_CPP17
+
 namespace etl
 {
-#if ETL_USING_CPP11
-#if ETL_USING_CPP17 && !defined(ETL_OVERLOAD_FORCE_CPP14)
-
   //*************************************************************************
   /// Variadic template definition of overload for C++17 and above.
   //*************************************************************************
@@ -54,26 +53,6 @@ namespace etl
   //*************************************************************************
   template<typename... TOverloads> overload(TOverloads...)->overload<TOverloads...>;
 
-#else
-
-  //*************************************************************************
-  /// Variadic template definition of overload for C++14.
-  //*************************************************************************
-  template <typename TFirst, typename... TOthers>
-  struct overload : TFirst, overload<TOthers...>
-  {
-    using TFirst::operator();
-    using overload<TOthers...>::operator();
-  };
-
-  template <typename TFirst> 
-  struct overload<TFirst> : TFirst
-  {
-    using TFirst::operator();
-  };
-
-#endif
-
   //*************************************************************************
   /// Make an overload.
   //*************************************************************************
@@ -82,8 +61,8 @@ namespace etl
   {
     return overload<TOverloads...>{ etl::forward<TOverloads>(overloads)... };
   }
+}
 
 #endif
-}
 
 #endif

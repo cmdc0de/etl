@@ -5,7 +5,7 @@ Embedded Template Library.
 https://github.com/ETLCPP/etl
 https://www.etlcpp.com
 
-Copyright(c) 2021 jwellbelove
+Copyright(c) 2021 John Wellbelove
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files(the "Software"), to deal
@@ -33,14 +33,41 @@ SOFTWARE.
 
 #if !defined(ETL_CRC_FORCE_CPP03_IMPLEMENTATION)
 
+#include <vector>
 #include <functional>
+#include <algorithm>
 
 namespace
 {
   //*****************************************************************************
+  enum class FunctionCalled : int
+  {
+    Not_Called,
+    Free_Void_Called,
+    Free_Int_Called,
+    Free_Reference_Called,
+    Free_Moveableonly_Called,
+    Normal_Called,
+    Normal_Returning_Void_Called,
+    Alternative_Called,
+    Member_Void_Called,
+    Member_Void_Const_Called,
+    Member_Int_Called,
+    Member_Int_Const_Called,
+    Member_Reference_Called,
+    Member_Reference_Const_Called,
+    Member_Moveableonly_Called,
+    Member_Static_Called,
+    Operator_Called,
+    Operator_Const_Called,
+    Lambda_Called
+  };
+
+  FunctionCalled function_called = FunctionCalled::Not_Called;
+
+  //*****************************************************************************
   const int VALUE1 = 1;
   const int VALUE2 = 2;
-  bool function_called = false;
   bool parameter_correct = false;
 
   //*****************************************************************************
@@ -70,7 +97,7 @@ namespace
   //*****************************************************************************
   void free_void()
   {
-    function_called = true;
+    function_called = FunctionCalled::Free_Void_Called;
   }
 
   //*****************************************************************************
@@ -78,7 +105,7 @@ namespace
   //*****************************************************************************
   void free_int(int i, int j)
   {
-    function_called = true;
+    function_called = FunctionCalled::Free_Int_Called;;
     parameter_correct = (i == VALUE1) && (j == VALUE2);
   }
 
@@ -87,7 +114,7 @@ namespace
   //*****************************************************************************
   void free_reference(const Data& data, int j)
   {
-    function_called = true;
+    function_called = FunctionCalled::Free_Reference_Called;
     parameter_correct = (data.d == VALUE1) && (j == VALUE2);
   }
 
@@ -96,7 +123,7 @@ namespace
   //*****************************************************************************
   void free_moveableonly(MoveableOnlyData&& data)
   {
-    function_called = true;
+    function_called = FunctionCalled::Free_Moveableonly_Called;
     parameter_correct = (data.d == VALUE1);
   }
 
@@ -105,7 +132,7 @@ namespace
   //*****************************************************************************
   int normal(int i, int j)
   {
-    function_called = true;
+    function_called = FunctionCalled::Normal_Called;
     parameter_correct = (i == VALUE1) && (j == VALUE2);
 
     return i + j;
@@ -116,7 +143,7 @@ namespace
   //*****************************************************************************
   void normal_returning_void(int i, int j)
   {
-    function_called = true;
+    function_called = FunctionCalled::Normal_Returning_Void_Called;
     parameter_correct = (i == VALUE1) && (j == VALUE2);
   }
 
@@ -125,7 +152,7 @@ namespace
   //*****************************************************************************
   int alternative(int i, int j)
   {
-    function_called = true;
+    function_called = FunctionCalled::Alternative_Called;
     parameter_correct = (i == VALUE1) && (j == VALUE2);
 
     return i + j + 1;
@@ -142,25 +169,25 @@ namespace
     // void
     void member_void()
     {
-      function_called = true;
+      function_called = FunctionCalled::Member_Void_Called;
     }
 
     void member_void_const() const
     {
-      function_called = true;
+      function_called = FunctionCalled::Member_Void_Const_Called;
     }
 
     //*******************************************
     // int
     void member_int(int i, int j)
     {
-      function_called = true;
+      function_called = FunctionCalled::Member_Int_Called;
       parameter_correct = (i == VALUE1) && (j == VALUE2);
     }
 
     void member_int_const(int i, int j) const
     {
-      function_called = true;
+      function_called = FunctionCalled::Member_Int_Const_Called;
       parameter_correct = (i == VALUE1) && (j == VALUE2);
     }
 
@@ -168,13 +195,13 @@ namespace
     // reference
     void member_reference(const Data& data, int j)
     {
-      function_called = true;
+      function_called = FunctionCalled::Member_Reference_Called;
       parameter_correct = (data.d == VALUE1) && (j == VALUE2);
     }
 
     void member_reference_const(const Data& data, int j) const
     {
-      function_called = true;
+      function_called = FunctionCalled::Member_Reference_Const_Called;
       parameter_correct = (data.d == VALUE1) && (j == VALUE2);
     }
 
@@ -182,7 +209,7 @@ namespace
     // moveable only data
     void member_moveableonly(MoveableOnlyData&& data)
     {
-      function_called = true;
+      function_called = FunctionCalled::Member_Moveableonly_Called;
       parameter_correct = (data.d == VALUE1);
     }
 
@@ -190,7 +217,7 @@ namespace
     // static
     static void member_static(const Data& data, int j)
     {
-      function_called = true;
+      function_called = FunctionCalled::Member_Static_Called;
       parameter_correct = (data.d == VALUE1) && (j == VALUE2);
     }
 
@@ -198,12 +225,12 @@ namespace
     // operator()
     void operator()()
     {
-      function_called = true;
+      function_called = FunctionCalled::Operator_Called;
     }
 
     void operator()() const
     {
-      function_called = true;
+      function_called = FunctionCalled::Operator_Const_Called;
     }
   };
 
@@ -226,7 +253,7 @@ namespace
   {
     SetupFixture()
     {
-      function_called   = false;
+      function_called   = FunctionCalled::Not_Called;
       parameter_correct = false;
     }
   };
@@ -245,6 +272,7 @@ namespace
     }
 
     //*************************************************************************
+#if ETL_USING_CPP14
     TEST_FIXTURE(SetupFixture, test_constexpr_is_valid_false)
     {
       constexpr etl::delegate<void(void)> d;
@@ -254,6 +282,7 @@ namespace
 
       CHECK_THROW(d(), etl::delegate_uninitialised);
     }
+#endif
 
     //*************************************************************************
     TEST_FIXTURE(SetupFixture, test_is_valid_true)
@@ -266,24 +295,36 @@ namespace
     }
 
     //*************************************************************************
+    TEST_FIXTURE(SetupFixture, test_is_valid_after_clear)
+    {
+      etl::delegate<void(void)> d([] {});
+
+      CHECK_TRUE(d.is_valid());
+      d.clear();
+      CHECK_FALSE(d.is_valid());
+    }
+
+    //*************************************************************************
     TEST_FIXTURE(SetupFixture, test_free_void)
     {
       auto d = etl::delegate<void(void)>::create<free_void>();
 
       d();
 
-      CHECK(function_called);
+      CHECK(function_called == FunctionCalled::Free_Void_Called);
     }
 
     //*************************************************************************
+#if ETL_USING_CPP14
     TEST_FIXTURE(SetupFixture, test_free_void_constexpr)
     {
       constexpr auto d = etl::delegate<void(void)>::create<free_void>();
 
       d();
 
-      CHECK(function_called);
+      CHECK(function_called == FunctionCalled::Free_Void_Called);
     }
+#endif
 
     //*************************************************************************
     TEST_FIXTURE(SetupFixture, test_free_int)
@@ -292,20 +333,22 @@ namespace
 
       d(VALUE1, VALUE2);
 
-      CHECK(function_called);
+      CHECK(function_called == FunctionCalled::Free_Int_Called);
       CHECK(parameter_correct);
     }
 
     //*************************************************************************
+#if ETL_USING_CPP14
     TEST_FIXTURE(SetupFixture, test_free_int_constexpr)
     {
       constexpr auto d = etl::delegate<void(int, int)>::create<free_int>();
 
       d(VALUE1, VALUE2);
 
-      CHECK(function_called);
+      CHECK(function_called == FunctionCalled::Free_Int_Called);
       CHECK(parameter_correct);
     }
+#endif
 
     //*************************************************************************
     TEST_FIXTURE(SetupFixture, test_free_reference)
@@ -317,11 +360,12 @@ namespace
 
       d(data, VALUE2);
 
-      CHECK(function_called);
+      CHECK(function_called == FunctionCalled::Free_Reference_Called);
       CHECK(parameter_correct);
     }
 
     //*************************************************************************
+#if ETL_USING_CPP14
     TEST_FIXTURE(SetupFixture, test_free_reference_constexpr)
     {
       constexpr etl::delegate<void(const Data&, int)> d = etl::delegate<void(const Data&, int)>::create<free_reference>();
@@ -331,9 +375,10 @@ namespace
 
       d(data, VALUE2);
 
-      CHECK(function_called);
+      CHECK(function_called == FunctionCalled::Free_Reference_Called);
       CHECK(parameter_correct);
     }
+#endif
 
     //*************************************************************************
     TEST_FIXTURE(SetupFixture, test_free_moveableonly)
@@ -345,11 +390,12 @@ namespace
 
       d(std::move(data));
 
-      CHECK(function_called);
+      CHECK(function_called == FunctionCalled::Free_Moveableonly_Called);
       CHECK(parameter_correct);
     }
 
     //*************************************************************************
+#if ETL_USING_CPP14
     TEST_FIXTURE(SetupFixture, test_free_moveableonly_constexpr)
     {
       constexpr auto d = etl::delegate<void(MoveableOnlyData&&)>::create<free_moveableonly>();
@@ -359,31 +405,32 @@ namespace
 
       d(std::move(data));
 
-      CHECK(function_called);
+      CHECK(function_called == FunctionCalled::Free_Moveableonly_Called);
       CHECK(parameter_correct);
     }
+#endif
 
     //*************************************************************************
     TEST_FIXTURE(SetupFixture, test_lambda_int)
     {
-      etl::delegate<void(int, int)> d([](int i, int j) { function_called = true; parameter_correct = (i == VALUE1) && (j == VALUE2); });
+      etl::delegate<void(int, int)> d([](int i, int j) { function_called = FunctionCalled::Lambda_Called; parameter_correct = (i == VALUE1) && (j == VALUE2); });
 
       d(VALUE1, VALUE2);
 
-      CHECK(function_called);
+      CHECK(function_called == FunctionCalled::Lambda_Called);
       CHECK(parameter_correct);
     }
 
     //*************************************************************************
     TEST_FIXTURE(SetupFixture, test_lambda_int_create)
     {
-      auto lambda = [](int i, int j) { function_called = true; parameter_correct = (i == VALUE1) && (j == VALUE2); };
+      auto lambda = [](int i, int j) { function_called = FunctionCalled::Lambda_Called; parameter_correct = (i == VALUE1) && (j == VALUE2); };
 
       etl::delegate<void(int, int)> d(lambda);
 
       d(VALUE1, VALUE2);
 
-      CHECK(function_called);
+      CHECK(function_called == FunctionCalled::Lambda_Called);
       CHECK(parameter_correct);
     }
 
@@ -396,7 +443,7 @@ namespace
 
       d();
 
-      CHECK(function_called);
+      CHECK(function_called == FunctionCalled::Operator_Called);
     }
 
     //*************************************************************************
@@ -408,10 +455,11 @@ namespace
 
       d();
 
-      CHECK(function_called);
+      CHECK(function_called == FunctionCalled::Operator_Called);
     }
 
     //*************************************************************************
+#if ETL_USING_CPP14
     TEST_FIXTURE(SetupFixture, test_member_operator_void_create_constexpr)
     {
       static Test test;
@@ -420,8 +468,9 @@ namespace
 
       d();
 
-      CHECK(function_called);
+      CHECK(function_called == FunctionCalled::Operator_Called);
     }
+#endif
 
     //*************************************************************************
     TEST_FIXTURE(SetupFixture, test_member_operator_void_const)
@@ -432,7 +481,7 @@ namespace
 
       d();
 
-      CHECK(function_called);
+      CHECK(function_called == FunctionCalled::Operator_Const_Called);
     }
 
 #if !defined(ETL_COMPILER_GCC)
@@ -443,18 +492,20 @@ namespace
 
       d();
 
-      CHECK(function_called);
+      CHECK(function_called == FunctionCalled::Operator_Called);
     }
 
     //*************************************************************************
+#if ETL_USING_CPP14
     TEST_FIXTURE(SetupFixture, test_member_operator_void_compile_time_constexpr)
     {
       constexpr auto d = etl::delegate<void(void)>::create<Test, test_static>();
 
       d();
 
-      CHECK(function_called);
+      CHECK(function_called == FunctionCalled::Operator_Called);
     }
+#endif
 
     //*************************************************************************
     TEST_FIXTURE(SetupFixture, test_member_operator_void_compile_time_const)
@@ -463,18 +514,20 @@ namespace
 
       d();
 
-      CHECK(function_called);
+      CHECK(function_called == FunctionCalled::Operator_Const_Called);
     }
 
     //*************************************************************************
+#if ETL_USING_CPP14
     TEST_FIXTURE(SetupFixture, test_member_operator_void_compile_time_const_constexpr)
     {
       constexpr auto d = etl::delegate<void(void)>::create<const Test, const_test_static>();
 
       d();
 
-      CHECK(function_called);
+      CHECK(function_called == FunctionCalled::Operator_Const_Called);
     }
+#endif
 #endif
 
     //*************************************************************************
@@ -488,7 +541,7 @@ namespace
 
       d();
 
-      CHECK(function_called);
+      CHECK(function_called == FunctionCalled::Operator_Called);
     }
 
     //*************************************************************************
@@ -500,10 +553,11 @@ namespace
 
       d();
 
-      CHECK(function_called);
+      CHECK(function_called == FunctionCalled::Member_Void_Called);
     }
 
     //*************************************************************************
+#if ETL_USING_CPP14
     TEST_FIXTURE(SetupFixture, test_member_void_constexpr)
     {
       static Test test;
@@ -512,8 +566,9 @@ namespace
 
       d();
 
-      CHECK(function_called);
+      CHECK(function_called == FunctionCalled::Member_Void_Called);
     }
+#endif
 
     //*************************************************************************
     TEST_FIXTURE(SetupFixture, test_member_void_const)
@@ -524,10 +579,11 @@ namespace
 
       d();
 
-      CHECK(function_called);
+      CHECK(function_called == FunctionCalled::Member_Void_Const_Called);
     }
 
     //*************************************************************************
+#if ETL_USING_CPP14
     TEST_FIXTURE(SetupFixture, test_member_void_const_constexpr)
     {
       static const Test test;
@@ -536,8 +592,9 @@ namespace
 
       d();
 
-      CHECK(function_called);
+      CHECK(function_called == FunctionCalled::Member_Void_Const_Called);
     }
+#endif
 
     //*************************************************************************
     TEST_FIXTURE(SetupFixture, test_member_int)
@@ -548,11 +605,12 @@ namespace
 
       d(VALUE1, VALUE2);
 
-      CHECK(function_called);
+      CHECK(function_called == FunctionCalled::Member_Int_Called);
       CHECK(parameter_correct);
     }
 
     //*************************************************************************
+#if ETL_USING_CPP14
     TEST_FIXTURE(SetupFixture, test_member_int_constexpr)
     {
       static Test test;
@@ -561,9 +619,10 @@ namespace
 
       d(VALUE1, VALUE2);
 
-      CHECK(function_called);
+      CHECK(function_called == FunctionCalled::Member_Int_Called);
       CHECK(parameter_correct);
     }
+#endif
 
     //*************************************************************************
     TEST_FIXTURE(SetupFixture, test_member_int_const)
@@ -574,11 +633,12 @@ namespace
 
       d(VALUE1, VALUE2);
 
-      CHECK(function_called);
+      CHECK(function_called == FunctionCalled::Member_Int_Const_Called);
       CHECK(parameter_correct);
     }
 
     //*************************************************************************
+#if ETL_USING_CPP14
     TEST_FIXTURE(SetupFixture, test_member_int_const_constexpr)
     {
       static const Test test;
@@ -587,9 +647,10 @@ namespace
 
       d(VALUE1, VALUE2);
 
-      CHECK(function_called);
+      CHECK(function_called == FunctionCalled::Member_Int_Const_Called);
       CHECK(parameter_correct);
     }
+#endif
 
     //*************************************************************************
     TEST_FIXTURE(SetupFixture, test_member_reference)
@@ -602,11 +663,12 @@ namespace
 
       d(data, VALUE2);
 
-      CHECK(function_called);
+      CHECK(function_called == FunctionCalled::Member_Reference_Called);
       CHECK(parameter_correct);
     }
 
     //*************************************************************************
+#if ETL_USING_CPP14
     TEST_FIXTURE(SetupFixture, test_member_reference_constexpr)
     {
       static Test test;
@@ -617,9 +679,10 @@ namespace
 
       d(data, VALUE2);
 
-      CHECK(function_called);
+      CHECK(function_called == FunctionCalled::Member_Reference_Called);
       CHECK(parameter_correct);
     }
+#endif
 
     //*************************************************************************
     TEST_FIXTURE(SetupFixture, test_member_reference_const)
@@ -632,11 +695,12 @@ namespace
 
       d(data, VALUE2);
 
-      CHECK(function_called);
+      CHECK(function_called == FunctionCalled::Member_Reference_Const_Called);
       CHECK(parameter_correct);
     }
 
     //*************************************************************************
+#if ETL_USING_CPP14
     TEST_FIXTURE(SetupFixture, test_member_reference_const_constexpr)
     {
       static const Test test;
@@ -647,9 +711,10 @@ namespace
 
       d(data, VALUE2);
 
-      CHECK(function_called);
+      CHECK(function_called == FunctionCalled::Member_Reference_Const_Called);
       CHECK(parameter_correct);
     }
+#endif
 
     //*************************************************************************
     TEST_FIXTURE(SetupFixture, test_member_moveableonly)
@@ -662,11 +727,12 @@ namespace
 
       d(std::move(data));
 
-      CHECK(function_called);
+      CHECK(function_called == FunctionCalled::Member_Moveableonly_Called);
       CHECK(parameter_correct);
     }
 
     //*************************************************************************
+#if ETL_USING_CPP14
     TEST_FIXTURE(SetupFixture, test_member_moveableonly_constexpr)
     {
       static Test test;
@@ -677,9 +743,10 @@ namespace
 
       d(std::move(data));
 
-      CHECK(function_called);
+      CHECK(function_called == FunctionCalled::Member_Moveableonly_Called);
       CHECK(parameter_correct);
     }
+#endif
 
     //*************************************************************************
     TEST_FIXTURE(SetupFixture, test_member_static)
@@ -691,11 +758,12 @@ namespace
 
       d(data, VALUE2);
 
-      CHECK(function_called);
+      CHECK(function_called == FunctionCalled::Member_Static_Called);
       CHECK(parameter_correct);
     }
 
     //*************************************************************************
+#if ETL_USING_CPP14
     TEST_FIXTURE(SetupFixture, test_member_static_constexpr)
     {
       constexpr auto d = etl::delegate<void(const Data&, int)>::create<Test::member_static>();
@@ -705,9 +773,10 @@ namespace
 
       d(data, VALUE2);
 
-      CHECK(function_called);
+      CHECK(function_called == FunctionCalled::Member_Static_Called);
       CHECK(parameter_correct);
     }
+#endif
 
 #if !(defined(ETL_COMPILER_GCC) && (__GNUC__ <= 5))
     //*************************************************************************
@@ -717,18 +786,20 @@ namespace
 
       d();
 
-      CHECK(function_called);
+      CHECK(function_called == FunctionCalled::Member_Void_Called);
     }
 
     //*************************************************************************
+#if ETL_USING_CPP14
     TEST_FIXTURE(SetupFixture, test_member_void_compile_time_constexpr)
     {
       constexpr auto d = etl::delegate<void(void)>::create<Test, test_static, &Test::member_void>();
 
       d();
 
-      CHECK(function_called);
+      CHECK(function_called == FunctionCalled::Member_Void_Called);
     }
+#endif
 
     //*************************************************************************
     TEST_FIXTURE(SetupFixture, test_member_void_const_compile_time)
@@ -737,18 +808,20 @@ namespace
 
       d();
 
-      CHECK(function_called);
+      CHECK(function_called == FunctionCalled::Member_Void_Const_Called);
     }
 
     //*************************************************************************
+#if ETL_USING_CPP14
     TEST_FIXTURE(SetupFixture, test_member_void_const_compile_time_constexpr)
     {
       constexpr auto d = etl::delegate<void(void)>::create<Test, const_test_static, &Test::member_void_const>();
 
       d();
 
-      CHECK(function_called);
+      CHECK(function_called == FunctionCalled::Member_Void_Const_Called);
     }
+#endif
 
     //*************************************************************************
     TEST_FIXTURE(SetupFixture, test_member_int_compile_time)
@@ -757,20 +830,22 @@ namespace
 
       d(VALUE1, VALUE2);
 
-      CHECK(function_called);
+      CHECK(function_called == FunctionCalled::Member_Int_Called);
       CHECK(parameter_correct);
     }
 
     //*************************************************************************
+#if ETL_USING_CPP14
     TEST_FIXTURE(SetupFixture, test_member_int_compile_time_constexpr)
     {
       constexpr auto d = etl::delegate<void(int, int)>::create<Test, test_static, &Test::member_int>();
 
       d(VALUE1, VALUE2);
 
-      CHECK(function_called);
+      CHECK(function_called == FunctionCalled::Member_Int_Called);
       CHECK(parameter_correct);
     }
+#endif
 
     //*************************************************************************
     TEST_FIXTURE(SetupFixture, test_member_int_const_compile_time)
@@ -779,20 +854,22 @@ namespace
 
       d(VALUE1, VALUE2);
 
-      CHECK(function_called);
+      CHECK(function_called == FunctionCalled::Member_Int_Const_Called);
       CHECK(parameter_correct);
     }
 
     //*************************************************************************
+#if ETL_USING_CPP14
     TEST_FIXTURE(SetupFixture, test_member_int_const_compile_time_constexpr)
     {
       constexpr auto d = etl::delegate<void(int, int)>::create<Test, const_test_static, &Test::member_int_const>();
 
       d(VALUE1, VALUE2);
 
-      CHECK(function_called);
+      CHECK(function_called == FunctionCalled::Member_Int_Const_Called);
       CHECK(parameter_correct);
     }
+#endif
 
     //*************************************************************************
     TEST_FIXTURE(SetupFixture, test_member_reference_compile_time)
@@ -804,11 +881,12 @@ namespace
 
       d(data, VALUE2);
 
-      CHECK(function_called);
+      CHECK(function_called == FunctionCalled::Member_Reference_Called);
       CHECK(parameter_correct);
     }
 
     //*************************************************************************
+#if ETL_USING_CPP14
     TEST_FIXTURE(SetupFixture, test_member_reference_compile_time_constexpr)
     {
       constexpr auto d = etl::delegate<void(const Data&, int)>::create<Test, test_static, &Test::member_reference>();
@@ -818,9 +896,10 @@ namespace
 
       d(data, VALUE2);
 
-      CHECK(function_called);
+      CHECK(function_called == FunctionCalled::Member_Reference_Called);
       CHECK(parameter_correct);
     }
+#endif
 
     //*************************************************************************
     TEST_FIXTURE(SetupFixture, test_member_reference_const_compile_time)
@@ -832,11 +911,12 @@ namespace
 
       d(data, VALUE2);
 
-      CHECK(function_called);
+      CHECK(function_called == FunctionCalled::Member_Reference_Const_Called);
       CHECK(parameter_correct);
     }
 
     //*************************************************************************
+#if ETL_USING_CPP14
     TEST_FIXTURE(SetupFixture, test_member_reference_const_compile_time_constexpr)
     {
       constexpr auto d = etl::delegate<void(const Data&, int)>::create<Test, const_test_static, &Test::member_reference_const>();
@@ -846,9 +926,10 @@ namespace
 
       d(data, VALUE2);
 
-      CHECK(function_called);
+      CHECK(function_called == FunctionCalled::Member_Reference_Const_Called);
       CHECK(parameter_correct);
     }
+#endif
 
     //*************************************************************************
     TEST_FIXTURE(SetupFixture, test_set_free_int)
@@ -859,7 +940,7 @@ namespace
 
       d(VALUE1, VALUE2);
 
-      CHECK(function_called);
+      CHECK(function_called == FunctionCalled::Free_Int_Called);
       CHECK(parameter_correct);
     }
 
@@ -868,11 +949,11 @@ namespace
     {
       etl::delegate<void(int, int)> d;
       
-      d.set([](int i, int j) { function_called = true; parameter_correct = (i == VALUE1) && (j == VALUE2); });
+      d.set([](int i, int j) { function_called = FunctionCalled::Lambda_Called; parameter_correct = (i == VALUE1) && (j == VALUE2); });
 
       d(VALUE1, VALUE2);
 
-      CHECK(function_called);
+      CHECK(function_called == FunctionCalled::Lambda_Called);
       CHECK(parameter_correct);
     }
 
@@ -889,7 +970,7 @@ namespace
 
       d(data, VALUE2);
 
-      CHECK(function_called);
+      CHECK(function_called == FunctionCalled::Member_Reference_Called);
       CHECK(parameter_correct);
     }
 
@@ -906,7 +987,7 @@ namespace
 
       d(data, VALUE2);
 
-      CHECK(function_called);
+      CHECK(function_called == FunctionCalled::Member_Reference_Const_Called);
       CHECK(parameter_correct);
     }
 
@@ -922,7 +1003,7 @@ namespace
 
       d(data, VALUE2);
 
-      CHECK(function_called);
+      CHECK(function_called == FunctionCalled::Member_Reference_Called);
       CHECK(parameter_correct);
     }
 
@@ -938,7 +1019,7 @@ namespace
 
       d(data, VALUE2);
 
-      CHECK(function_called);
+      CHECK(function_called == FunctionCalled::Member_Reference_Const_Called);
       CHECK(parameter_correct);
     }
 #endif
@@ -953,11 +1034,12 @@ namespace
 
       d2(VALUE1, VALUE2);
 
-      CHECK(function_called);
+      CHECK(function_called == FunctionCalled::Member_Int_Called);
       CHECK(parameter_correct);
     }
 
     //*************************************************************************
+#if ETL_USING_CPP14
     TEST_FIXTURE(SetupFixture, test_copy_construct_constexpr)
     {
       static Test test;
@@ -967,9 +1049,10 @@ namespace
 
       d2(VALUE1, VALUE2);
 
-      CHECK(function_called);
+      CHECK(function_called == FunctionCalled::Member_Int_Called);
       CHECK(parameter_correct);
     }
+#endif
 
     //*************************************************************************
     TEST_FIXTURE(SetupFixture, test_assignment)
@@ -983,7 +1066,7 @@ namespace
 
       d2(VALUE1, VALUE2);
 
-      CHECK(function_called);
+      CHECK(function_called == FunctionCalled::Member_Int_Called);
       CHECK(parameter_correct);
     }
 
@@ -1090,7 +1173,7 @@ namespace
       bool was_called = d.call_if(VALUE1, VALUE2);
 
       CHECK(was_called);
-      CHECK(function_called);
+      CHECK(function_called == FunctionCalled::Normal_Returning_Void_Called);
       CHECK(parameter_correct);
     }
 
@@ -1102,7 +1185,7 @@ namespace
       bool was_called = d.call_if(VALUE1, VALUE2);
 
       CHECK(!was_called);
-      CHECK(!function_called);
+      CHECK(function_called == FunctionCalled::Not_Called);
       CHECK(!parameter_correct);
     }
 
@@ -1115,8 +1198,54 @@ namespace
 
       d(VALUE1, VALUE2);
 
-      CHECK(function_called);
+      CHECK(function_called == FunctionCalled::Free_Int_Called);
       CHECK(parameter_correct);
+    }
+
+    //*************************************************************************
+    TEST_FIXTURE(SetupFixture, test_delegate_identification)
+    {
+      Test test1;
+      Test test2;
+
+      auto d1 = etl::delegate<void(int, int)>::create<free_int>();
+      auto d2 = etl::delegate<void(int, int)>::create<Test, &Test::member_int>(test1);
+      auto d3 = etl::delegate<void(int, int)>::create<Test, &Test::member_int>(test2);
+
+      etl::delegate<void(int, int)> d4;
+
+      using Delegate_List = std::vector<etl::delegate<void(int, int)>>;
+
+      Delegate_List delegate_list = { d1, d2, d3 };
+
+      Delegate_List::const_iterator itr;
+
+      d4 = d1;
+
+      itr = std::find(delegate_list.begin(), delegate_list.end(), d4);
+      CHECK(*itr == d1);
+      CHECK(*itr != d2);
+      CHECK(*itr != d3);
+
+      d4 = d2;
+
+      itr = std::find(delegate_list.begin(), delegate_list.end(), d4);
+      CHECK(*itr != d1);
+      CHECK(*itr == d2);
+      CHECK(*itr != d3);
+
+      d4 = d3;
+
+      itr = std::find(delegate_list.begin(), delegate_list.end(), d4);
+      CHECK(*itr != d1);
+      CHECK(*itr != d2);
+      CHECK(*itr == d3);
+
+      d4 = etl::delegate<void(int, int)>::create<Test, &Test::member_int>(test2); // Same as d3
+      itr = std::find(delegate_list.begin(), delegate_list.end(), d4);
+      CHECK(*itr != d1);
+      CHECK(*itr != d2);
+      CHECK(*itr == d3);
     }
   };
 }

@@ -5,7 +5,7 @@ Embedded Template Library.
 https://github.com/ETLCPP/etl
 https://www.etlcpp.com
 
-Copyright(c) 2017 jwellbelove
+Copyright(c) 2017 John Wellbelove
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files(the "Software"), to deal
@@ -563,9 +563,7 @@ namespace
       Data5  aw5;
       size_t hash = etl::hash<Data5>()(aw5);
 
-
       size_t compare_hash = etl::private_hash::generic_hash<size_t>(reinterpret_cast<const uint8_t*>(data5), reinterpret_cast<const uint8_t*>(data5 + 5U));
-
 
       CHECK_EQUAL(compare_hash, hash);
     }

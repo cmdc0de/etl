@@ -5,7 +5,7 @@ Embedded Template Library.
 https://github.com/ETLCPP/etl
 https://www.etlcpp.com
 
-Copyright(c) 2019 jwellbelove
+Copyright(c) 2019 John Wellbelove
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files(the "Software"), to deal
@@ -85,15 +85,15 @@ namespace
   Test test;
 
   // Callback for 'member'.
-  constexpr etl::delegate<void(size_t)> member_callback = etl::delegate<void(size_t)>::create<Test, test, &Test::member>();
+  ETL_CONSTEXPR14 etl::delegate<void(size_t)> member_callback = etl::delegate<void(size_t)>::create<Test, test, &Test::member>();
 
   // Callback for 'global'.
-  constexpr etl::delegate<void(size_t)> global_callback = etl::delegate<void(size_t)>::create<global>();
+  ETL_CONSTEXPR14 etl::delegate<void(size_t)> global_callback = etl::delegate<void(size_t)>::create<global>();
 
   // Callback for 'unhandled'.
-  constexpr etl::delegate<void(size_t)> unhandled_callback = etl::delegate<void(size_t)>::create<unhandled>();
+  ETL_CONSTEXPR14 etl::delegate<void(size_t)> unhandled_callback = etl::delegate<void(size_t)>::create<unhandled>();
 
-  constexpr etl::delegate<void(size_t)> delegate_list[]
+  ETL_CONSTEXPR14 etl::delegate<void(size_t)> delegate_list[]
   {
     global_callback,
     member_callback,

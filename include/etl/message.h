@@ -5,7 +5,7 @@ Embedded Template Library.
 https://github.com/ETLCPP/etl
 https://www.etlcpp.com
 
-Copyright(c) 2017 jwellbelove
+Copyright(c) 2017 John Wellbelove
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files(the "Software"), to deal
@@ -29,14 +29,14 @@ SOFTWARE.
 #ifndef ETL_MESSAGE_INCLUDED
 #define ETL_MESSAGE_INCLUDED
 
-#include <stdint.h>
-
 #include "platform.h"
 #include "error_handler.h"
 #include "exception.h"
 #include "message_types.h"
 #include "type_traits.h"
 #include "static_assert.h"
+
+#include <stdint.h>
 
 namespace etl
 {
@@ -86,16 +86,16 @@ namespace etl
 
   public:
 
-    enum
-    {
-      ID = ID_
-    };
+    static ETL_CONSTANT etl::message_id_t ID = ID_;
 
     ETL_NODISCARD etl::message_id_t get_message_id() const ETL_NOEXCEPT ETL_OVERRIDE
     {
       return ID;
     }
   };
+
+  template <etl::message_id_t ID_, typename TParent>
+  ETL_CONSTANT etl::message_id_t message<ID_, TParent>::ID;
 }
 
 #endif

@@ -5,7 +5,7 @@ Embedded Template Library.
 https://github.com/ETLCPP/etl
 https://www.etlcpp.com
 
-Copyright(c) 2020 jwellbelove
+Copyright(c) 2020 John Wellbelove
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files(the "Software"), to deal
@@ -89,6 +89,7 @@ namespace
     }
 
     //*************************************************************************
+#if ETL_USING_CPP14
     TEST(test_constexpr)
     {
       constexpr Flags cef1;
@@ -176,6 +177,7 @@ namespace
       CHECK(!is_not_same2);
       CHECK(!is_not_same3);
     }
+#endif
 
     //*************************************************************************
     TEST(test_value_masked)

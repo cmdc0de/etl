@@ -7,7 +7,7 @@ Embedded Template Library.
 https://github.com/ETLCPP/etl
 https://www.etlcpp.com
 
-Copyright(c) 2021 jwellbelove
+Copyright(c) 2021 John Wellbelove
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files(the "Software"), to deal
@@ -31,9 +31,6 @@ SOFTWARE.
 #ifndef ETL_MEM_CAST_INCLUDED
 #define ETL_MEM_CAST_INCLUDED
 
-#include <stdint.h>
-#include <string.h>
-
 #include "platform.h"
 #include "memory.h"
 #include "static_assert.h"
@@ -44,6 +41,9 @@ SOFTWARE.
 #include "error_handler.h"
 #include "file_error_numbers.h"
 #include "binary.h"
+
+#include <stdint.h>
+#include <string.h>
 
 namespace etl
 {
@@ -314,6 +314,12 @@ namespace etl
     /// The internal buffer
     etl::uninitialized_buffer<Size, 1U, Alignment> buffer;
   };
+
+  template <size_t Size_, size_t Alignment_>
+  ETL_CONSTANT size_t mem_cast<Size_, Alignment_>::Size;
+
+  template <size_t Size_, size_t Alignment_>
+  ETL_CONSTANT size_t mem_cast<Size_, Alignment_>::Alignment;
 
   //*****************************************************************************
   /// mem_cast_ptr

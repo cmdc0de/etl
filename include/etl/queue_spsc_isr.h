@@ -7,7 +7,7 @@ Embedded Template Library.
 https://github.com/ETLCPP/etl
 https://www.etlcpp.com
 
-Copyright(c) 2018 jwellbelove
+Copyright(c) 2018 John Wellbelove
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files(the "Software"), to deal
@@ -31,9 +31,6 @@ SOFTWARE.
 #ifndef ETL_SPSC_QUEUE_ISR_INCLUDED
 #define ETL_SPSC_QUEUE_ISR_INCLUDED
 
-#include <stddef.h>
-#include <stdint.h>
-
 #include "platform.h"
 #include "alignment.h"
 #include "parameter_type.h"
@@ -41,6 +38,9 @@ SOFTWARE.
 #include "integral_limits.h"
 #include "utility.h"
 #include "placement_new.h"
+
+#include <stddef.h>
+#include <stdint.h>
 
 namespace etl
 {
@@ -797,6 +797,9 @@ namespace etl
     /// The uninitialised buffer of T used in the queue_spsc_isr.
     typename etl::aligned_storage<sizeof(T), etl::alignment_of<T>::value>::type buffer[MAX_SIZE];
   };
+
+  template <typename T, size_t SIZE, typename TAccess, const size_t MEMORY_MODEL>
+  ETL_CONSTANT typename queue_spsc_isr<T, SIZE, TAccess, MEMORY_MODEL>::size_type queue_spsc_isr<T, SIZE, TAccess, MEMORY_MODEL>::MAX_SIZE;
 }
 
 #endif

@@ -5,7 +5,7 @@ Embedded Template Library.
 https://github.com/ETLCPP/etl
 https://www.etlcpp.com
 
-Copyright(c) 2021 jwellbelove
+Copyright(c) 2021 John Wellbelove
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files(the "Software"), to deal
@@ -64,7 +64,7 @@ namespace
     {
     }
 
-    void on_receive(const Message1& msg)
+    void on_receive(const Message1&)
     {
     }
 
@@ -85,7 +85,7 @@ namespace
     {
     }
 
-    void on_receive(const Message1& msg)
+    void on_receive(const Message1&)
     {
     }
 
@@ -106,7 +106,7 @@ namespace
     {
     }
 
-    void on_receive(const Message1& msg)
+    void on_receive(const Message1&)
     {
     }
 
@@ -127,7 +127,7 @@ namespace
     {
     }
 
-    void on_receive(const Message1& msg)
+    void on_receive(const Message1&)
     {
     }
 
@@ -148,7 +148,7 @@ namespace
     {
     }
 
-    void on_receive(const Message1& msg)
+    void on_receive(const Message1&)
     {
     }
 

@@ -1,4 +1,305 @@
 ===============================================================================
+20.37.0
+#708 Fix missing class key with friend.
+#709 intrusive_list::iterator operator -> should not dereference pointer before return.
+#710 Calling accept on etl::variant visits a copy instead of the original object.
+#711 Added etl::is_forward_link, etl::is_bidirectional_link and etl::is_tree_link to intrusive links.
+     Added Constructors, access and status member functions to intrusive links.
+#712 Unable to use etl::optional with non-default-constructible POD objects.
+#716 etl::variant (variant_varadic) default constructed state
+#720 etl::optional rvalue value_or() broken
+#722 Bitset accesses memory out of bounds
+Modified etl::visitor to allow direct specification of the argument type.
+Added etl::is_visitor trait.
+Removed default link type for etl::intrusive_list and etl::intrusive_forward_list
+
+===============================================================================
+20.36.2
+#707 parameter_pack: Fix C++17 pedantic build
+
+===============================================================================
+20.36.1
+#700 Compilation error for [] map operator. Fixed map const placement new issue.
+Re-enabled memcast tests.
+
+===============================================================================
+20.36.0
+#663 Make unit tests compile for C++20
+#675 Compilation error in optional.h
+#684 Added sanitization fix for MinGW
+#687 Build failure. constexpr keyword before template keyword 
+#689 Add as_bytes and as_writable_bytes
+#690 Add rvalue accessors to expected and optional and update constructors
+#692 operator [] for flat_map always calls default constructor for mapped_type
+#695 Visiting a const variant (variadic)
+#698 Behaviour of bidirectional_link nodes. Links are now cleared when unlinked
+#699 Optional(POD) operator bool explicit
+Optimised map/flat_map/unordered_map [] operator and insert()
+Removed [] operator for reference_flat_map
+Unit tests compile for C++11
+Fixed C++11 constexpr compatibility
+Removed redundant 'const' in template parameters
+Updated CI scripts to enable C++ standard and optimisation selection
+Updated static constant definitions
+Fixed incorrect return types for reverse iterator begin() & end()
+Updated C++ standard conditional compilation for reverse iterator functions
+Fixed latest Address Sanitizer issues
+Message packet unused parameter fix
+Added ETL_OR_STD17 macro as the namespace for size()
+Added Tasking compiler
+Fix type traits generator
+Fix test array sizes
+Changed some ETL_ASSERT macros to ETL_ASSERT_OR_RETURN
+Updated CMake files to allow C++ standard selection
+Replaced ETL_ASSERT_AND_RETURN with ETL_ASSERT_OR_RETURN
+Changed native char8_t check
+Renamed Github vs2022.yml to visual-studio.yml
+Updated Unittest++ checks
+Comments and noexcept updates to placement new
+etl::variant (variadic) refactor and updates for C++ standards compatibility
+etl::overload available in C++17 only
+map/flat_map speed optimisations
+Various C++03 compatibilty updates for maps
+Refactored Bash compilation scripts to allow selection of C++ standard and optimisation level
+Renamed Bash compilation scripts. Changed 'sanity checks' to 'syntax checks
+Some internal constant case changes from all upper to capital case
+
+===============================================================================
+20.35.15
+#627 Make tests build with C++14
+#663 Make unit tests compile for C++20
+#675 Compilation error in optional.h line 405
+
+===============================================================================
+20.35.14
+Convert the Visual Studio project to VS2022
+
+===============================================================================
+20.35.13
+#649 Fixed the false positive 'array-bounds' errors for ETL unit tests.
+#652 Fixed false positives 'maybe-uninitialized' errors for ETL unit tests.
+Moved virtual functions in etl::fixed_sized_memory_block_allocator from 'private' to 'protected'. 
+
+===============================================================================
+20.35.12
+#615 Addition of etl::expected
+#649 Changed intrusive_list and intrusive_forward_list iterator constructor parameter from reference to pointer.
+#667 etl::span copy constructor with original span with fixed extent causes pend iterator to be invalid
+#668 byte_stream changes that add error exceptions have changed previous behaviour
+#670 span equality operators
+#672 HFSM-specific start() and reset()
+Fixed span templated copy constructor
+Added destination_router_id parameter overrides to receive() virtual functions
+Added ""_sv string view operators
+Added M17 CRC
+Added repair() to etl::circular_buffer
+Added etl::contruct_object_at, etl::get_object_at and etl::destroy_object_at
+Added etl::is_aligned, etl::alignment_exception and etl::alignment_error
+Removed unnecessary code in etl::vector_ext::repair()
+Updated sanity check make files
+C++03 compatibility improvements
+
+===============================================================================
+20.35.11
+Added emplace by index to variant (variadic)
+#660 byte_stream_reader::skip error
+
+===============================================================================
+20.35.10
+#659 emplace member functions return reference to emplaced value
+
+===============================================================================
+20.35.9
+#657 -Wpedantic-failure. Removed superfluous semicolons
+#653 CMake - Don't warn on tag missing when subproject
+#651 result<T, void> specialization
+#650 Fix result<void, E> default ctor
+Removed Ubuntu 18.04 from Github Actions
+Added Ubuntu 22.04 to Github Actions
+
+===============================================================================
+20.35.8
+#648 Improve is_constructible, is_copy_constructible, is_move_constructible for type traits with default definitions 
+#645 Avoid 'missing return statement at end of non-void function' in `etl::visit<>()`.
+Removed unused ETL_USE_MEM_BUILTINS option
+
+===============================================================================
+20.35.7
+Updated etl::delgate to handle const functors correctly
+
+===============================================================================
+20.35.6
+#643 Don't use push_macro and pull_macro with Tasking compiler
+
+===============================================================================
+20.35.5
+#641 Wrong usage of enable_if for none C++11 compilers
+
+===============================================================================
+20.35.4
+#639 Only build tests if top level project
+
+===============================================================================
+20.35.3
+#636 Fix bug in optional emplace for pod type specialisation
+
+===============================================================================
+20.35.2
+#634 Strange behavior in move assignment of optional
+
+===============================================================================
+20.35.1
+#628 Fixed set of ETL_NO_STL flag in meson.build
+#631 unique_ptr derived copy or move to base does not compile
+Removed duplicate include in etl::array_view
+
+===============================================================================
+20.35.0
+#596 Helper functions to convert strings to numeric values. etl::to_arithmetic
+#600 Fix 'maybe-uninitialized' g++ error on macros
+#601 Move __STDC_LIMIT_MACROS and __STDC_CONSTANT_MACROS before `#include <stdint.h>`
+#602 Replace ETL_COMPILER_ICCAVR by ETL_COMPILER_IAR
+#603 Add back/front insert iterator
+#604 Update-test-sources-in-meson-build
+#605 Special case check for hashing -0.0
+#606 Fix non-usage of key equal function
+#610 Added select1st and select2nd
+#612 Automatically detect native endianness for IAR compiler platform
+#613 Fix bare assert in reference_counted_object.h
+#614 unaligned types: use unsigned storage type
+#615 Addition of etl::expected (partial). Implementation of etl::unexpected
+#616 Provide cmake library for UnitTest++
+#618 fix bug in find_next of (new) bitset class
+#621 No need to initialize the C-compiler, small speed improvement
+#626 Empty etl::optional ctor storage initialization performance
+Removed constexpr for etl::bit_cast due to unreliability of compiler support
+Added has_value() as an alias for is_value() for etl::result (consistancy with STL conventions)
+Added ETL_ERROR_WITH_VALUE macro for exceptions that require a value
+Changed scaling template parameter for etl::scaled_rounding to uint32_t
+Remove redundant etl::pair functions
+Updated string_view and char traits
+
+===============================================================================
+20.34.0
+Changed explicit message constructor for unsupported message types
+Added etl::circular_iterator and circular iterator extensions to etl::span
+Added etl::bitset_ext
+Added etl::lsb_mask, etl::make_lsb_mask, etl::msb_mask and etl::make_msb_mask to binary utilities
+Updates for unordered maps and sets for an API that better matches the STL
+Fixes for etl::result<void, TError>
+Deleted copy constructors for etl::circular_buffer_ext, etl::indirect_vector_ext and etl::vector_ext to eliminate dangling pointers
+Fix non-C++03 code syntax
+Fixed unordered container equality tests to match STL
+#581 Hash function for enums
+#583 Permit non-default-constructable hashes and key-equals
+#584 unordered_set::const_iterator has incorrect value_type
+#585 Fixed etl::result<void> being unusable due to deleted default constructor
+#587 Fixed IAR build warnings in message_packet
+#589 Add minmax_push.h/minmax_pop.h includes
+#593 Workaround for __has_include(<...>) and ICCAVR
+#591 Automatically define __STDC_LIMIT_MACROS and __STDC_CONSTANT_MACROS
+
+===============================================================================
+20.33.0
+Added etl::message_broker to message framework
+Added 'successor' parameter constructors to all etl::imessage_router derived classes
+Added etl::binary_search to algorithm.h
+Standardise conditional compilation macros for ETL_USING_CPP11 and ETL_USING_STL
+#546: Added a new variant of bitset that may be constexpr
+Removed the use of ETL_FORCE_CONSTEXPR_ALGORITHMS as all algorithms may be constexpr
+Rationalised etl::send_message functions
+Fixed implicit virtual warning for etl::vector
+Fixed C++03 delegate compatibility
+Added missing char_traits unit tests and char_traits bug fixes
+Added default message id constructors
+Added ability to set the bitset from wchar_t, char16_t and char32_t
+Added ARM5 and ARM6 compiler compatibility for GCC atomics
+#579: Fixed Unexpected namespace for variant with non-CPP11 compiler
+
+===============================================================================
+20.32.1
+Added size only constructor, set_buffer() and is_valid() members to circular_buffer_ext
+
+===============================================================================
+20.32.0
+#571 Activate GCC and clang compiler warnings
+#575 Bip buffer improvements
+#576 Invoke function pointers with parenthesis
+#574 Allow users to remove SYSTEM keyword because it forces C linkage for some gcc versions
+
+===============================================================================
+20.31.3
+#569 Fixed swap function for circular_buffer_ext
+#568 Fixed circular_buffer iterator -> operators
+Optimised container move for external buffers
+Added functions and macros to etl::debug_count
+Added tests for error handler macros
+
+===============================================================================
+20.31.2
+#567 error-handler: only return when the condition is false 
+
+===============================================================================
+20.31.1
+Addition of extra ETL_NODISCARD and ETL_NOEXCEPT to etl::span & etl::poly_span.
+Fixed warnings for initialisation order for some etl::poly_span constructors.
+
+===============================================================================
+20.31.0
+Added etl::poly_span
+Refacted parts of etl::span, including prevent compound statements in constexpr methods for C++11
+Added etl::is_enum
+
+===============================================================================
+20.30.1
+Fixed #560 Unable to upcast legacy variant Latest
+Refactored legacy variant to remove upcast functors.
+Added upcast_ptr, is_base_of & 'not a base' error exception to legacy variant.
+If ETL_USE_LEGACY_VARIANT is defined then legacy variant is in the etl namespace.
+If ETL_USE_LEGACY_VARIANT is not defined then legacy variant is in the etl::legacy namespace.
+Added non-member etl::send_message for etl::shared_message
+Green Hills compiler compatibility
+
+===============================================================================
+20.30.0
+Fixed #560 Unable to upcast legacy variant.
+Refactored legacy variant to remove upcast functors.
+Added upcast_ptr, is_base_of & 'not a base' error exception to legacy variant.
+If ETL_USE_LEGACY_VARIANT is defined then legacy variant is in the etl namespace.
+If ETL_USE_LEGACY_VARIANT is not defined then legacy variant is in the etl::legacy namespace.
+Added non-member etl::send_message for etl::shared_message
+
+===============================================================================
+20.29.3
+Updated message_packet_generator.h to match etl::message_packet changes.
+
+===============================================================================
+20.29.2
+#557 QueuedFSM example does not compile.
+
+===============================================================================
+20.29.1
+Added etl::byte_stream_overflow assert to byte_stream_reader 'skip'.
+
+===============================================================================
+20.29.0
+Added etl::bit_stream_writer
+Added etl::bit_stream_reader
+Deprecated etl::bit_stream
+Added callback option to etl::byte_stream_writer
+Added error exceptions to byte_stream_writer
+Added ETL_NODISCARD to etl::delegate 'create' and 'is_valid' functions
+Added etl::visit support to etl::variant
+Refactored C++17 message_packet
+Refactored etl::atomic implementations to allow non-(integrals/pointers/bool)
+Refactors etl::vector and etl::deque resize() to take const reference parameter
+Renamed ETL_ALWAYS_ASSERT to ETL_ASSERT_FAIL
+Removed duplicate void_t definition
+Removed duplicate etl::declvar definition
+Renamed cumulative_moving_average to pseudo_windowed_moving_average to more accurately reflect its algorithm.
+Changed etl::debounce internal state names to avoid clashes with Arduino macros.
+
+===============================================================================
 20.28.0
 Fixed issues raised by sanitizer.
 Added conditional compilation for 8 bit type in hash.h

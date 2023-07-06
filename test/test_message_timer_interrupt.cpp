@@ -5,7 +5,7 @@ Embedded Template Library.
 https://github.com/ETLCPP/etl
 https://www.etlcpp.com
 
-Copyright(c) 2022 jwellbelove
+Copyright(c) 2022 John Wellbelove
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files(the "Software"), to deal
@@ -55,10 +55,10 @@ namespace
       --guard_count;
     }
 
-    volatile static int guard_count;
+    static int guard_count;
   };
 
-  volatile int ScopedGuard::guard_count = 0;
+  int ScopedGuard::guard_count = 0;
 
   //***************************************************************************
   struct TimerLogEntry
@@ -716,6 +716,7 @@ namespace
 
       // Start the repeating timers.
       timer_controller.start(id1);
+      timer_controller.start(id2);
       timer_controller.start(id3);
       timer_controller.start(id4);
 

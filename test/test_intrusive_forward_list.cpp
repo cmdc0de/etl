@@ -5,7 +5,7 @@ Embedded Template Library.
 https://github.com/ETLCPP/etl
 https://www.etlcpp.com
 
-Copyright(c) 2015 jwellbelove
+Copyright(c) 2015 John Wellbelove
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files(the "Software"), to deal
@@ -125,7 +125,7 @@ namespace
 
 namespace
 {
-  SUITE(test_forward_list)
+  SUITE(test_intrusive_forward_list)
   {
     InitialDataNDC stable_sort_data;
     InitialDataNDC unsorted_data;
@@ -210,6 +210,21 @@ namespace
     }
 
     //*************************************************************************
+    TEST_FIXTURE(SetupFixture, test_iterator_arrow_operator)
+    {
+      ItemNDCNode item1("1");
+      ItemNDCNode item2("2");
+      DataNDC0 data;
+      data.push_front(item2);
+      data.push_front(item1);
+
+      auto iter = data.begin();
+      CHECK(*(iter.operator->()) == item1);
+      ++iter;
+      CHECK(*(iter.operator->()) == item2);
+    }
+
+    //*************************************************************************
     TEST_FIXTURE(SetupFixture, test_const_iterator)
     {
       DataNDC0 data0(sorted_data.begin(), sorted_data.end());
@@ -220,10 +235,36 @@ namespace
     }
 
     //*************************************************************************
+    TEST_FIXTURE(SetupFixture, test_const_iterator_arrow_operator)
+    {
+      ItemNDCNode item1("1");
+      ItemNDCNode item2("2");
+      DataNDC0 data;
+      data.push_front(item2);
+      data.push_front(item1);
+
+      auto iter = data.cbegin();
+      CHECK(*(iter.operator->()) == item1);
+      ++iter;
+      CHECK(*(iter.operator->()) == item2);
+    }
+
+    //*************************************************************************
     TEST_FIXTURE(SetupFixture, test_clear)
     {
       DataNDC0 data0(sorted_data.begin(), sorted_data.end());
+
+      for (auto& item : sorted_data)
+      {
+        CHECK_TRUE(etl::is_linked<FirstLink>(item));
+      }
+
       data0.clear();
+
+      for (auto& item : sorted_data)
+      {
+        CHECK_FALSE(etl::is_linked<FirstLink>(item));
+      }     
 
       CHECK(data0.empty());
     }
@@ -233,11 +274,13 @@ namespace
     {
       DataNDC0 data0;
 
+      static InitialDataNDC sorted_data = { ItemNDCNode("0"), ItemNDCNode("1"), ItemNDCNode("2"), ItemNDCNode("3"), ItemNDCNode("4"), ItemNDCNode("5"), ItemNDCNode("6"), ItemNDCNode("7"), ItemNDCNode("8"), ItemNDCNode("9") };
+
       // Do it twice. We should only get one copy.
       data0.assign(sorted_data.begin(), sorted_data.end());
       data0.assign(sorted_data.begin(), sorted_data.end());
 
-      are_equal = std::equal(data0.begin(), data0.end(), sorted_data.begin());
+      bool are_equal = std::equal(data0.begin(), data0.end(), sorted_data.begin());
 
       CHECK(are_equal);
     }
@@ -246,7 +289,7 @@ namespace
     TEST_FIXTURE(SetupFixture, test_assign_range_two_lists_same)
     {
       DataNDC0 data0;
-      DataNDC0 data1;
+      DataNDC1 data1;
 
       data0.assign(sorted_data.begin(), sorted_data.end());
       data1.assign(sorted_data.begin(), sorted_data.end());
@@ -261,14 +304,14 @@ namespace
     ////*************************************************************************
     TEST_FIXTURE(SetupFixture, test_two_lists_different)
     {
-      ItemNDCNode node0("0");
-      ItemNDCNode node1("1");
-      ItemNDCNode node2("2");
-      ItemNDCNode node3("3");
-      ItemNDCNode node4("4");
-      ItemNDCNode node5("5");
-      ItemNDCNode node6("6");
-      ItemNDCNode node7("7");
+      static ItemNDCNode node0("0");
+      static ItemNDCNode node1("1");
+      static ItemNDCNode node2("2");
+      static ItemNDCNode node3("3");
+      static ItemNDCNode node4("4");
+      static ItemNDCNode node5("5");
+      static ItemNDCNode node6("6");
+      static ItemNDCNode node7("7");
 
       {
         std::list<ItemNDCNode> compare0;
@@ -417,12 +460,12 @@ namespace
     //*************************************************************************
     TEST_FIXTURE(SetupFixture, test_push_front)
     {
-      ItemNDCNode node1("1");
-      ItemNDCNode node2("2");
-      ItemNDCNode node3("3");
-      ItemNDCNode node4("4");
-      ItemNDCNode node5("5");
-      ItemNDCNode node6("6");
+      static ItemNDCNode node1("1");
+      static ItemNDCNode node2("2");
+      static ItemNDCNode node3("3");
+      static ItemNDCNode node4("4");
+      static ItemNDCNode node5("5");
+      static ItemNDCNode node6("6");
 
       {
         std::list<ItemNDCNode> compare_data;
@@ -452,12 +495,12 @@ namespace
     //*************************************************************************
     TEST_FIXTURE(SetupFixture, test_push_front_pop_front)
     {
-      ItemNDCNode node1("1");
-      ItemNDCNode node2("2");
-      ItemNDCNode node3("3");
-      ItemNDCNode node4("4");
-      ItemNDCNode node5("5");
-      ItemNDCNode node6("6");
+      static ItemNDCNode node1("1");
+      static ItemNDCNode node2("2");
+      static ItemNDCNode node3("3");
+      static ItemNDCNode node4("4");
+      static ItemNDCNode node5("5");
+      static ItemNDCNode node6("6");
 
       {
         DataNDC0 data0;
@@ -501,6 +544,17 @@ namespace
         CHECK_EQUAL(6, std::distance(data1.begin(), data1.end()));
         CHECK(!data1.empty());
       }
+    }
+
+    //*************************************************************************
+    TEST_FIXTURE(SetupFixture, test_push_front_already_linked_value)
+    {
+      DataNDC0 data0;
+
+      static ItemNDCNode node1("1");
+
+      data0.push_front(node1);
+      CHECK_THROW(data0.push_front(node1), etl::intrusive_forward_list_value_is_already_linked);
     }
 
     //*************************************************************************
@@ -566,6 +620,17 @@ namespace
     //*************************************************************************
     TEST_FIXTURE(SetupFixture, test_erase_after_range)
     {
+      FirstLink& fl0 = sorted_data[0];
+      FirstLink& fl1 = sorted_data[1];
+      FirstLink& fl2 = sorted_data[2];
+      FirstLink& fl3 = sorted_data[3];
+      FirstLink& fl4 = sorted_data[4];
+      FirstLink& fl5 = sorted_data[5];
+      FirstLink& fl6 = sorted_data[6];
+      FirstLink& fl7 = sorted_data[7];
+      FirstLink& fl8 = sorted_data[8];
+      FirstLink& fl9 = sorted_data[9];
+
       std::forward_list<ItemNDCNode> compare_data(sorted_data.begin(), sorted_data.end());
       DataNDC0 data0(sorted_data.begin(), sorted_data.end());
       DataNDC1 data1(sorted_data2.begin(), sorted_data2.end());
@@ -584,7 +649,29 @@ namespace
 
       std::forward_list<ItemNDCNode>::iterator i_compare_result = compare_data.erase_after(i_compare_data_1, i_compare_data_2);
 
+      CHECK_TRUE(fl0.is_linked());
+      CHECK_TRUE(fl1.is_linked());
+      CHECK_TRUE(fl2.is_linked());
+      CHECK_TRUE(fl3.is_linked());
+      CHECK_TRUE(fl4.is_linked());
+      CHECK_TRUE(fl5.is_linked());
+      CHECK_TRUE(fl6.is_linked());
+      CHECK_TRUE(fl7.is_linked());
+      CHECK_TRUE(fl8.is_linked());
+      CHECK_TRUE(fl9.is_linked());
+
       DataNDC0::iterator i_result = data0.erase_after(i_data_1, i_data_2);
+
+      CHECK_TRUE(fl0.is_linked());
+      CHECK_TRUE(fl1.is_linked());
+      CHECK_TRUE(fl2.is_linked());
+      CHECK_FALSE(fl3.is_linked());
+      CHECK_FALSE(fl4.is_linked());
+      CHECK_TRUE(fl5.is_linked());
+      CHECK_TRUE(fl6.is_linked());
+      CHECK_TRUE(fl7.is_linked());
+      CHECK_TRUE(fl8.is_linked());
+      CHECK_TRUE(fl9.is_linked());
 
       CHECK_EQUAL(*i_compare_result, *i_result);
 
@@ -723,6 +810,8 @@ namespace
       CHECK_EQUAL(data1.size(), data0.size());
       CHECK_EQUAL(data0.size(), size_t(std::distance(data0.begin(), data0.end())));
 
+      bool are_equal = false;
+
       are_equal = std::equal(data0.begin(), data0.end(), sorted_data.rbegin());
       CHECK(are_equal);
 
@@ -781,7 +870,7 @@ namespace
       CHECK(are_equal);
     }
 
-    //*************************************************************************
+    ////*************************************************************************
     TEST_FIXTURE(SetupFixture, test_splice_list)
     {
       DataNDC0 data0(sorted_data.begin(), sorted_data.end());

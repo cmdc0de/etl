@@ -5,7 +5,7 @@ Embedded Template Library.
 https://github.com/ETLCPP/etl
 https://www.etlcpp.com
 
-Copyright(c) 2015 jwellbelove
+Copyright(c) 2015 John Wellbelove
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files(the "Software"), to deal
@@ -29,6 +29,8 @@ SOFTWARE.
 #include "unit_test_framework.h"
 
 #include "etl/overload.h"
+
+#if ETL_USING_CPP17
 
 #include <iostream>
 
@@ -73,7 +75,7 @@ namespace
   SUITE(test_overload)
   {
     //*************************************************************************
-    TEST(test_overload_lambdas)
+    TEST(test_overload_lambdas_make_overload)
     {
       auto overload = etl::make_overload([](int i) { result.bi = true; },
                                          [](double d) { result.bd = true; },
@@ -99,9 +101,8 @@ namespace
     }
 
     //*************************************************************************
-    TEST(test_overload_lambdas_cpp17)
+    TEST(test_overload_lambdas_initializer_list)
     {
-#if !defined(ETL_OVERLOAD_FORCE_CPP14)
       result.clear();
       Function(int(1), etl::overload
                        {
@@ -134,7 +135,6 @@ namespace
       CHECK(result.bi == false);
       CHECK(result.bd == false);
       CHECK(result.bs == true);
-#endif
     }
 
     //*************************************************************************
@@ -162,3 +162,5 @@ namespace
     }
   };
 }
+
+#endif

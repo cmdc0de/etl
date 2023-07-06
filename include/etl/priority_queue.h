@@ -7,7 +7,7 @@ Embedded Template Library.
 https://github.com/ETLCPP/etl
 https://www.etlcpp.com
 
-Copyright(c) 2015 jwellbelove, rlindeman
+Copyright(c) 2015 John Wellbelove, rlindeman
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files(the "Software"), to deal
@@ -31,10 +31,7 @@ SOFTWARE.
 #ifndef ETL_PRIORITY_QUEUE_INCLUDED
 #define ETL_PRIORITY_QUEUE_INCLUDED
 
-#include <stddef.h>
-
 #include "platform.h"
-
 #include "algorithm.h"
 #include "utility.h"
 #include "functional.h"
@@ -44,6 +41,8 @@ SOFTWARE.
 #include "parameter_type.h"
 #include "error_handler.h"
 #include "exception.h"
+
+#include <stddef.h>
 
 //*****************************************************************************
 ///\defgroup queue queue
@@ -527,6 +526,9 @@ namespace etl
     }
 #endif
   };
+
+  template <typename T, const size_t SIZE, typename TContainer, typename TCompare>
+  ETL_CONSTANT typename priority_queue<T, SIZE, TContainer, TCompare>::size_type priority_queue<T, SIZE, TContainer, TCompare>::MAX_SIZE;
 }
 
 #endif

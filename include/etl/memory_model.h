@@ -7,7 +7,7 @@ Embedded Template Library.
 https://github.com/ETLCPP/etl
 https://www.etlcpp.com
 
-Copyright(c) 2018 jwellbelove
+Copyright(c) 2018 John Wellbelove
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files(the "Software"), to deal
@@ -31,9 +31,11 @@ SOFTWARE.
 #ifndef ETL_MEMORY_MODEL_INCLUDED
 #define ETL_MEMORY_MODEL_INCLUDED
 
+#include "platform.h"
 #include "user_type.h"
-#include <stdint.h>
 #include "type_lookup.h"
+
+#include <stdint.h>
 
 namespace etl
 {
@@ -44,7 +46,7 @@ namespace etl
   ETL_USER_TYPE(MEMORY_MODEL_HUGE,   3)
   ETL_END_USER_TYPE(memory_model)
 
-  template <const size_t MEMORY_MODEL>
+  template <size_t MEMORY_MODEL>
   struct size_type_lookup;
 
   template <>

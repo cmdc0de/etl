@@ -7,7 +7,7 @@ Embedded Template Library.
 https://github.com/ETLCPP/etl
 https://www.etlcpp.com
 
-Copyright(c) 2014 jwellbelove
+Copyright(c) 2014 John Wellbelove
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files(the "Software"), to deal
@@ -31,14 +31,14 @@ SOFTWARE.
 #ifndef ETL_PEARSON_INCLUDED
 #define ETL_PEARSON_INCLUDED
 
-#include <stdint.h>
-
 #include "platform.h"
 #include "static_assert.h"
 #include "type_traits.h"
 #include "ihash.h"
 #include "array.h"
 #include "iterator.h"
+
+#include <stdint.h>
 
 ETL_STATIC_ASSERT(ETL_USING_8BIT_TYPES, "This file does not currently support targets with no 8bit type");
 
@@ -56,7 +56,7 @@ namespace etl
   ///\tparam HASH_LENGTH The number of elements in the hash.
   /// \ingroup pearson
   //***************************************************************************
-  template <const size_t HASH_LENGTH>
+  template <size_t HASH_LENGTH>
   class pearson
   {
   public:

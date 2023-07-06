@@ -5,7 +5,7 @@ Embedded Template Library.
 https://github.com/ETLCPP/etl
 https://www.etlcpp.com
 
-Copyright(c) 2020 jwellbelove
+Copyright(c) 2020 John Wellbelove
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files(the "Software"), to deal
@@ -152,12 +152,12 @@ namespace
     //*************************************************************************
     TEST_FIXTURE(SetupFixture, test_default_constructor_use_array_buffer)
     {
-      Text text(array_text, std::size(array_text));
+      Text text(array_text, ETL_OR_STD17::size(array_text));
 
       CHECK_EQUAL(0U, text.size());
       CHECK(text.empty());
-      CHECK_EQUAL(std::size(array_text) - 1, text.capacity());
-      CHECK_EQUAL(std::size(array_text) - 1, text.max_size());
+      CHECK_EQUAL(ETL_OR_STD17::size(array_text) - 1, text.capacity());
+      CHECK_EQUAL(ETL_OR_STD17::size(array_text) - 1, text.max_size());
       CHECK(text.begin() == text.end());
 #if ETL_HAS_STRING_TRUNCATION_CHECKS
       CHECK(!text.is_truncated());
@@ -167,12 +167,12 @@ namespace
     //*************************************************************************
     TEST_FIXTURE(SetupFixture, test_default_constructor_use_array_buffer_text)
     {
-      Text text(array_text, array_text, std::size(array_text));
+      Text text(array_text, array_text, ETL_OR_STD17::size(array_text));
 
       CHECK_EQUAL(text.size(), etl::strlen(array_text));
       CHECK(!text.empty());
-      CHECK_EQUAL(std::size(array_text) - 1, text.capacity());
-      CHECK_EQUAL(std::size(array_text) - 1, text.max_size());
+      CHECK_EQUAL(ETL_OR_STD17::size(array_text) - 1, text.capacity());
+      CHECK_EQUAL(ETL_OR_STD17::size(array_text) - 1, text.max_size());
       CHECK(text.begin() != text.end());
 #if ETL_HAS_STRING_TRUNCATION_CHECKS
       CHECK(!text.is_truncated());
@@ -613,7 +613,9 @@ namespace
       TextBuffer buffer2;
       Text other_text(text, buffer2.data(), buffer2.size());
 
+#include "etl/private/diagnostic_self_assign_overloaded_push.h" 
       other_text = other_text;
+#include "etl/private/diagnostic_pop.h" 
 
       bool is_equal = Equal(text, other_text);
 
@@ -633,7 +635,9 @@ namespace
       TextBuffer buffer2;
       Text other_text(text, buffer2.data(), buffer2.size());
 
+#include "etl/private/diagnostic_self_assign_overloaded_push.h" 
       other_text = other_text;
+#include "etl/private/diagnostic_pop.h" 
 
       bool is_equal = Equal(text, other_text);
 

@@ -5,7 +5,7 @@ Embedded Template Library.
 https://github.com/ETLCPP/etl
 https://www.etlcpp.com
 
-Copyright(c) 2022 jwellbelove
+Copyright(c) 2022 John Wellbelove
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files(the "Software"), to deal
@@ -759,6 +759,24 @@ namespace
 
       CHECK_EQUAL(0x1234, test_le.value());
       CHECK_EQUAL(0x1234, test_be.value());
+    }
+
+    //*************************************************************************
+    TEST(test_storage_bytes)
+    {
+      etl::le_uint16_t test_le(0x1234);
+      etl::be_uint16_t test_be(0x1234);
+
+      int lev0 = test_le[0];
+      int lev1 = test_le[1];
+
+      int bev0 = test_be[0];
+      int bev1 = test_be[1];
+
+      CHECK_EQUAL(0x34, lev0);
+      CHECK_EQUAL(0x12, lev1);
+      CHECK_EQUAL(0x12, bev0);
+      CHECK_EQUAL(0x34, bev1);
     }
   };
 }

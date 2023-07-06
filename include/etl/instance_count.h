@@ -7,7 +7,7 @@ Embedded Template Library.
 https://github.com/ETLCPP/etl
 https://www.etlcpp.com
 
-Copyright(c) 2014 jwellbelove
+Copyright(c) 2014 John Wellbelove
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files(the "Software"), to deal
@@ -31,9 +31,9 @@ SOFTWARE.
 #ifndef ETL_INSTANCE_COUNT_INCLUDED
 #define ETL_INSTANCE_COUNT_INCLUDED
 
-#include <stdint.h>
-
 #include "platform.h"
+
+#include <stdint.h>
 
 ///\defgroup instance_count instance count
 ///\ingroup utilities
@@ -107,7 +107,7 @@ namespace etl
     //*************************************************************************
     static counter_type& current_instance_count()
     {
-      static counter_type counter = 0;
+      static counter_type counter = { 0 };
       return counter;
     }
   };

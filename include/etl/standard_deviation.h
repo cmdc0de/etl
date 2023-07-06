@@ -7,7 +7,7 @@ Embedded Template Library.
 https://github.com/ETLCPP/etl
 https://www.etlcpp.com
 
-Copyright(c) 2021 jwellbelove
+Copyright(c) 2021 John Wellbelove
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files(the "Software"), to deal
@@ -73,10 +73,24 @@ namespace etl
   //***************************************************************************
   /// Standard Deviation Type.
   //***************************************************************************
-  struct standard_deviation_type
+  namespace private_standard_deviation
   {
-    static ETL_CONSTANT bool Sample     = false;
-    static ETL_CONSTANT bool Population = true;
+    template<typename T = void>
+    struct standard_deviation_type_helper
+    {
+      static ETL_CONSTANT bool Sample = false;
+      static ETL_CONSTANT bool Population = true;
+    };
+
+    template <typename T>
+    ETL_CONSTANT bool standard_deviation_type_helper<T>::Sample;
+
+    template <typename T>
+    ETL_CONSTANT bool standard_deviation_type_helper<T>::Population;
+  }
+
+  struct standard_deviation_type : public private_standard_deviation::standard_deviation_type_helper<>
+  {
   };
 
   //***************************************************************************

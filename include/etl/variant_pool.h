@@ -5,7 +5,7 @@ Embedded Template Library.
 https://github.com/ETLCPP/etl
 https://www.etlcpp.com
 
-Copyright(c) 2017 jwellbelove
+Copyright(c) 2017 John Wellbelove
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files(the "Software"), to deal
@@ -51,18 +51,18 @@ SOFTWARE.
 #ifndef ETL_VARIANT_POOL_INCLUDED
 #define ETL_VARIANT_POOL_INCLUDED
 
-#include <stdint.h>
-
 #include "platform.h"
 #include "pool.h"
 #include "type_traits.h"
 #include "static_assert.h"
 #include "largest.h"
 
+#include <stdint.h>
+
 namespace etl
 {
   //***************************************************************************
-  template <const size_t MAX_SIZE_,
+  template <size_t MAX_SIZE_,
             typename T1,
             typename T2 = void,
             typename T3 = void,
@@ -79,9 +79,10 @@ namespace etl
             typename T14 = void,
             typename T15 = void,
             typename T16 = void>
-  class variant_pool : public etl::generic_pool<etl::largest<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16>::size,
-                                                etl::largest<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16>::alignment,
-                                                MAX_SIZE_>
+  class variant_pool
+    : public etl::generic_pool<etl::largest<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16>::size,
+                               etl::largest<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16>::alignment,
+                               MAX_SIZE_>
   {
   public:
 
@@ -162,7 +163,7 @@ namespace etl
     {
       ETL_STATIC_ASSERT((etl::is_one_of<T, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16>::value), "Unsupported type");
 
-      return base_t::template create<T>(args...);
+      return base_t::template create<T>(etl::forward<Args>(args)...);
     }
 #endif
 
@@ -226,16 +227,20 @@ namespace etl
             typename T16 = void>
   class variant_pool_ext
     : public etl::generic_pool_ext<etl::largest<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16>::size,
-                                   etl::largest<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16>::alignment> {
+                                   etl::largest<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16>::alignment>
+  {
   public:
+
     typedef etl::generic_pool_ext<etl::largest<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16>::size,
-                                  etl::largest<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16>::alignment>
-      base_t;
+                                  etl::largest<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16>::alignment> base_t;
 
     //*************************************************************************
     /// Default constructor.
     //*************************************************************************
-    variant_pool_ext(typename base_t::element* buffer, size_t size) : base_t(buffer, size) {}
+    variant_pool_ext(typename base_t::element* buffer, size_t size)
+      : base_t(buffer, size) 
+    {
+    }
 
 #if ETL_CPP11_NOT_SUPPORTED || ETL_USING_STLPORT
     //*************************************************************************
@@ -301,7 +306,7 @@ namespace etl
     {
       ETL_STATIC_ASSERT((etl::is_one_of<T, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16>::value), "Unsupported type");
 
-      return base_t::template create<T>(args...);
+      return base_t::template create<T>(etl::forward<Args>(args)...);
     }
 #endif
 
@@ -311,13 +316,23 @@ namespace etl
     template <typename T>
     void destroy(const T* const p)
     {
-      ETL_STATIC_ASSERT(
-        (etl::is_one_of<T, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16>::value || etl::is_base_of<T, T1>::value ||
-         etl::is_base_of<T, T2>::value || etl::is_base_of<T, T3>::value || etl::is_base_of<T, T4>::value || etl::is_base_of<T, T5>::value ||
-         etl::is_base_of<T, T6>::value || etl::is_base_of<T, T7>::value || etl::is_base_of<T, T8>::value || etl::is_base_of<T, T9>::value ||
-         etl::is_base_of<T, T10>::value || etl::is_base_of<T, T11>::value || etl::is_base_of<T, T12>::value || etl::is_base_of<T, T13>::value ||
-         etl::is_base_of<T, T14>::value || etl::is_base_of<T, T15>::value || etl::is_base_of<T, T16>::value),
-        "Invalid type");
+      ETL_STATIC_ASSERT((etl::is_one_of<T, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16>::value ||
+                         etl::is_base_of<T, T1>::value ||
+                         etl::is_base_of<T, T2>::value ||
+                         etl::is_base_of<T, T3>::value ||
+                         etl::is_base_of<T, T4>::value ||
+                         etl::is_base_of<T, T5>::value ||
+                         etl::is_base_of<T, T6>::value ||
+                         etl::is_base_of<T, T7>::value ||
+                         etl::is_base_of<T, T8>::value ||
+                         etl::is_base_of<T, T9>::value ||
+                         etl::is_base_of<T, T10>::value ||
+                         etl::is_base_of<T, T11>::value ||
+                         etl::is_base_of<T, T12>::value ||
+                         etl::is_base_of<T, T13>::value ||
+                         etl::is_base_of<T, T14>::value ||
+                         etl::is_base_of<T, T15>::value ||
+                         etl::is_base_of<T, T16>::value), "Invalid type");
 
       base_t::destroy(p);
     }
@@ -325,12 +340,15 @@ namespace etl
     //*************************************************************************
     /// Returns the maximum number of items in the variant_pool.
     //*************************************************************************
-    // redundant also declared in ipool::max_size()
-    size_t max_size() const { return base_t::max_size(); }
+    size_t max_size() const 
+    { 
+      return base_t::max_size(); 
+    }
 
   private:
+
     variant_pool_ext(const variant_pool_ext&) ETL_DELETE;
-    variant_pool_ext& operator=(const variant_pool_ext&) ETL_DELETE;
+    variant_pool_ext& operator =(const variant_pool_ext&) ETL_DELETE;
   };
 }
 

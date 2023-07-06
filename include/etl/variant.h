@@ -7,7 +7,7 @@ Embedded Template Library.
 https://github.com/ETLCPP/etl
 https://www.etlcpp.com
 
-Copyright(c) 2014 jwellbelove
+Copyright(c) 2014 John Wellbelove
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files(the "Software"), to deal
@@ -33,10 +33,11 @@ SOFTWARE.
 
 #include "platform.h"
 
-#if !ETL_USING_CPP11 || ETL_USE_LEGACY_VARIANT
-  #include "private/variant_legacy.h"
+#if !ETL_USING_CPP11 || defined(ETL_USE_LEGACY_VARIANT)
+  #include "private/variant_legacy.h"   // etl::variant
 #else
-  #include "private/variant_variadic.h"
+  #include "private/variant_legacy.h"   // etl::legacy::variant
+  #include "private/variant_variadic.h" // etl::variant
 #endif
 
 #endif

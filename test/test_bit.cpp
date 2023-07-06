@@ -5,7 +5,7 @@ Embedded Template Library.
 https://github.com/ETLCPP/etl
 https://www.etlcpp.com
 
-Copyright(c) 2021 jwellbelove
+Copyright(c) 2021 John Wellbelove
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files(the "Software"), to deal
@@ -39,9 +39,9 @@ namespace
   //***********************************
   // Count bits the long way.
   template <typename T>
-  size_t test_count(T value)
+  int test_count(T value)
   {
-    size_t count = 0UL;
+    int count = 0;
 
     for (int i = 0; i < etl::integral_limits<T>::bits; ++i)
     {
@@ -57,9 +57,9 @@ namespace
   //***********************************
   // Count trailing zeros the long way.
   template <typename T>
-  size_t test_trailing_zeros(T value)
+  int test_trailing_zeros(T value)
   {
-    size_t count = 0UL;
+    int count = 0;
 
     for (int i = 0; i < etl::integral_limits<T>::bits; ++i)
     {
@@ -81,7 +81,7 @@ namespace
   //***********************************
   // Count leading zeros the long way.
   template <typename T>
-  size_t test_leading_zeros(T value)
+  int test_leading_zeros(T value)
   {
     value = etl::reverse_bits(value);
     return test_trailing_zeros(value);
@@ -90,9 +90,9 @@ namespace
   //***********************************
   // Count trailing ones the long way.
   template <typename T>
-  size_t test_trailing_ones(T value)
+  int test_trailing_ones(T value)
   {
-    size_t count = 0UL;
+    int count = 0UL;
 
     for (int i = 0; i < etl::integral_limits<T>::bits; ++i)
     {
@@ -114,7 +114,7 @@ namespace
   //***********************************
   // Count leading ones the long way.
   template <typename T>
-  size_t test_leading_ones(T value)
+  int test_leading_ones(T value)
   {
     value = etl::reverse_bits(value);
     return test_trailing_ones(value);
@@ -196,12 +196,31 @@ namespace
   SUITE(test_bit)
   {
     //*************************************************************************
-    TEST(test_bit_cast)
+    TEST(test_bit_cast_integrals)
     {
-      int32_t i = 0x12345678;
-      uint32_t ui = etl::bit_cast<uint32_t>(i);
+      int32_t  i;
+      uint32_t ui;
 
+      i  = 0x12345678;
+      ui = etl::bit_cast<uint32_t>(i);
       CHECK_EQUAL(i, ui);
+
+      i  = -1234567890;
+      ui = etl::bit_cast<uint32_t>(i);
+      CHECK_EQUAL(i, static_cast<int32_t>(ui));
+    }
+
+    //*************************************************************************
+    TEST(test_bit_cast_different_types)
+    {
+      using Int = etl::smallest_int_for_bits_t<sizeof(float) * CHAR_BIT>;
+
+      Int i1;
+      float f = 123.456789f;
+      memcpy(&i1, &f, sizeof(float));
+
+      Int i2 = etl::bit_cast<Int>(f);
+      CHECK_EQUAL(i1, i2);
     }
 
     //*************************************************************************
