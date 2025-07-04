@@ -30,11 +30,15 @@ SOFTWARE.
 
 #include "etl/span.h"
 #include "etl/array.h"
+#include "etl/unaligned_type.h"
 
 #include <array>
 #include <vector>
 #include <algorithm>
 #include <iterator>
+#if ETL_USING_CPP20
+  #include <span>
+#endif
 
 namespace
 {
@@ -47,7 +51,13 @@ namespace
     typedef std::vector<int> StlVData;
 
     typedef etl::span<int, 10U> View;
+    typedef etl::span<int, 9U> SView;
     typedef etl::span<const int, 10U> CView;
+    typedef etl::span<int, 0U> EView;
+
+#if ETL_USING_CPP20
+    using StdView = std::span<int, 10U>;
+#endif
 
     EtlData etldata = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
     StlData stldata = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
@@ -68,15 +78,20 @@ namespace
     const int ccdata[] = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
     const int* pccdata = ccdata;
 
+#if ETL_USING_CPP20
     //*************************************************************************
-    TEST(test_default_constructor)
+    TEST(test_construct_from_std_span)
     {
-      View view;
+      StdView stdview(stldata);
+      View view(stdview);
 
-      CHECK_EQUAL(10U, view.size());
-      CHECK_EQUAL(10U, view.max_size());
-      CHECK(!view.empty());
+      CHECK_EQUAL(stdview.size(), view.size());
+      CHECK_EQUAL(stdview.size(), view.size());
+
+      bool isEqual = std::equal(view.begin(), view.end(), stdview.begin());
+      CHECK(isEqual);
     }
+#endif
 
     //*************************************************************************
     TEST(test_constructor_etl_array_1)
@@ -249,9 +264,7 @@ namespace
     //*************************************************************************
     TEST(test_implicit_constructor_c_array_2)
     {
-      CView view;
-
-      view = ccdata;
+      CView view(ccdata);
 
       CHECK_EQUAL(SIZE, view.size());
       CHECK_EQUAL(SIZE, view.max_size());
@@ -339,12 +352,11 @@ namespace
     TEST(test_assign_from_span)
     {
       View view1(etldata);
-      View view2;
+      View view2 = view1;
 
       CView cview1(etldata);
-      CView cview2;
+      CView cview2 = view2;
 
-      view2 = view1;
       cview2 = cview1;
 
       CHECK_EQUAL(view1.size(), view2.size());
@@ -387,15 +399,19 @@ namespace
       View  view(etldata.begin(), etldata.end());
       CView cview(etldata.begin(), etldata.end());
 
+      CHECK_EQUAL(etldata.cbegin(), view.cbegin());
       CHECK_EQUAL(etldata.begin(), view.begin());
       CHECK_EQUAL(etldata.begin(), cview.begin());
 
+      CHECK_EQUAL(etldata.cend(), view.crbegin().base());
       CHECK_EQUAL(etldata.end(), view.rbegin().base());
       CHECK_EQUAL(etldata.end(), cview.rbegin().base());
 
+      CHECK_EQUAL(etldata.cend(), view.cend());
       CHECK_EQUAL(etldata.end(), view.end());
       CHECK_EQUAL(etldata.end(), cview.end());
 
+      CHECK_EQUAL(etldata.cbegin(), view.crend().base());
       CHECK_EQUAL(etldata.begin(), view.rend().base());
       CHECK_EQUAL(etldata.begin(), cview.rend().base());
     }
@@ -421,6 +437,22 @@ namespace
 
       CHECK_EQUAL(etldata.data(), view.data());
       CHECK_EQUAL(etldata.data(), cview.data());
+    }
+
+    //*************************************************************************
+    TEST(test_at)
+    {
+      View  view(etldata.begin(), etldata.end());
+      CView cview(etldata.begin(), etldata.end());
+
+      for (size_t i = 0UL; i < etldata.size(); ++i)
+      {
+        CHECK_EQUAL(etldata.at(i), view.at(i));
+        CHECK_EQUAL(etldata.at(i), cview.at(i));
+      }
+
+      CHECK_THROW({ int d = view.at(view.size()); (void)d; }, etl::array_out_of_range);
+      CHECK_THROW({ int d = cview.at(cview.size()); (void)d; }, etl::array_out_of_range);
     }
 
     //*************************************************************************
@@ -454,6 +486,9 @@ namespace
     {
       View view1(etldata.begin(), etldata.begin());
       CHECK(!view1.empty());
+
+      EView view2(etldata.begin(), etldata.begin());
+      CHECK(view2.empty());
     }
 
     //*************************************************************************
@@ -998,25 +1033,23 @@ namespace
       etl::array<int, 10> data1{ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
       etl::array<int, 10> data2{ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
       etl::array<int, 10> data3{ 0, 1, 2, 3, 4, 4, 6, 7, 8, 9 };
+      etl::array<int, 9>  data4{ 0, 1, 2, 3, 4, 5, 6, 7, 8 };
 
       View view1{ data1 };
       View view2{ data1 };
       View view3{ data2 };
       View view4{ data3 };
-      View view6;
-      View view7;
+      SView view8{ data4 };
 
       CHECK_TRUE(etl::equal(view1, view2));
       CHECK_TRUE(etl::equal(view1, view3));
       CHECK_FALSE(etl::equal(view1, view4));
-      CHECK_TRUE(etl::equal(view6, view6));
-      CHECK_TRUE(etl::equal(view6, view7));
+      CHECK_FALSE(etl::equal(view1, view8));
 
       CHECK_TRUE(view1 == view2);
       CHECK_FALSE(view1 == view3);
       CHECK_FALSE(view1 == view4);
-      CHECK_TRUE(view6 == view6);
-      CHECK_TRUE(view6 == view7);
+      CHECK_FALSE(view1 == view8);
     }
 
     //*************************************************************************
@@ -1030,20 +1063,14 @@ namespace
       CView view2{ data1 };
       CView view3{ data2 };
       CView view4{ data3 };
-      View view6;
-      CView view7;
 
       CHECK_TRUE(etl::equal(view1, view2));
       CHECK_TRUE(etl::equal(view1, view3));
       CHECK_FALSE(etl::equal(view1, view4));
-      CHECK_TRUE(etl::equal(view6, view6));
-      CHECK_TRUE(etl::equal(view6, view7));
 
       CHECK_TRUE(view1 == view2);
       CHECK_FALSE(view1 == view3);
       CHECK_FALSE(view1 == view4);
-      CHECK_TRUE(view6 == view6);
-      CHECK_TRUE(view6 == view7);
     }
 
     //*************************************************************************
@@ -1057,20 +1084,14 @@ namespace
       View view2{ data1 };
       View view3{ data2 };
       View view4{ data3 };
-      View view6;
-      View view7;
 
       CHECK_TRUE(etl::equal(view1, view2));
       CHECK_TRUE(etl::equal(view1, view3));
       CHECK_FALSE(etl::equal(view1, view4));
-      CHECK_TRUE(etl::equal(view6, view6));
-      CHECK_TRUE(etl::equal(view6, view7));
 
       CHECK_FALSE(view1 != view2);
       CHECK_TRUE(view1 != view3);
       CHECK_TRUE(view1 != view4);
-      CHECK_FALSE(view6 != view6);
-      CHECK_FALSE(view6 != view7);
     }
 
     //*************************************************************************
@@ -1084,20 +1105,14 @@ namespace
       CView view2{ data1 };
       CView view3{ data2 };
       CView view4{ data3 };
-      View view6;
-      View view7;
 
       CHECK_TRUE(etl::equal(view1, view2));
       CHECK_TRUE(etl::equal(view1, view3));
       CHECK_FALSE(etl::equal(view1, view4));
-      CHECK_TRUE(etl::equal(view6, view6));
-      CHECK_TRUE(etl::equal(view6, view7));
 
       CHECK_FALSE(view1 != view2);
       CHECK_TRUE(view1 != view3);
       CHECK_TRUE(view1 != view4);
-      CHECK_FALSE(view6 != view6);
-      CHECK_FALSE(view6 != view7);
     }
 
     //*************************************************************************
@@ -1115,6 +1130,134 @@ namespace
 
       CHECK_EQUAL(const_bytes.size(),    sizeof(data));
       CHECK_EQUAL(writable_bytes.size(), sizeof(data));
+
+      etl::byte* pdata = reinterpret_cast<etl::byte*>(data);
+
+      // Test the reading of bytes.
+      for (size_t i = 0; i < sizeof(data); ++i)
+      {
+        CHECK_EQUAL(int(pdata[i]), int(const_bytes[i]));
+        CHECK_EQUAL(int(pdata[i]), int(writable_bytes[i]));
+      }
+
+      // Test writing of bytes.
+      for (size_t i = 0; i < writable_bytes.size(); ++i)
+      {
+        writable_bytes[i] = ~writable_bytes[i];
+        CHECK_EQUAL(int(pdata[i]), int(writable_bytes[i]));
+      }
+    }
+
+    //*************************************************************************
+    TEST(test_make_span_c_array)
+    {
+      {
+        auto s = etl::make_span(cdata);
+
+        CHECK_EQUAL(s.size(), 10);
+        View view(etldata);
+        CHECK_TRUE(etl::equal(s, view));
+      }
+      {
+        auto s = etl::make_span(ccdata);
+
+        CHECK_EQUAL(s.size(), 10);
+        View view(etldata);
+        CHECK_TRUE(etl::equal(s, view));
+      }
+    }
+
+    //*************************************************************************
+    TEST(test_span_issue_1050_questions_on_span_constructors)
+    {
+      int arr[5]{};
+      etl::span<int, 5> span1(arr);
+      etl::span<int, 5> span2(span1);
+      //etl::span<int, 10> span3(span1); // This line should fail to compile.
+    }
+    
+    //*************************************************************************
+    TEST(test_reinterpret_as)
+    {
+      uint8_t data[] = { 0x01, 0x02, 0x03, 0x04, 0x05 };
+      etl::span<uint8_t, 5> data0 = data;
+
+      etl::span<etl::be_uint16_t> data1 = data0.reinterpret_as<etl::be_uint16_t>();
+
+      CHECK_EQUAL(data1.size(), 2);
+      CHECK(data1[0] == 0x102);
+      CHECK(data1[1] == 0x304);
+    }
+
+    //*************************************************************************
+    TEST(test_reinterpret_as_aligned)
+    {
+      uint32_t data[] = { 0x01020304, 0x020406080, 0x03400560};
+      etl::span<uint32_t, 3> data0 = data;
+      CHECK_EQUAL(data0.size(), 3);
+
+      etl::span<uint8_t> data1 = data0.reinterpret_as<uint8_t>();
+      CHECK_EQUAL(data1.size(), 12);
+
+      etl::span<uint16_t> data2 = data1.subspan(2).reinterpret_as<uint16_t>();
+      CHECK_EQUAL(data2.size(), 5);
+
+      CHECK_THROW(data2 = data1.subspan(1).reinterpret_as<uint16_t>(), etl::span_alignment_exception);
+    }
+
+    //*************************************************************************
+    TEST(test_copy)
+    {
+      uint8_t src[] = { 0x01, 0x02, 0x03, 0x04, 0x05 };
+      uint8_t dst[] = { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
+      {
+        etl::span<uint8_t, 5> data0 = src;
+        etl::span<uint8_t, 6> data1 = dst;
+
+        CHECK_EQUAL(etl::copy(data0, data1), true);
+        CHECK(std::equal(data0.begin(), data0.end(), data1.begin()));
+      }
+      {
+        etl::span<uint8_t, 5> data0 = src;
+        etl::span<uint8_t, 5> data1(&dst[1], 5);
+
+        CHECK_EQUAL(etl::copy(data0, data1), true);
+        CHECK(std::equal(data0.begin(), data0.end(), data1.begin()));
+      }
+
+      {
+        etl::span<uint8_t, 5> data0 = src;
+        etl::span<uint8_t, 4> data1(&dst[2], 4);
+
+        CHECK_EQUAL(etl::copy(data0, data1), false);
+      }
+      {
+        etl::span<uint8_t, 0> data0(&src[0], 0);
+        etl::span<uint8_t, 6> data1 = dst;
+
+        CHECK_EQUAL(etl::copy(data0, data1), true);
+      }
+      {
+        etl::span<uint8_t, 5> data0 = src;
+        etl::span<uint8_t, 5> data1 = src;
+
+        CHECK_EQUAL(etl::copy(data0, data1), true);
+      }
+    }
+
+    //*************************************************************************
+    TEST(test_dynamic_span_to_fixed_span)
+    {
+      int data[5] = { 0, 1, 2, 3, 4 };
+      etl::span<int> sp1(data);
+
+      using span_4 = etl::span<int, 4>;
+      using span_5 = etl::span<int, 5>;
+      using span_8 = etl::span<int, 8>;
+
+      CHECK_NO_THROW({ span_5 sp2(sp1); });
+      CHECK_THROW({ span_4 sp3(sp1); }, etl::span_size_mismatch);
+      CHECK_THROW({ span_8 sp4(sp1); }, etl::span_size_mismatch);
     }
 
 #include "etl/private/diagnostic_pop.h"

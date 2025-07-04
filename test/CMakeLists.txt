@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.5.0)
+cmake_minimum_required(VERSION 3.10)
 project(etl_unit_tests LANGUAGES CXX)
 
 #include(FetchContent)
@@ -19,10 +19,23 @@ add_executable(etl_tests
 	test_array_view.cpp
 	test_array_wrapper.cpp
 	test_atomic.cpp
-    test_binary.cpp
+	test_base64_RFC2152_decoder.cpp
+	test_base64_RFC2152_encoder.cpp
+	test_base64_RFC3501_decoder.cpp
+	test_base64_RFC3501_encoder.cpp
+	test_base64_RFC4648_decoder_with_no_padding.cpp
+	test_base64_RFC4648_decoder_with_padding.cpp
+	test_base64_RFC4648_encoder_with_no_padding.cpp
+	test_base64_RFC4648_encoder_with_padding.cpp
+	test_base64_RFC4648_URL_decoder_with_no_padding.cpp
+	test_base64_RFC4648_URL_decoder_with_padding.cpp
+	test_base64_RFC4648_URL_encoder_with_no_padding.cpp
+	test_base64_RFC4648_URL_encoder_with_padding.cpp
+	test_binary.cpp
 	test_bip_buffer_spsc_atomic.cpp
 	test_bit.cpp
 	test_bitset_legacy.cpp
+	test_bitset_new_comparisons.cpp
 	test_bitset_new_default_element_type.cpp
 	test_bitset_new_explicit_single_element_type.cpp
 	test_bitset_new_ext_default_element_type.cpp
@@ -32,12 +45,12 @@ add_executable(etl_tests
 	test_bit_stream_reader_little_endian.cpp
 	test_bit_stream_writer_big_endian.cpp
 	test_bit_stream_writer_little_endian.cpp
-	test_byte.cpp
-	test_byte_stream.cpp
 	test_bloom_filter.cpp
 	test_bresenham_line.cpp
 	test_bsd_checksum.cpp
 	test_buffer_descriptors.cpp
+	test_byte.cpp
+	test_byte_stream.cpp
 	test_callback_service.cpp
 	test_callback_timer.cpp
 	test_callback_timer_atomic.cpp
@@ -45,6 +58,27 @@ add_executable(etl_tests
 	test_callback_timer_locked.cpp
 	test_char_traits.cpp
 	test_checksum.cpp
+	test_chrono_clocks.cpp
+	test_chrono_day.cpp
+	test_chrono_duration.cpp
+	test_chrono_hh_mm_ss.cpp
+	test_chrono_literals.cpp
+	test_chrono_month.cpp
+	test_chrono_month_day.cpp
+	test_chrono_month_day_last.cpp
+	test_chrono_month_weekday.cpp
+	test_chrono_month_weekday_last.cpp
+	test_chrono_operators.cpp
+	test_chrono_time_point.cpp
+	test_chrono_weekday.cpp
+	test_chrono_weekday_indexed.cpp
+	test_chrono_weekday_last.cpp
+	test_chrono_year.cpp
+	test_chrono_year_month.cpp
+	test_chrono_year_month_day.cpp
+	test_chrono_year_month_day_last.cpp
+	test_chrono_year_month_weekday.cpp
+	test_chrono_year_month_weekday_last.cpp
 	test_circular_buffer.cpp
 	test_circular_buffer_external_buffer.cpp
 	test_circular_iterator.cpp
@@ -53,7 +87,7 @@ add_executable(etl_tests
 	test_container.cpp
 	test_correlation.cpp
 	test_covariance.cpp
-	test_crc.cpp
+	test_crc1.cpp
 	test_crc16.cpp
 	test_crc16_a.cpp
 	test_crc16_arc.cpp
@@ -97,6 +131,8 @@ add_executable(etl_tests
 	test_crc8_ebu.cpp
 	test_crc8_icode.cpp
 	test_crc8_itu.cpp
+	test_crc8_j1850.cpp
+	test_crc8_j1850_zero.cpp
 	test_crc8_maxim.cpp
 	test_crc8_rohc.cpp
 	test_crc8_wcdma.cpp
@@ -106,6 +142,7 @@ add_executable(etl_tests
 	test_delegate_cpp03.cpp
 	test_delegate_service.cpp
 	test_delegate_service_compile_time.cpp
+	test_delegate_service_cpp03.cpp
 	test_deque.cpp
 	test_endian.cpp
 	test_enum_type.cpp
@@ -127,10 +164,13 @@ add_executable(etl_tests
 	test_fsm.cpp
 	test_function.cpp
 	test_functional.cpp
+	test_function_traits.cpp
 	test_gamma.cpp
 	test_hash.cpp
 	test_hfsm.cpp
+	test_hfsm_recurse_to_inner_state_on_start.cpp
 	test_histogram.cpp
+	test_index_of_type.cpp
 	test_indirect_vector.cpp
 	test_indirect_vector_external_buffer.cpp
 	test_instance_count.cpp
@@ -149,13 +189,16 @@ add_executable(etl_tests
 	test_limits.cpp
 	test_list.cpp
 	test_list_shared_pool.cpp
+	test_macros.cpp
 	test_make_string.cpp
 	test_map.cpp
-	test_maths.cpp
+	test_math.cpp
+	test_math_functions.cpp
 	test_mean.cpp
+	test_memory.cpp
 	test_mem_cast.cpp
 	test_mem_cast_ptr.cpp
-	test_memory.cpp
+	test_message.cpp
 	test_message_broker.cpp
 	test_message_bus.cpp
 	test_message_packet.cpp
@@ -169,12 +212,14 @@ add_executable(etl_tests
 	test_multiset.cpp
 	test_multi_array.cpp
 	test_multi_range.cpp
+	test_multi_span.cpp
 	test_multi_vector.cpp
 	test_murmur3.cpp
 	test_nth_type.cpp
 	test_numeric.cpp
 	test_observer.cpp
 	test_optional.cpp
+	test_overload.cpp
 	test_packet.cpp
 	test_parameter_pack.cpp
 	test_parameter_type.cpp
@@ -200,6 +245,7 @@ add_executable(etl_tests
 	test_queue_spsc_locked.cpp
 	test_queue_spsc_locked_small.cpp
 	test_random.cpp
+	test_ratio.cpp
 	test_reference_flat_map.cpp
 	test_reference_flat_multimap.cpp
 	test_reference_flat_multiset.cpp
@@ -211,33 +257,39 @@ add_executable(etl_tests
 	test_set.cpp
 	test_shared_message.cpp
 	test_singleton.cpp
+	test_singleton_base.cpp
 	test_smallest.cpp
 	test_span_dynamic_extent.cpp
 	test_span_fixed_extent.cpp
 	test_stack.cpp
 	test_standard_deviation.cpp
 	test_state_chart.cpp
-	test_state_chart_with_data_parameter.cpp
-	test_state_chart_with_rvalue_data_parameter.cpp
 	test_state_chart_compile_time.cpp
 	test_state_chart_compile_time_with_data_parameter.cpp
+	test_state_chart_with_data_parameter.cpp
+	test_state_chart_with_rvalue_data_parameter.cpp
 	test_string_char.cpp
 	test_string_char_external_buffer.cpp
 	test_string_stream.cpp
 	test_string_stream_u16.cpp
 	test_string_stream_u32.cpp
+	test_string_stream_u8.cpp
 	test_string_stream_wchar_t.cpp
 	test_string_u16.cpp
 	test_string_u16_external_buffer.cpp
 	test_string_u32.cpp
 	test_string_u32_external_buffer.cpp
+	test_string_u8.cpp
+	test_string_u8_external_buffer.cpp
 	test_string_utilities.cpp
 	test_string_utilities_std.cpp
 	test_string_utilities_std_u16.cpp
 	test_string_utilities_std_u32.cpp
+	test_string_utilities_std_u8.cpp
 	test_string_utilities_std_wchar_t.cpp
 	test_string_utilities_u16.cpp
 	test_string_utilities_u32.cpp
+	test_string_utilities_u8.cpp
 	test_string_utilities_wchar_t.cpp
 	test_string_view.cpp
 	test_string_wchar_t.cpp
@@ -248,17 +300,22 @@ add_executable(etl_tests
 	test_to_arithmetic.cpp
 	test_to_arithmetic_u16.cpp
 	test_to_arithmetic_u32.cpp
+	test_to_arithmetic_u8.cpp
 	test_to_arithmetic_wchar_t.cpp
 	test_to_string.cpp
 	test_to_u16string.cpp
 	test_to_u32string.cpp
+	test_to_u8string.cpp
 	test_to_wstring.cpp
+	test_tuple.cpp
 	test_type_def.cpp
+	test_type_list.cpp
 	test_type_lookup.cpp
 	test_type_select.cpp
 	test_type_traits.cpp
 	test_unaligned_type.cpp
-	test_unaligned_type_constexpr.cpp
+	test_unaligned_type_ext.cpp
+	test_uncopyable.cpp
 	test_unordered_map.cpp
 	test_unordered_multimap.cpp
 	test_unordered_multiset.cpp
@@ -267,9 +324,9 @@ add_executable(etl_tests
 	test_utility.cpp
 	test_variance.cpp
 	test_variant_legacy.cpp
-	test_variant_variadic.cpp
 	test_variant_pool.cpp
 	test_variant_pool_external_buffer.cpp
+	test_variant_variadic.cpp
 	test_vector.cpp
 	test_vector_external_buffer.cpp
 	test_vector_non_trivial.cpp
@@ -277,7 +334,7 @@ add_executable(etl_tests
 	test_vector_pointer_external_buffer.cpp
 	test_visitor.cpp
 	test_xor_checksum.cpp
-	test_xor_rotate_checksum.cpp 
+	test_xor_rotate_checksum.cpp
   )
 
 target_compile_definitions(etl_tests PRIVATE -DETL_DEBUG)
@@ -288,20 +345,23 @@ if (ETL_CXX_STANDARD MATCHES "98")
 	message(STATUS "Compiling for C++98")
     set_property(TARGET etl_tests PROPERTY CXX_STANDARD 98)
 elseif (ETL_CXX_STANDARD MATCHES "03")
-	message(STATUS "Compiling for C++03 (C++98)")    
+	message(STATUS "Compiling for C++03 (C++98)")
 	set_property(TARGET etl_tests PROPERTY CXX_STANDARD 98)
 elseif (ETL_CXX_STANDARD MATCHES "11")
-	message(STATUS "Compiling for C++11")    
+	message(STATUS "Compiling for C++11")
 	set_property(TARGET etl_tests PROPERTY CXX_STANDARD 11)
 elseif (ETL_CXX_STANDARD MATCHES "14")
-	message(STATUS "Compiling for C++14")    
+	message(STATUS "Compiling for C++14")
 	set_property(TARGET etl_tests PROPERTY CXX_STANDARD 14)
 elseif (ETL_CXX_STANDARD MATCHES "17")
-	message(STATUS "Compiling for C++17")    
+	message(STATUS "Compiling for C++17")
 	set_property(TARGET etl_tests PROPERTY CXX_STANDARD 17)
-else()
+elseif (ETL_CXX_STANDARD MATCHES "20")
 	message(STATUS "Compiling for C++20")
 	set_property(TARGET etl_tests PROPERTY CXX_STANDARD 20)
+else()
+	message(STATUS "Compiling for C++23")
+	set_property(TARGET etl_tests PROPERTY CXX_STANDARD 23)
 endif()
 
 if (NO_STL OR ETL_NO_STL)
@@ -319,6 +379,11 @@ endif()
 if (ETL_USER_DEFINED_TYPE_TRAITS)
 	message(STATUS "Compiling for user defined type traits")
 	target_compile_definitions(etl_tests PRIVATE -DETL_USER_DEFINED_TYPE_TRAITS)
+endif()
+
+if (ETL_MESSAGES_ARE_NOT_VIRTUAL)
+	message(STATUS "Compiling for non-virtual messages")
+	target_compile_definitions(etl_tests PRIVATE -DETL_MESSAGES_ARE_NOT_VIRTUAL)
 endif()
 
 if (ETL_FORCE_TEST_CPP03_IMPLEMENTATION)
@@ -341,21 +406,23 @@ if (ETL_OPTIMISATION MATCHES "-O3")
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3")
 endif()
 
-target_include_directories(etl_tests
-		PRIVATE
-		${PROJECT_SOURCE_DIR}/../include)
-
-add_subdirectory(UnitTest++)
-target_link_libraries(etl_tests PRIVATE UnitTestpp)
-
 if ((CMAKE_CXX_COMPILER_ID MATCHES "MSVC"))
+	message(STATUS "Using MSVC compiler")
 	target_compile_options(etl_tests
 			PRIVATE
 			/Zc:__cplusplus
 			)
 endif ()
 
-if ((CMAKE_CXX_COMPILER_ID MATCHES "GNU") OR (CMAKE_CXX_COMPILER_ID MATCHES "Clang"))
+if (CMAKE_CXX_COMPILER_ID MATCHES "GNU")
+	message(STATUS "Using GCC compiler")
+endif ()
+
+if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+    message(STATUS "Using Clang compiler")
+endif ()
+
+if (CMAKE_CXX_COMPILER_ID MATCHES "GNU")
 	target_compile_options(etl_tests
 			PRIVATE
 			-fno-omit-frame-pointer
@@ -363,21 +430,52 @@ if ((CMAKE_CXX_COMPILER_ID MATCHES "GNU") OR (CMAKE_CXX_COMPILER_ID MATCHES "Cla
 			-Wall
 			-Wextra
 			-Werror
+			-Wfloat-equal
+			-Wshadow
+			-Wnull-dereference
+			-g
 			)
-	
-	# MinGW doesn't presently support sanitization
-	if (NOT MINGW)
-		target_compile_options(etl_tests
-			PRIVATE
-			-fsanitize=address,undefined,bounds
-			)
-
-		target_link_options(etl_tests
-			PRIVATE
-			-fsanitize=address,undefined,bounds
-			)	
-	endif()
 endif ()
+
+if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+	target_compile_options(etl_tests
+			PRIVATE
+			-fno-omit-frame-pointer
+			-fno-common
+			-Wall
+			-Wextra
+			-Werror
+			-Wfloat-equal
+			-Wshadow
+			-Wnull-dereference
+			-g
+			)
+endif ()
+
+if ((CMAKE_CXX_COMPILER_ID MATCHES "GNU") OR (CMAKE_CXX_COMPILER_ID MATCHES "Clang"))
+	if (ETL_ENABLE_SANITIZER MATCHES "ON")
+		message(STATUS "Compiling with Sanitizer enabled")
+		# MinGW doesn't presently support sanitization
+		if (NOT MINGW)
+			target_compile_options(etl_tests
+				PRIVATE
+				-fsanitize=address,undefined,bounds
+				)
+
+			target_link_options(etl_tests
+				PRIVATE
+				-fsanitize=address,undefined,bounds
+				)	
+		endif()
+	endif ()
+endif ()
+
+target_include_directories(etl_tests
+		PRIVATE
+		${PROJECT_SOURCE_DIR}/../include)
+
+add_subdirectory(UnitTest++)
+target_link_libraries(etl_tests PRIVATE UnitTestpp)
 
 # Enable the 'make test' CMake target using the executable defined above
 add_test(etl_unit_tests etl_tests)
@@ -387,4 +485,3 @@ add_test(etl_unit_tests etl_tests)
 # as they appear from UnitTest++
 add_custom_target(test_verbose COMMAND ${CMAKE_CTEST_COMMAND} --verbose)
 
- 

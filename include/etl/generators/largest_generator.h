@@ -52,12 +52,12 @@ cog.outl("//********************************************************************
 // To generate to header file, run this at the command line.
 // Note: You will need Python and COG installed.
 //
-// python -m cogapp -d -e -olargest.h -DNTypes=<n> largest_generator.h
+// cog -d -e -olargest.h -DNTypes=<n> largest_generator.h
 // Where <n> is the number of types to support.
 //
 // e.g.
 // To generate handlers for up to 16 types...
-// python -m cogapp -d -e -olargest.h -DNTypes=16 largest_generator.h
+// cog -d -e -olargest.h -DNTypes=16 largest_generator.h
 //
 // See generate.bat
 //***************************************************************************
@@ -140,7 +140,7 @@ namespace etl
   cog.outl("/// Supports up to %s types." % NTypes)
   cog.outl("/// Defines 'value_type' which is the type of the largest parameter.")
   cog.outl("/// Defines 'size' which is the size of the largest parameter.")
-  cog.outl("///\ingroup largest")
+  cog.outl("///\\ingroup largest")
   cog.outl("//***************************************************************************")
   cog.out("template <typename T1, ")
   for n in range(2, int(NTypes)):
@@ -249,7 +249,7 @@ namespace etl
   cog.outl("/// Template to determine the largest alignment.")
   cog.outl("/// Supports up to %s types." % int(NTypes))
   cog.outl("/// Defines <b>value</b> which is the largest alignment of all the parameters.")
-  cog.outl("///\ingroup largest")
+  cog.outl("///\\ingroup largest")
   cog.outl("//***************************************************************************")
   cog.out("template <typename T1, ")
   for n in range(2, int(NTypes)):
@@ -309,7 +309,7 @@ namespace etl
   //***************************************************************************
   /// Defines a type that is as larger or larger than the specified type.
   /// Will return the specified type is there is not a larger type.
-  ///\ingroup largest
+  ///\\ingroup largest
   //***************************************************************************
   template <typename T>
   struct larger_int_type
@@ -379,7 +379,7 @@ namespace etl
   ///\ingroup largest
   //***************************************************************************
   template <typename... T>
-    struct largest
+  struct largest
   {
     using type = typename etl::largest_type<T...>::type;
 
@@ -407,7 +407,7 @@ namespace etl
   cog.outl("/// Template to determine the largest type, size and alignment.")
   cog.outl("/// Supports up to %s types." % NTypes)
   cog.outl("/// Defines <b>value</b> which is the largest type, size and alignment of all the parameters.")
-  cog.outl("///\ingroup largest")
+  cog.outl("///\\ingroup largest")
   cog.outl("//***************************************************************************")
   cog.out("template <typename T1, ")
   for n in range(2, int(NTypes)):

@@ -32,9 +32,7 @@ SOFTWARE.
 #define ETL_QUEUE_INCLUDED
 
 #include "platform.h"
-#include "iterator.h"
 #include "alignment.h"
-#include "array.h"
 #include "exception.h"
 #include "error_handler.h"
 #include "debug_count.h"
@@ -193,7 +191,7 @@ namespace etl
       }
 
       ++current_size;
-      ETL_INCREMENT_DEBUG_COUNT
+      ETL_INCREMENT_DEBUG_COUNT;
     }
 
     //*************************************************************************
@@ -206,7 +204,7 @@ namespace etl
         out = 0;
       }
       --current_size;
-      ETL_DECREMENT_DEBUG_COUNT
+      ETL_DECREMENT_DEBUG_COUNT;
     }
 
     //*************************************************************************
@@ -217,14 +215,14 @@ namespace etl
       in = 0;
       out = 0;
       current_size = 0;
-      ETL_RESET_DEBUG_COUNT
+      ETL_RESET_DEBUG_COUNT;
     }
 
     size_type in;            ///< Where to input new data.
     size_type out;           ///< Where to get the oldest data.
     size_type current_size;   ///< The number of items in the queue.
     const size_type CAPACITY; ///< The maximum number of items in the queue.
-    ETL_DECLARE_DEBUG_COUNT  ///< For internal debugging purposes.
+    ETL_DECLARE_DEBUG_COUNT;  ///< For internal debugging purposes.
 
   };
 
@@ -337,76 +335,107 @@ namespace etl
     //*************************************************************************
     /// Constructs a value in the queue 'in place'.
     /// If asserts or exceptions are enabled, throws an etl::queue_full if the queue if already full.
-    ///\param value The value to use to construct the item to push to the queue.
+    ///\param args The arguments to the constructor for the new item to push to the queue.
     //*************************************************************************
     template <typename ... Args>
-    void emplace(Args && ... args)
+    reference emplace(Args && ... args)
     {
 #if defined(ETL_CHECK_PUSH_POP)
       ETL_ASSERT(!full(), ETL_ERROR(queue_full));
 #endif
-      ::new (&p_buffer[in]) T(etl::forward<Args>(args)...);
+      reference value = p_buffer[in];
+      ::new (&value) T(etl::forward<Args>(args)...);
       add_in();
+      return value;
     }
 #else
     //*************************************************************************
+    /// Constructs a default constructed value in the queue 'in place'.
+    /// If asserts or exceptions are enabled, throws an etl::queue_full if the queue if already full.
+    //*************************************************************************
+    reference emplace()
+    {
+#if defined(ETL_CHECK_PUSH_POP)
+      ETL_ASSERT(!full(), ETL_ERROR(queue_full));
+#endif
+      reference value = p_buffer[in];
+      ::new (&value) T();
+      add_in();
+      return value;
+    }
+
+    //*************************************************************************
     /// Constructs a value in the queue 'in place'.
     /// If asserts or exceptions are enabled, throws an etl::queue_full if the queue if already full.
-    ///\param value The value to use to construct the item to push to the queue.
+    ///\param value1 The argument to use to construct the item to push to the queue.
     //*************************************************************************
     template <typename T1>
-    void emplace(const T1& value1)
+    reference emplace(const T1& value1)
     {
 #if defined(ETL_CHECK_PUSH_POP)
       ETL_ASSERT(!full(), ETL_ERROR(queue_full));
 #endif
-      ::new (&p_buffer[in]) T(value1);
+      reference value = p_buffer[in];
+      ::new (&value) T(value1);
       add_in();
+      return value;
     }
 
     //*************************************************************************
     /// Constructs a value in the queue 'in place'.
     /// If asserts or exceptions are enabled, throws an etl::queue_full if the queue if already full.
-    ///\param value The value to use to construct the item to push to the queue.
+    ///\param value1 The first argument to use to construct the item to push to the queue.
+    ///\param value2 The second argument to use to construct the item to push to the queue.
     //*************************************************************************
     template <typename T1, typename T2>
-    void emplace(const T1& value1, const T2& value2)
+    reference emplace(const T1& value1, const T2& value2)
     {
 #if defined(ETL_CHECK_PUSH_POP)
       ETL_ASSERT(!full(), ETL_ERROR(queue_full));
 #endif
-      ::new (&p_buffer[in]) T(value1, value2);
+      reference value = p_buffer[in];
+      ::new (&value) T(value1, value2);
       add_in();
+      return value;
     }
 
     //*************************************************************************
     /// Constructs a value in the queue 'in place'.
     /// If asserts or exceptions are enabled, throws an etl::queue_full if the queue if already full.
-    ///\param value The value to use to construct the item to push to the queue.
+    ///\param value1 The first argument to use to construct the item to push to the queue.
+    ///\param value2 The second argument to use to construct the item to push to the queue.
+    ///\param value3 The third argument to use to construct the item to push to the queue.
     //*************************************************************************
     template <typename T1, typename T2, typename T3>
-    void emplace(const T1& value1, const T2& value2, const T3& value3)
+    reference emplace(const T1& value1, const T2& value2, const T3& value3)
     {
 #if defined(ETL_CHECK_PUSH_POP)
       ETL_ASSERT(!full(), ETL_ERROR(queue_full));
 #endif
-      ::new (&p_buffer[in]) T(value1, value2, value3);
+      reference value = p_buffer[in];
+      ::new (&value) T(value1, value2, value3);
       add_in();
+      return value;
     }
 
     //*************************************************************************
     /// Constructs a value in the queue 'in place'.
     /// If asserts or exceptions are enabled, throws an etl::queue_full if the queue if already full.
-    ///\param value The value to use to construct the item to push to the queue.
+    ///\param value1 The first argument to use to construct the item to push to the queue.
+    ///\param value2 The second argument to use to construct the item to push to the queue.
+    ///\param value3 The third argument to use to construct the item to push to the queue.
+    ///\param value4 The fourth argument to use to construct the item to push to the queue.
     //*************************************************************************
     template <typename T1, typename T2, typename T3, typename T4>
-    void emplace(const T1& value1, const T2& value2, const T3& value3, const T4& value4)
+    reference emplace(const T1& value1, const T2& value2, const T3& value3, const T4& value4)
     {
 #if defined(ETL_CHECK_PUSH_POP)
       ETL_ASSERT(!full(), ETL_ERROR(queue_full));
 #endif
-      ::new (&p_buffer[in]) T(value1, value2, value3, value4);
+      reference value = p_buffer[in];
+      ::new (&value) T(value1, value2, value3, value4);
       add_in();
+      return value;
     }
 #endif
 
@@ -440,7 +469,7 @@ namespace etl
     void pop()
     {
 #if defined(ETL_CHECK_PUSH_POP)
-      ETL_ASSERT(!empty(), ETL_ERROR(queue_empty));
+      ETL_ASSERT_OR_RETURN(!empty(), ETL_ERROR(queue_empty));
 #endif
       p_buffer[out].~T();
       del_out();
@@ -648,7 +677,7 @@ namespace etl
     {
       if (&rhs != this)
       {
-        base_t::move_clone(rhs);
+        base_t::move_clone(etl::move(rhs));
       }
 
       return *this;

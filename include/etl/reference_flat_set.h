@@ -87,7 +87,7 @@ namespace etl
   public:
 
     flat_set_iterator(string_type file_name_, numeric_type line_number_)
-      : flat_set_exception(ETL_ERROR_TEXT("flat_set:iterator", ETL_REFERENCE_FLAT_SET_FILE_ID"C"), file_name_, line_number_)
+      : flat_set_exception(ETL_ERROR_TEXT("flat_set:iterator", ETL_REFERENCE_FLAT_SET_FILE_ID"B"), file_name_, line_number_)
     {
     }
   };
@@ -999,7 +999,7 @@ namespace etl
   template <typename TKey, typename TKeyCompare = etl::less<TKey>, typename... T>
   constexpr auto make_reference_flat_set(T&&... keys) -> etl::reference_flat_set<TKey, sizeof...(T), TKeyCompare>
   {
-    return { {etl::forward<T>(keys)...} };
+    return { etl::forward<T>(keys)... };
   }
 #endif
 

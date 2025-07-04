@@ -372,6 +372,20 @@ namespace etl
     //*************************************************************************
     /// Constructs a value in the queue 'in place'.
     //*************************************************************************
+    bool emplace()
+    {
+      this->lock();
+
+      bool result = emplace_implementation();
+
+      this->unlock();
+
+      return result;
+    }
+
+    //*************************************************************************
+    /// Constructs a value in the queue 'in place'.
+    //*************************************************************************
     template <typename T1>
     bool emplace(const T1& value1)
     {
@@ -537,9 +551,18 @@ namespace etl
     {
       this->lock();
 
-      while (pop_implementation())
+      if ETL_IF_CONSTEXPR(etl::is_trivially_destructible<T>::value)
       {
-        // Do nothing.
+        this->write_index  = 0;
+        this->read_index   = 0;
+        this->current_size = 0;
+      }
+      else
+      {
+        while (pop_implementation())
+        {
+          // Do nothing.
+        }
       }
 
       this->unlock();

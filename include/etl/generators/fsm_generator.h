@@ -50,12 +50,12 @@ cog.outl("//********************************************************************
 // To generate to header file, run this at the command line.
 // Note: You will need Python and COG installed.
 //
-// python -m cogapp -d -e -ofsm.h -DHandlers=<n> fsm_generator.h
+// cog -d -e -ofsm.h -DHandlers=<n> fsm_generator.h
 // Where <n> is the number of messages to support.
 //
 // e.g.
 // To generate handlers for up to 16 events...
-// python -m cogapp -d -e -ofsm.h -DHandlers=16 fsm_generator.h
+// cog -d -e -ofsm.h -DHandlers=16 fsm_generator.h
 //
 // See generate.bat
 //***************************************************************************
@@ -177,13 +177,25 @@ namespace etl
   };
 
   //***************************************************************************
-  /// Exception for forbidden state chages.
+  /// Exception for forbidden state changes.
   //***************************************************************************
   class fsm_state_composite_state_change_forbidden : public etl::fsm_exception
   {
   public:
     fsm_state_composite_state_change_forbidden(string_type file_name_, numeric_type line_number_)
       : etl::fsm_exception(ETL_ERROR_TEXT("fsm:change in composite state forbidden", ETL_FSM_FILE_ID"E"), file_name_, line_number_)
+    {
+    }
+  };
+
+  //***************************************************************************
+  /// Exception for message received but not started.
+  //***************************************************************************
+  class fsm_not_started : public etl::fsm_exception
+  {
+  public:
+    fsm_not_started(string_type file_name_, numeric_type line_number_)
+      : etl::fsm_exception(ETL_ERROR_TEXT("fsm:not started", ETL_FSM_FILE_ID"F"), file_name_, line_number_)
     {
     }
   };
@@ -201,6 +213,9 @@ namespace etl
       
       // Pass this when this event also needs to be passed to the parent.
       static ETL_CONSTANT fsm_state_id_t Pass_To_Parent = No_State_Change - 1U;
+
+      // Pass this when this event should trigger a self transition.
+      static ETL_CONSTANT fsm_state_id_t Self_Transition = No_State_Change - 2U;
     };
 
     template <typename T>
@@ -208,6 +223,9 @@ namespace etl
 
     template <typename T>
     ETL_CONSTANT fsm_state_id_t ifsm_state_helper<T>::Pass_To_Parent;
+
+    template <typename T>
+    ETL_CONSTANT fsm_state_id_t ifsm_state_helper<T>::Self_Transition;
   }
 
   //***************************************************************************
@@ -223,6 +241,7 @@ namespace etl
 
     using private_fsm::ifsm_state_helper<>::No_State_Change;
     using private_fsm::ifsm_state_helper<>::Pass_To_Parent;
+    using private_fsm::ifsm_state_helper<>::Self_Transition;
 
 #if ETL_USING_CPP17 && !defined(ETL_FSM_FORCE_CPP03_IMPLEMENTATION) // For C++17 and above
     template <typename, typename, etl::fsm_state_id_t, typename...>
@@ -423,26 +442,38 @@ namespace etl
     //*******************************************
     void receive(const etl::imessage& message) ETL_OVERRIDE
     {
-      etl::fsm_state_id_t next_state_id = p_state->process_event(message);
-
-      if (have_changed_state(next_state_id))
+      if (is_started())
       {
-        ETL_ASSERT(next_state_id < number_of_states, ETL_ERROR(etl::fsm_state_id_exception));
-        etl::ifsm_state* p_next_state = state_list[next_state_id];
+        etl::fsm_state_id_t next_state_id = p_state->process_event(message);
 
-        do
+        if (have_changed_state(next_state_id))
+        {
+          ETL_ASSERT_OR_RETURN(next_state_id < number_of_states, ETL_ERROR(etl::fsm_state_id_exception));
+          etl::ifsm_state* p_next_state = state_list[next_state_id];
+
+          do
+          {
+            p_state->on_exit_state();
+            p_state = p_next_state;
+
+            next_state_id = p_state->on_enter_state();
+
+            if (have_changed_state(next_state_id))
+            {
+              ETL_ASSERT_OR_RETURN(next_state_id < number_of_states, ETL_ERROR(etl::fsm_state_id_exception));
+              p_next_state = state_list[next_state_id];
+            }
+          } while (p_next_state != p_state); // Have we changed state again?
+        }
+        else if (is_self_transition(next_state_id))
         {
           p_state->on_exit_state();
-          p_state = p_next_state;
-
-          next_state_id = p_state->on_enter_state();
-
-          if (have_changed_state(next_state_id))
-          {
-            ETL_ASSERT(next_state_id < number_of_states, ETL_ERROR(etl::fsm_state_id_exception));
-            p_next_state = state_list[next_state_id];
-          }
-        } while (p_next_state != p_state); // Have we changed state again?
+          p_state->on_enter_state();
+        }
+      }
+      else
+      {
+        ETL_ASSERT_FAIL(ETL_ERROR(etl::fsm_not_started));
       }
     }
 
@@ -530,7 +561,14 @@ namespace etl
     bool have_changed_state(etl::fsm_state_id_t next_state_id) const
     {
       return (next_state_id != p_state->get_state_id()) &&
-             (next_state_id != ifsm_state::No_State_Change);
+             (next_state_id != ifsm_state::No_State_Change) &&
+             (next_state_id != ifsm_state::Self_Transition);
+    }
+
+    //********************************************
+    bool is_self_transition(etl::fsm_state_id_t next_state_id) const
+    {
+      return (next_state_id == ifsm_state::Self_Transition);
     }
 
     etl::ifsm_state*    p_state;          ///< A pointer to the current state.
@@ -594,11 +632,11 @@ namespace etl
 
     //********************************************
     template <typename TMessage>
-    bool process_event_type(const etl::imessage& msg, etl::fsm_state_id_t& state_id)
+    bool process_event_type(const etl::imessage& msg, etl::fsm_state_id_t& new_state_id)
     {
       if (TMessage::ID == msg.get_message_id())
       {
-        state_id = static_cast<TDerived*>(this)->on_event(static_cast<const TMessage&>(msg));
+        new_state_id = static_cast<TDerived*>(this)->on_event(static_cast<const TMessage&>(msg));
         return true;
       }
       else

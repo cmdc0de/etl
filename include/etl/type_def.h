@@ -32,277 +32,784 @@ SOFTWARE.
 #define ETL_TYPE_DEF_INCLUDED
 
 #include "platform.h"
+#include "type_traits.h"
 
 namespace etl
 {
-    #define ETL_TYPEDEF(T, name) class name##_tag; typedef etl::type_def<name##_tag, T> name
+  #define ETL_TYPEDEF(T, name) class name##_tag; typedef etl::type_def<name##_tag, T> name
+  #define ETL_USING(name, T)   class name##_tag; typedef etl::type_def<name##_tag, T> name
 
-    //*************************************************************************
-    /// A template type to define strong typedefs.
-    /// Usage:
-    ///\code
-    /// // Short form.
-    /// ETL_TYPEDEF(int, mytype);
-    ///
-    /// // Long form.
-    /// class mytype_t_tag;
-    /// typedef etl::type_def<mytype_t_tag, int> mytype_t_tag;
-    ///\endcode
-    //*************************************************************************
-    template <typename TIdType, typename TValue>
-    class type_def
+  //*************************************************************************
+  /// A template type to define strong typedefs.
+  /// Usage:
+  ///\code
+  /// // Short form.
+  /// ETL_TYPEDEF(int, mytype);
+  /// or
+  /// ETL_USING(mytype, int);
+  ///
+  /// // Long form.
+  /// class mytype_t_tag;
+  /// typedef etl::type_def<mytype_t_tag, int> mytype;
+  ///\endcode
+  //*************************************************************************
+  template <typename TIdType, typename TValue>
+  class type_def
+  {
+  public:
+
+    typedef TValue  type;
+    typedef TValue  value_type;
+    typedef TIdType id_type;
+
+    //*********************************************************************
+    ETL_CONSTEXPR type_def()
+      : value(TValue())
     {
-    public:
+    }
 
-        typedef TValue  value_type;
-        typedef TIdType id_type;
+    //*********************************************************************
+#if ETL_USING_CPP11
+    template <typename T, typename = typename etl::enable_if<etl::is_convertible<T, TValue>::value, void>::type>
+#else
+    template <typename T>
+#endif
+    ETL_CONSTEXPR type_def(T value_)
+      : value(value_)
+    {
+    }
 
-        //*********************************************************************
-        type_def()
-            : value(TValue())
-        {
-        }
+    //*********************************************************************
+#if ETL_USING_CPP11
+    ETL_CONSTEXPR type_def(const type_def& other) = default;
+#endif
 
-        //*********************************************************************
-        type_def(TValue value_)
-            : value(value_)
-        {
-        }
+    //*********************************************************************
+    ETL_CONSTEXPR operator TValue() const
+    {
+      return value;
+    }
 
-        //*********************************************************************
-        type_def(const type_def& other)
-            : value(other.value)
-        {
-        }
+    //*********************************************************************
+    ETL_CONSTEXPR14 type_def& operator ++()
+    {
+      ++value;
+      return *this;
+    }
 
-        //*********************************************************************
-        operator TValue() const
-        {
-            return value;
-        }
+    //*********************************************************************
+    ETL_CONSTEXPR14 type_def operator ++(int)
+    {
+      type_def temp(*this);
+      type_def::operator ++();
+      return temp;
+    }
 
-        //*********************************************************************
-        type_def& operator ++()
-        {
-            ++value;
-            return *this;
-        }
+    //*********************************************************************
+    ETL_CONSTEXPR14 type_def& operator --()
+    {
+      --value;
+      return *this;
+    }
 
-        //*********************************************************************
-        type_def operator ++(int)
-        {
-            type_def temp(*this);
-            type_def::operator ++();
-            return temp;
-        }
+    //*********************************************************************
+    ETL_CONSTEXPR14 type_def operator --(int)
+    {
+      type_def temp(*this);
+      type_def::operator --();
+      return temp;
+    }
 
-        //*********************************************************************
-        type_def& operator --()
-        {
-            --value;
-            return *this;
-        }
+    //*********************************************************************
+    template <typename T>
+    ETL_CONSTEXPR14 
+#if ETL_USING_CPP11
+      typename etl::enable_if<etl::is_convertible<T, TValue>::value, type_def&>::type
+#else
+      type_def&
+#endif
+      operator +=(T rhs)
+    {
+      value += rhs;
+      return *this;
+    }
 
-        //*********************************************************************
-        type_def operator --(int)
-        {
-            type_def temp(*this);
-            type_def::operator --();
-            return temp;
-        }
+    //*********************************************************************
+    ETL_CONSTEXPR14 
+    type_def& operator +=(const type_def& rhs)
+    {
+      value += rhs.value;
+      return *this;
+    }
 
-        //*********************************************************************
-        type_def& operator +=(TValue rhs)
-        {
-            value += rhs;
-            return *this;
-        }
+    //*********************************************************************
+    template <typename T>
+    ETL_CONSTEXPR14 
+#if ETL_USING_CPP11
+      typename etl::enable_if<etl::is_convertible<T, TValue>::value, type_def&>::type
+#else
+      type_def&
+#endif
+      operator -=(T rhs)
+    {
+      value -= rhs;
+      return *this;
+    }
 
-        //*********************************************************************
-        type_def& operator +=(const type_def& rhs)
-        {
-            value += rhs.value;
-            return *this;
-        }
+    //*********************************************************************
+    ETL_CONSTEXPR14 type_def& operator -=(const type_def& rhs)
+    {
+      value -= rhs.value;
+      return *this;
+    }
 
-        //*********************************************************************
-        type_def& operator -=(TValue rhs)
-        {
-            value -= rhs;
-            return *this;
-        }
+    //*********************************************************************
+    template <typename T>
+    ETL_CONSTEXPR14 
+#if ETL_USING_CPP11
+      typename etl::enable_if<etl::is_convertible<T, TValue>::value, type_def&>::type
+#else
+      type_def&
+#endif
+      operator *=(T rhs)
+    {
+      value *= rhs;
+      return *this;
+    }
 
-        //*********************************************************************
-        type_def& operator -=(const type_def& rhs)
-        {
-            value -= rhs.value;
-            return *this;
-        }
+    //*********************************************************************
+    ETL_CONSTEXPR14 type_def& operator *=(const type_def& rhs)
+    {
+      value *= rhs.value;
+      return *this;
+    }
 
-        //*********************************************************************
-        type_def& operator *=(TValue rhs)
-        {
-            value *= rhs;
-            return *this;
-        }
+    //*********************************************************************
+    template <typename T>
+    ETL_CONSTEXPR14 
+#if ETL_USING_CPP11
+      typename etl::enable_if<etl::is_convertible<T, TValue>::value, type_def&>::type
+#else
+      type_def&
+#endif
+      operator /=(T rhs)
+    {
+      value /= rhs;
+      return *this;
+    }
 
-        //*********************************************************************
-        type_def& operator *=(const type_def& rhs)
-        {
-            value *= rhs.value;
-            return *this;
-        }
+    //*********************************************************************
+    ETL_CONSTEXPR14 type_def& operator /=(const type_def& rhs)
+    {
+      value /= rhs.value;
+      return *this;
+    }
 
-        //*********************************************************************
-        type_def& operator /=(TValue rhs)
-        {
-            value /= rhs;
-            return *this;
-        }
+    //*********************************************************************
+    template <typename T>
+    ETL_CONSTEXPR14 
+#if ETL_USING_CPP11
+      typename etl::enable_if<etl::is_convertible<T, TValue>::value, type_def&>::type
+#else
+      type_def&
+#endif
+      operator %=(T rhs)
+    {
+      value %= rhs;
+      return *this;
+    }
 
-        //*********************************************************************
-        type_def& operator /=(const type_def& rhs)
-        {
-            value /= rhs.value;
-            return *this;
-        }
+    //*********************************************************************
+    ETL_CONSTEXPR14 type_def& operator %=(const type_def& rhs)
+    {
+      value %= rhs.value;
+      return *this;
+    }
 
-        //*********************************************************************
-        type_def& operator %=(TValue rhs)
-        {
-            value %= rhs;
-            return *this;
-        }
+    //*********************************************************************
+    template <typename T>
+    ETL_CONSTEXPR14 
+#if ETL_USING_CPP11
+      typename etl::enable_if<etl::is_convertible<T, TValue>::value, type_def&>::type
+#else
+      type_def&
+#endif
+      operator &=(T rhs)
+    {
+      value &= rhs;
+      return *this;
+    }
 
-        //*********************************************************************
-        type_def& operator %=(const type_def& rhs)
-        {
-            value %= rhs.value;
-            return *this;
-        }
+    //*********************************************************************
+    ETL_CONSTEXPR14 type_def& operator &=(const type_def& rhs)
+    {
+      value &= rhs.value;
+      return *this;
+    }
 
-        //*********************************************************************
-        type_def& operator &=(TValue rhs)
-        {
-            value &= rhs;
-            return *this;
-        }
+    //*********************************************************************
+    template <typename T>
+    ETL_CONSTEXPR14 
+#if ETL_USING_CPP11
+      typename etl::enable_if<etl::is_convertible<T, TValue>::value, type_def&>::type
+#else
+      type_def&
+#endif
+      operator |=(T rhs)
+    {
+      value |= rhs;
+      return *this;
+    }
 
-        //*********************************************************************
-        type_def& operator &=(const type_def& rhs)
-        {
-            value &= rhs.value;
-            return *this;
-        }
+    //*********************************************************************
+    ETL_CONSTEXPR14 type_def& operator |=(const type_def& rhs)
+    {
+      value |= rhs.value;
+      return *this;
+    }
 
-        //*********************************************************************
-        type_def& operator |=(TValue rhs)
-        {
-            value |= rhs;
-            return *this;
-        }
+    //*********************************************************************
+    template <typename T>
+    ETL_CONSTEXPR14 
+#if ETL_USING_CPP11
+      typename etl::enable_if<etl::is_convertible<T, TValue>::value, type_def&>::type
+#else
+      type_def&
+#endif
+      operator ^=(T rhs)
+    {
+      value ^= rhs;
+      return *this;
+    }
 
-        //*********************************************************************
-        type_def& operator |=(const type_def& rhs)
-        {
-            value |= rhs.value;
-            return *this;
-        }
+    //*********************************************************************
+    ETL_CONSTEXPR14 type_def& operator ^=(const type_def& rhs)
+    {
+      value ^= rhs.value;
+      return *this;
+    }
 
-        //*********************************************************************
-        type_def& operator ^=(TValue rhs)
-        {
-            value ^= rhs;
-            return *this;
-        }
+    //*********************************************************************
+    ETL_CONSTEXPR14 type_def& operator <<=(int rhs)
+    {
+      value <<= rhs;
+      return *this;
+    }
 
-        //*********************************************************************
-        type_def& operator ^=(const type_def& rhs)
-        {
-            value ^= rhs.value;
-            return *this;
-        }
+    //*********************************************************************
+    ETL_CONSTEXPR14 type_def& operator >>=(int rhs)
+    {
+      value >>= rhs;
+      return *this;
+    }
 
-        //*********************************************************************
-        type_def& operator <<=(TValue rhs)
-        {
-            value <<= rhs;
-            return *this;
-        }
+    //*********************************************************************
+#if ETL_USING_CPP11
+    ETL_CONSTEXPR14 type_def& operator =(const type_def& rhs) = default;
+#endif
 
-        //*********************************************************************
-        type_def& operator >>=(TValue rhs)
-        {
-            value >>= rhs;
-            return *this;
-        }
+    //*********************************************************************
+    TValue& get()
+    {
+      return value;
+    }
 
-        //*********************************************************************
-        type_def& operator =(TValue rhs)
-        {
-            value = rhs;
-            return *this;
-        }
+    //*********************************************************************
+    ETL_CONSTEXPR const TValue& get() const
+    {
+      return value;
+    }
 
-        //*********************************************************************
-        type_def& operator =(const type_def& rhs)
-        {
-          value = rhs.value;
-          return *this;
-        }
+    //*********************************************************************
+    // + operator
+    //*********************************************************************
+    template <typename T>
+    friend ETL_CONSTEXPR
+#if ETL_USING_CPP11
+      typename etl::enable_if<etl::is_convertible<T, TValue>::value, type_def>::type
+#else
+      type_def
+#endif
+      operator +(const type_def& lhs, T rhs)
+    {
+      return type_def(lhs.value + rhs);
+    }
 
-        //*********************************************************************
-        TValue& get()
-        {
-            return value;
-        }
+    //*********************************************************************
+    template <typename T>
+    friend ETL_CONSTEXPR type_def operator +(T lhs, const type_def& rhs)
+    {
+      return type_def(lhs + rhs.value);
+    }
 
-        //*********************************************************************
-        const TValue& get() const
-        {
-            return value;
-        }
+    //*********************************************************************
+    friend ETL_CONSTEXPR type_def operator +(const type_def& lhs, const type_def& rhs)
+    {
+      return type_def(lhs.value + rhs.value);
+    }
 
-        //*********************************************************************
-        friend bool operator <(const type_def& lhs, const type_def& rhs)
-        {
-            return lhs.value < rhs.value;
-        }
+    //*********************************************************************
+    // - operator
+    //*********************************************************************
+    template <typename T>
+    friend ETL_CONSTEXPR 
+#if ETL_USING_CPP11
+      typename etl::enable_if<etl::is_convertible<T, TValue>::value, type_def>::type
+#else
+      type_def
+#endif
+      operator -(const type_def& lhs, T rhs)
+    {
+      return type_def(lhs.value - rhs);
+    }
 
-        //*********************************************************************
-        friend bool operator <=(const type_def& lhs, const type_def& rhs)
-        {
-            return lhs.value <= rhs.value;
-        }
+    //*********************************************************************
+    template <typename T>
+    friend ETL_CONSTEXPR
+#if ETL_USING_CPP11
+      typename etl::enable_if<etl::is_convertible<T, TValue>::value, type_def>::type
+#else
+      type_def
+#endif
+      operator -(T lhs, const type_def& rhs)
+    {
+      return type_def(lhs - rhs.value);
+    }
 
-        //*********************************************************************
-        friend bool operator >(const type_def& lhs, const type_def& rhs)
-        {
-            return lhs.value > rhs.value;
-        }
+    //*********************************************************************
+    friend ETL_CONSTEXPR type_def operator -(const type_def& lhs, const type_def& rhs)
+    {
+      return type_def(lhs.value - rhs.value);
+    }
 
-        //*********************************************************************
-        friend bool operator >=(const type_def& lhs, const type_def& rhs)
-        {
-            return lhs.value >= rhs.value;
-        }
+    //*********************************************************************
+    // * operator
+    //*********************************************************************
+    template <typename T>
+    friend ETL_CONSTEXPR
+#if ETL_USING_CPP11
+      typename etl::enable_if<etl::is_convertible<T, TValue>::value, type_def>::type
+#else
+      type_def
+#endif
+      operator *(const type_def& lhs, T rhs)
+    {
+      return type_def(lhs.value * rhs);
+    }
 
-        //*********************************************************************
-        friend bool operator ==(const type_def& lhs, const type_def& rhs)
-        {
-            return lhs.value == rhs.value;
-        }
+    //*********************************************************************
+    template <typename T>
+    friend ETL_CONSTEXPR
+#if ETL_USING_CPP11
+      typename etl::enable_if<etl::is_convertible<T, TValue>::value, type_def>::type
+#else
+      type_def
+#endif
+      operator *(T lhs, const type_def& rhs)
+    {
+      return type_def(lhs * rhs.value);
+    }
 
-        //*********************************************************************
-        friend bool operator !=(const type_def& lhs, const type_def& rhs)
-        {
-            return lhs.value != rhs.value;
-        }
+    //*********************************************************************
+    friend ETL_CONSTEXPR type_def operator *(const type_def& lhs, const type_def& rhs)
+    {
+      return type_def(lhs.value * rhs.value);
+    }
 
-    private:
+    //*********************************************************************
+    // / operator
+    //*********************************************************************
+    template <typename T>
+    friend ETL_CONSTEXPR
+#if ETL_USING_CPP11
+      typename etl::enable_if<etl::is_convertible<T, TValue>::value, type_def>::type
+#else
+      type_def
+#endif
+      operator /(const type_def& lhs, T rhs)
+    {
+      return type_def(lhs.value / rhs);
+    }
 
-        TValue value;
-    };
+    //*********************************************************************
+    template <typename T>
+    friend ETL_CONSTEXPR
+#if ETL_USING_CPP11
+      typename etl::enable_if<etl::is_convertible<T, TValue>::value, type_def>::type
+#else
+      type_def
+#endif
+      operator /(T lhs, const type_def& rhs)
+    {
+      return type_def(lhs / rhs.value);
+    }
+
+    //*********************************************************************
+    friend ETL_CONSTEXPR type_def operator /(const type_def& lhs, const type_def& rhs)
+    {
+      return type_def(lhs.value / rhs.value);
+    }
+
+    //*********************************************************************
+    template <typename T>
+    friend ETL_CONSTEXPR
+#if ETL_USING_CPP11
+      typename etl::enable_if<etl::is_convertible<T, TValue>::value, type_def>::type
+#else
+      type_def
+#endif
+      operator %(const type_def& lhs, T rhs)
+    {
+      return type_def(lhs.value % rhs);
+    }
+
+    //*********************************************************************
+    // % operator
+    //*********************************************************************
+    template <typename T>
+    friend ETL_CONSTEXPR
+#if ETL_USING_CPP11
+      typename etl::enable_if<etl::is_convertible<T, TValue>::value, type_def>::type
+#else
+      type_def
+#endif
+      operator %(T lhs, const type_def& rhs)
+    {
+      return type_def(lhs % rhs.value);
+    }
+
+    //*********************************************************************
+    friend ETL_CONSTEXPR type_def operator %(const type_def& lhs, const type_def& rhs)
+    {
+      return type_def(lhs.value % rhs.value);
+    }
+
+    //*********************************************************************
+    // & operator
+    //*********************************************************************
+    template <typename T>
+    friend ETL_CONSTEXPR 
+#if ETL_USING_CPP11
+      typename etl::enable_if<etl::is_convertible<T, TValue>::value, type_def>::type
+#else
+      type_def
+#endif
+      operator &(const type_def& lhs, T rhs)
+    {
+      return type_def(lhs.value & rhs);
+    }
+
+    //*********************************************************************
+    template <typename T>
+    friend ETL_CONSTEXPR
+#if ETL_USING_CPP11
+      typename etl::enable_if<etl::is_convertible<T, TValue>::value, type_def>::type
+#else
+      type_def
+#endif
+      operator &(T lhs, const type_def& rhs)
+    {
+      return type_def(lhs & rhs.value);
+    }
+
+    //*********************************************************************
+    friend ETL_CONSTEXPR type_def operator &(const type_def& lhs, const type_def& rhs)
+    {
+      return type_def(lhs.value & rhs.value);
+    }
+
+    //*********************************************************************
+    // | operator
+    //*********************************************************************
+    template <typename T>
+    friend ETL_CONSTEXPR
+#if ETL_USING_CPP11
+      typename etl::enable_if<etl::is_convertible<T, TValue>::value, type_def>::type
+#else
+      type_def
+#endif
+      operator |(const type_def& lhs, T rhs)
+    {
+      return type_def(lhs.value | rhs);
+    }
+
+    //*********************************************************************
+    template <typename T>
+    friend ETL_CONSTEXPR
+#if ETL_USING_CPP11
+      typename etl::enable_if<etl::is_convertible<T, TValue>::value, type_def>::type
+#else
+      type_def
+#endif
+      operator |(T lhs, const type_def& rhs)
+    {
+      return type_def(lhs | rhs.value);
+    }
+
+    //*********************************************************************
+    friend ETL_CONSTEXPR type_def operator |(const type_def& lhs, const type_def& rhs)
+    {
+      return type_def(lhs.value | rhs.value);
+    }
+
+    //*********************************************************************
+    // ^ operator
+    //*********************************************************************
+    template <typename T>
+    friend ETL_CONSTEXPR
+#if ETL_USING_CPP11
+      typename etl::enable_if<etl::is_convertible<T, TValue>::value, type_def>::type
+#else
+      type_def
+#endif
+      operator ^(const type_def& lhs, T rhs)
+    {
+      return type_def(lhs.value ^ rhs);
+    }
+
+    //*********************************************************************
+    template <typename T>
+    friend ETL_CONSTEXPR
+#if ETL_USING_CPP11
+      typename etl::enable_if<etl::is_convertible<T, TValue>::value, type_def>::type
+#else
+      type_def
+#endif
+      operator ^(T lhs, const type_def& rhs)
+    {
+      return type_def(lhs ^ rhs.value);
+    }
+
+    //*********************************************************************
+    friend ETL_CONSTEXPR type_def operator ^(const type_def& lhs, const type_def& rhs)
+    {
+      return type_def(lhs.value ^ rhs.value);
+    }
+
+    //*********************************************************************
+    // << operator
+    //*********************************************************************
+    friend ETL_CONSTEXPR type_def operator <<(const type_def& lhs, int rhs)
+    {
+      return type_def(lhs.value << rhs);
+    }
+
+    //*********************************************************************
+    // >> operator
+    //*********************************************************************
+    friend ETL_CONSTEXPR type_def operator >>(const type_def& lhs, int rhs)
+    {
+      return type_def(lhs.value >> rhs);
+    }
+
+    //*********************************************************************
+    // < operator
+    //*********************************************************************
+    template <typename T>
+    friend ETL_CONSTEXPR
+#if ETL_USING_CPP11
+      typename etl::enable_if<etl::is_convertible<T, TValue>::value, bool>::type
+#else
+      bool
+#endif
+      operator <(const type_def& lhs, T rhs)
+    {
+      return lhs.value < rhs;
+    }
+
+    //*********************************************************************
+    template <typename T>
+    friend ETL_CONSTEXPR
+#if ETL_USING_CPP11
+      typename etl::enable_if<etl::is_convertible<T, TValue>::value, bool>::type
+#else
+      bool
+#endif
+      operator <(T lhs, const type_def& rhs)
+    {
+      return lhs < rhs.value;
+    }
+
+    //*********************************************************************
+    friend ETL_CONSTEXPR bool operator <(const type_def& lhs, const type_def& rhs)
+    {
+      return lhs.value < rhs.value;
+    }
+
+    //*********************************************************************
+    // <= operator
+    //*********************************************************************
+    template <typename T>
+    friend ETL_CONSTEXPR
+#if ETL_USING_CPP11
+      typename etl::enable_if<etl::is_convertible<T, TValue>::value, bool>::type
+#else
+      bool
+#endif
+      operator <=(const type_def& lhs, T rhs)
+    {
+      return lhs.value <= rhs;
+    }
+
+    //*********************************************************************
+    template <typename T>
+    friend ETL_CONSTEXPR
+#if ETL_USING_CPP11
+      typename etl::enable_if<etl::is_convertible<T, TValue>::value, bool>::type
+#else
+      bool
+#endif
+      operator <=(T lhs, const type_def& rhs)
+    {
+      return lhs <= rhs.value;
+    }
+
+    //*********************************************************************
+    friend ETL_CONSTEXPR bool operator <=(const type_def& lhs, const type_def& rhs)
+    {
+      return lhs.value <= rhs.value;
+    }
+
+    //*********************************************************************
+    // > operator
+    //*********************************************************************
+    template <typename T>
+    friend ETL_CONSTEXPR
+#if ETL_USING_CPP11
+      typename etl::enable_if<etl::is_convertible<T, TValue>::value, bool>::type
+#else
+      bool
+#endif
+      operator >(const type_def& lhs, T rhs)
+    {
+      return lhs.value > rhs;
+    }
+
+    //*********************************************************************
+    template <typename T>
+    friend ETL_CONSTEXPR
+#if ETL_USING_CPP11
+      typename etl::enable_if<etl::is_convertible<T, TValue>::value, bool>::type
+#else
+      bool
+#endif
+      operator >(T lhs, const type_def& rhs)
+    {
+      return lhs > rhs.value;
+    }
+
+    //*********************************************************************
+    friend ETL_CONSTEXPR bool operator >(const type_def& lhs, const type_def& rhs)
+    {
+      return lhs.value > rhs.value;
+    }
+
+    //*********************************************************************
+    // >= operator
+    //*********************************************************************
+    template <typename T>
+    friend ETL_CONSTEXPR
+#if ETL_USING_CPP11
+      typename etl::enable_if<etl::is_convertible<T, TValue>::value, bool>::type
+#else
+      bool
+#endif
+      operator >=(const type_def& lhs, T rhs)
+    {
+      return lhs.value >= rhs;
+    }
+
+    //*********************************************************************
+    template <typename T>
+    friend ETL_CONSTEXPR
+#if ETL_USING_CPP11
+      typename etl::enable_if<etl::is_convertible<T, TValue>::value, bool>::type
+#else
+      bool
+#endif
+      operator >=(T lhs, const type_def& rhs)
+    {
+      return lhs >= rhs.value;
+    }
+
+    //*********************************************************************
+    friend ETL_CONSTEXPR bool operator >=(const type_def& lhs, const type_def& rhs)
+    {
+      return lhs.value >= rhs.value;
+    }
+
+    //*********************************************************************
+    // == operator
+    //*********************************************************************
+    template <typename T>
+    friend ETL_CONSTEXPR
+#if ETL_USING_CPP11
+      typename etl::enable_if<etl::is_convertible<T, TValue>::value, bool>::type
+#else
+      bool
+#endif
+      operator ==(const type_def& lhs, T rhs)
+    {
+      return lhs.value == rhs;
+    }
+
+    //*********************************************************************
+    template <typename T>
+    friend ETL_CONSTEXPR
+#if ETL_USING_CPP11
+      typename etl::enable_if<etl::is_convertible<T, TValue>::value, bool>::type
+#else
+      bool
+#endif
+      operator ==(T lhs, const type_def& rhs)
+    {
+      return lhs == rhs.value;
+    }
+
+    //*********************************************************************
+    friend ETL_CONSTEXPR bool operator ==(const type_def& lhs, const type_def& rhs)
+    {
+      return lhs.value == rhs.value;
+    }
+
+    //*********************************************************************
+    // != operator
+    //*********************************************************************
+    template <typename T>
+    friend ETL_CONSTEXPR
+#if ETL_USING_CPP11
+      typename etl::enable_if<etl::is_convertible<T, TValue>::value, bool>::type
+#else
+      bool
+#endif
+      operator !=(const type_def& lhs, T rhs)
+    {
+      return lhs.value != rhs;
+    }
+
+    //*********************************************************************
+    template <typename T>
+    friend ETL_CONSTEXPR
+#if ETL_USING_CPP11
+      typename etl::enable_if<etl::is_convertible<T, TValue>::value, bool>::type
+#else
+      bool
+#endif
+      operator !=(T lhs, const type_def& rhs)
+    {
+      return lhs != rhs.value;
+    }
+
+    //*********************************************************************
+    friend ETL_CONSTEXPR bool operator !=(const type_def& lhs, const type_def& rhs)
+    {
+      return lhs.value != rhs.value;
+    }
+
+  private:
+
+      TValue value;
+  };
 }
 
 #endif

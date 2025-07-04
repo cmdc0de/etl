@@ -33,11 +33,14 @@ SOFTWARE.
 
 #include "platform.h"
 
-#if !ETL_USING_CPP11 || defined(ETL_USE_LEGACY_VARIANT)
-  #include "private/variant_legacy.h"   // etl::variant
+#if ETL_USING_LEGACY_VARIANT
+  // etl::variant
+  #include "private/variant_legacy.h" // IWYU pragma: export
 #else
-  #include "private/variant_legacy.h"   // etl::legacy::variant
-  #include "private/variant_variadic.h" // etl::variant
+  // etl::legacy::variant
+  #include "private/variant_legacy.h" // IWYU pragma: export
+  // etl::variant
+  #include "private/variant_variadic.h" // IWYU pragma: export
 #endif
 
 #endif

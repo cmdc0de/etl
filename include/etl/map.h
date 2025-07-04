@@ -290,16 +290,23 @@ namespace etl
       {
         // If critical node matches child node direction then perform a two
         // node rotate in the direction of the critical node
-        if (critical_node->weight == critical_node->children[critical_node->dir]->dir)
+        // Check for nullptr before dereferencing to avoid C28182 warning
+        if (critical_node->children[critical_node->dir] != ETL_NULLPTR) ETL_UNLIKELY
         {
-          rotate_2node(critical_node, critical_node->dir);
-        }
-        // Otherwise perform a three node rotation in the direction of the
-        // critical node
-        else
-        {
-          rotate_3node(critical_node, critical_node->dir,
-            critical_node->children[critical_node->dir]->children[1 - critical_node->dir]->dir);
+          if (critical_node->weight == critical_node->children[critical_node->dir]->dir)
+          {
+            rotate_2node(critical_node, critical_node->dir);
+          }
+          // Otherwise perform a three node rotation in the direction of the
+          // critical node
+          else
+          {
+            if (critical_node->children[critical_node->dir]->children[1 - critical_node->dir] != ETL_NULLPTR) ETL_UNLIKELY
+            {
+              rotate_3node(critical_node, critical_node->dir,
+                           critical_node->children[critical_node->dir]->children[1 - critical_node->dir]->dir);
+            }
+          }
         }
       }
     }
@@ -450,7 +457,7 @@ namespace etl
     size_type current_size;   ///< The number of the used nodes.
     const size_type CAPACITY; ///< The maximum size of the map.
     Node* root_node;          ///< The node that acts as the map root.
-    ETL_DECLARE_DEBUG_COUNT
+    ETL_DECLARE_DEBUG_COUNT;
   };
 
   //***************************************************************************
@@ -1496,10 +1503,10 @@ namespace etl
     //*************************************************************************
     Data_Node& allocate_data_node(const_reference value)
     {
-      Data_Node& node = allocate_data_node();
-      ::new (&node.value) value_type(value);
-      ETL_INCREMENT_DEBUG_COUNT
-      return node;
+      Data_Node* node = allocate_data_node();
+      ::new (&node->value) value_type(value);
+      ETL_INCREMENT_DEBUG_COUNT;
+      return *node;
     }
 
     //*************************************************************************
@@ -1507,12 +1514,12 @@ namespace etl
     //*************************************************************************
     Data_Node& allocate_data_node_with_key(const_key_reference key)
     {
-      Data_Node& node = allocate_data_node();
+      Data_Node* node = allocate_data_node();
 
-      ::new ((void*)etl::addressof(node.value.first))  key_type(key);
-      ::new ((void*)etl::addressof(node.value.second)) mapped_type();
-      ETL_INCREMENT_DEBUG_COUNT
-      return node;
+      ::new ((void*)etl::addressof(node->value.first))  key_type(key);
+      ::new ((void*)etl::addressof(node->value.second)) mapped_type();
+      ETL_INCREMENT_DEBUG_COUNT;
+      return *node;
     }
 
 #if ETL_USING_CPP11
@@ -1521,10 +1528,10 @@ namespace etl
     //*************************************************************************
     Data_Node& allocate_data_node(rvalue_reference value)
     {
-      Data_Node& node = allocate_data_node();
-      ::new (&node.value) value_type(etl::move(value));
-      ETL_INCREMENT_DEBUG_COUNT
-      return node;
+      Data_Node* node = allocate_data_node();
+      ::new (&node->value) value_type(etl::move(value));
+      ETL_INCREMENT_DEBUG_COUNT;
+      return *node;
     }
 
     //*************************************************************************
@@ -1532,12 +1539,12 @@ namespace etl
     //*************************************************************************
     Data_Node& allocate_data_node_with_key(rvalue_key_reference key)
     {
-      Data_Node& node = allocate_data_node();
+      Data_Node* node = allocate_data_node();
 
-      ::new ((void*)etl::addressof(node.value.first))  key_type(etl::move(key));
-      ::new ((void*)etl::addressof(node.value.second)) mapped_type();
-      ETL_INCREMENT_DEBUG_COUNT
-      return node;
+      ::new ((void*)etl::addressof(node->value.first))  key_type(etl::move(key));
+      ::new ((void*)etl::addressof(node->value.second)) mapped_type();
+      ETL_INCREMENT_DEBUG_COUNT;
+      return *node;
     }
 
 #endif
@@ -1545,10 +1552,10 @@ namespace etl
     //*************************************************************************
     /// Create a Data_Node.
     //*************************************************************************
-    Data_Node& allocate_data_node()
+    Data_Node* allocate_data_node()
     {
       Data_Node* (etl::ipool::*func)() = &etl::ipool::allocate<Data_Node>;
-      return *(p_node_pool->*func)();
+      return (p_node_pool->*func)();
     }
 
     //*************************************************************************
@@ -1558,7 +1565,7 @@ namespace etl
     {
       node.value.~value_type();
       p_node_pool->release(&node);
-      ETL_DECREMENT_DEBUG_COUNT
+      ETL_DECREMENT_DEBUG_COUNT;
     }
 
     //*************************************************************************
@@ -2812,7 +2819,7 @@ namespace etl
   template <typename TKey, typename TMapped, typename TKeyCompare = etl::less<TKey>, typename... TPairs>
   constexpr auto make_map(TPairs&&... pairs) -> etl::map<TKey, TMapped, sizeof...(TPairs), TKeyCompare>
   {
-    return { {etl::forward<TPairs>(pairs)...} };
+    return { etl::forward<TPairs>(pairs)... };
   }
 #endif
 

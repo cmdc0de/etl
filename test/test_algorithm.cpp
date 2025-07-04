@@ -30,6 +30,7 @@ SOFTWARE.
 
 #include "etl/algorithm.h"
 #include "etl/container.h"
+#include "etl/binary.h"
 
 #include "data.h"
 #include "iterators_for_unit_tests.h"
@@ -84,9 +85,9 @@ namespace
     {
     }
 
-    Data(int a, int b)
-      : a(a)
-      , b(b)
+    Data(int a_, int b_)
+      : a(a_)
+      , b(b_)
     {
     }
 
@@ -190,6 +191,15 @@ namespace
     }
 
     //*************************************************************************
+    TEST(min_element_empty)
+    {
+      Vector dataEmpty;
+      Vector::iterator expected = std::min_element(dataEmpty.begin(), dataEmpty.end());
+      Vector::iterator result = etl::min_element(dataEmpty.begin(), dataEmpty.end());
+      CHECK_EQUAL(std::distance(dataEmpty.end(), expected), std::distance(dataEmpty.end(), result));
+    }
+
+    //*************************************************************************
     TEST(max_element)
     {
       Vector::iterator expected = std::max_element(data.begin(), data.end());
@@ -203,6 +213,15 @@ namespace
       Vector::iterator expected = std::max_element(data.begin(), data.end(), std::greater<int>());
       Vector::iterator result = etl::max_element(data.begin(), data.end(), std::greater<int>());
       CHECK_EQUAL(std::distance(data.begin(), expected), std::distance(data.begin(), result));
+    }
+
+    //*************************************************************************
+    TEST(max_element_empty)
+    {
+      Vector dataEmpty;
+      Vector::iterator expected = std::max_element(dataEmpty.begin(), dataEmpty.end());
+      Vector::iterator result = etl::max_element(dataEmpty.begin(), dataEmpty.end());
+      CHECK_EQUAL(std::distance(dataEmpty.end(), expected), std::distance(dataEmpty.end(), result));
     }
 
     //*************************************************************************
@@ -221,6 +240,16 @@ namespace
       std::pair<Vector::iterator, Vector::iterator> result = etl::minmax_element(data.begin(), data.end(), std::greater<int>());
       CHECK_EQUAL(std::distance(data.begin(), expected.first), std::distance(data.begin(), result.first));
       CHECK_EQUAL(std::distance(data.begin(), expected.second), std::distance(data.begin(), result.second));
+    }
+
+    //*************************************************************************
+    TEST(minmax_element_empty)
+    {
+      Vector dataEmpty;
+      std::pair<Vector::iterator, Vector::iterator> expected = std::minmax_element(dataEmpty.begin(), dataEmpty.end());
+      std::pair<Vector::iterator, Vector::iterator> result = etl::minmax_element(dataEmpty.begin(), dataEmpty.end());
+      CHECK_EQUAL(std::distance(dataEmpty.begin(), expected.first), std::distance(dataEmpty.begin(), result.first));
+      CHECK_EQUAL(std::distance(dataEmpty.begin(), expected.second), std::distance(dataEmpty.begin(), result.second));
     }
 
     //*************************************************************************
@@ -689,10 +718,21 @@ namespace
     }
 
     //*************************************************************************
-    TEST(iter_swap)
+    TEST(iter_swap_same_types)
     {
       int a = 1;
       int b = 2;
+
+      etl::iter_swap(&a, &b);
+      CHECK_EQUAL(2, a);
+      CHECK_EQUAL(1, b);
+    }
+
+    //*************************************************************************
+    TEST(iter_swap_differnt_types)
+    {
+      int  a = 1;
+      long b = 2;
 
       etl::iter_swap(&a, &b);
       CHECK_EQUAL(2, a);
@@ -1322,6 +1362,17 @@ namespace
       CHECK_EQUAL(std::begin(out1) + 5, result);
       is_same = std::equal(std::begin(out1), std::end(out1), std::begin(check3));
       CHECK(is_same);
+    }
+
+    //*************************************************************************
+    TEST(copy_s_random_iterator)
+    {
+      int data1[] = { 1, 2, 3, 4, 5 };
+      int out1[10];
+      CHECK_THROW(etl::copy_s(std::end(data1), std::begin(data1), std::begin(out1), std::end(out1)), etl::algorithm_error);
+      CHECK_THROW(etl::copy_s(std::begin(data1), std::end(data1), std::end(out1), std::begin(out1)), etl::algorithm_error);
+      CHECK_THROW(etl::move_s(std::end(data1), std::begin(data1), std::begin(out1), std::end(out1)), etl::algorithm_error);
+      CHECK_THROW(etl::move_s(std::begin(data1), std::end(data1), std::end(out1), std::begin(out1)), etl::algorithm_error);
     }
 
     //*************************************************************************
@@ -1970,10 +2021,10 @@ namespace
       {
         std::shuffle(data.begin(), data.end(), urng);
 
-        std::forward_list<int> data1(data.begin(), data.end());
+        std::vector<int>       data1(data.begin(), data.end());
         std::forward_list<int> data2(data.begin(), data.end());
 
-        data1.sort();
+        std::sort(data1.begin(), data1.end());
         etl::selection_sort(data2.begin(), data2.end());
 
         bool is_same = std::equal(data1.begin(), data1.end(), data2.begin());
@@ -2186,6 +2237,227 @@ namespace
 
       bool is_same = std::equal(expected.begin(), expected.end(), data.begin());
       CHECK(is_same);
+    }
+
+    //*************************************************************************
+    struct generator
+    {
+      generator(int value_)
+        : value(value_)
+      {
+      }
+
+      int operator()()
+      {
+        return value++;
+      }
+
+      int value;
+    };
+
+    TEST(generate)
+    {
+      std::array<int, 10> expected = { 2, 3, 4, 5, 6, 7, 8, 9, 10, 11 };
+      std::array<int, 10> actual;
+
+      etl::generate(actual.begin(), actual.end(), generator(2));
+
+      CHECK_ARRAY_EQUAL(expected.data(), actual.data(), expected.size());
+    }
+
+    //*************************************************************************
+    TEST(partition_forward_iterator_container)
+    {
+      // 40,320 permutations.
+      std::array<int, 8> origin = { 0, 1, 2, 3, 4, 5, 6, 7 };
+
+      std::forward_list<int> compare(origin.begin(), origin.end());
+      std::forward_list<int> data(origin.begin(), origin.end());
+
+      bool complete = false;
+
+      while (!complete)
+      {
+        auto pivot1 = std::partition(compare.begin(), compare.end(), [](int i) { return etl::is_even(i); });
+        auto pivot2 = etl::partition(data.begin(), data.end(), [](int i) { return etl::is_even(i); });
+
+        auto distance1 = std::distance(compare.begin(), pivot1);
+        auto distance2 = std::distance(data.begin(), pivot2);
+
+        CHECK_EQUAL(*pivot1, *pivot2);
+        CHECK_EQUAL(distance1, distance2);
+
+        for (auto itr = compare.begin(); itr != pivot1; ++itr)
+        {
+          CHECK_TRUE((etl::is_even(*itr)));
+        }
+
+        for (auto itr = pivot1; itr != compare.end(); ++itr)
+        {
+          CHECK_FALSE((etl::is_even(*itr)));
+        }
+
+        complete = !std::next_permutation(origin.begin(), origin.end());
+
+        compare.assign(origin.begin(), origin.end());
+        data.assign(origin.begin(), origin.end());
+      }
+    }
+
+    //*************************************************************************
+    TEST(partition_bidirectional_iterator_container)
+    {
+      // 40,320 permutations.
+      std::array<int, 8> initial = { 0, 1, 2, 3, 4, 5, 6, 7 };
+      
+      std::array<int, 8> compare = initial;
+      std::array<int, 8> data = initial;
+
+      bool complete = false;
+
+      while (!complete)
+      {
+        auto pivot1 = std::partition(compare.begin(), compare.end(), [](int i) { return etl::is_even(i); });
+        auto pivot2 = etl::partition(data.begin(), data.end(), [](int i) { return etl::is_even(i); });
+
+        auto distance1 = std::distance(compare.begin(), pivot1);
+        auto distance2 = std::distance(data.begin(), pivot2);
+
+        CHECK_EQUAL(*pivot1, *pivot2);
+        CHECK_EQUAL(distance1, distance2);
+
+        for (auto itr = compare.begin(); itr != pivot1; ++itr)
+        {
+          CHECK_TRUE((etl::is_even(*itr)));
+        }
+
+        for (auto itr = pivot1; itr != compare.end(); ++itr)
+        {
+          CHECK_FALSE((etl::is_even(*itr)));
+        }
+
+        complete = !std::next_permutation(initial.begin(), initial.end());
+
+        compare = initial;
+        data = initial;
+      }
+    }
+
+    //*************************************************************************
+    TEST(nth_element_with_default_less_than_comparison)
+    {
+      // 40,320 permutations.
+      std::array<int, 8> initial = { 0, 1, 2, 3, 4, 5, 6, 7 };
+
+      std::array<int, 8> compare = initial;
+      std::array<int, 8> data    = initial;
+
+      bool complete = false;
+
+      // For each nth position of each permutation.
+      while (!complete)
+      {
+        // Try each nth position.
+        for (size_t i = 0; i < initial.size(); ++i)
+        {
+          std::sort(compare.begin(), compare.end());
+          etl::nth_element(data.begin(), data.begin() + i, data.end());
+
+          CHECK_EQUAL(compare[i], data[i]);
+        }
+
+        complete = !std::next_permutation(initial.begin(), initial.end());
+
+        compare = initial;
+        data    = initial;
+      }
+    }
+
+#if (ETL_USING_CPP20 && ETL_USING_STL) || (ETL_USING_CPP14 && ETL_NOT_USING_STL && !defined(ETL_IN_UNIT_TEST))
+    //*************************************************************************
+    constexpr int MakeNth(int nth_index)
+    {
+      std::array<int, 8> data = { 5, 1, 3, 7, 6, 2, 4, 0 };
+
+      etl::nth_element(data.begin(), data.begin() + nth_index, data.end());
+
+      return data[nth_index];
+    }
+    
+    TEST(constexpr_nth_element_with_default_less_than_comparison)
+    {
+      std::array<int, 8> compare = { 0, 1, 2, 3, 4, 5, 6, 7 };
+
+      constexpr int nth = MakeNth(3);
+
+      CHECK_EQUAL(compare[3], nth);
+    }
+#endif
+
+    //*************************************************************************
+    TEST(nth_element_with_custom_comparison)
+    {
+      // 40,320 permutations.
+      std::array<int, 8> initial = { 0, 1, 2, 3, 4, 5, 6, 7 };
+
+      std::array<int, 8> compare = initial;
+      std::array<int, 8> data = initial;
+
+      bool complete = false;
+
+      // For each nth position of each permutation.
+      while (!complete)
+      {
+        // Try each nth position.
+        for (size_t i = 0; i < initial.size(); ++i)
+        {
+          std::sort(compare.begin(), compare.end(), std::greater<int>());
+          etl::nth_element(data.begin(), data.begin() + i, data.end(), std::greater<int>());
+
+          CHECK_EQUAL(compare[i], data[i]);
+        }
+
+        complete = !std::next_permutation(initial.begin(), initial.end());
+
+        compare = initial;
+        data = initial;
+      }
+    }
+
+    //*************************************************************************
+    TEST(clamp_run_time)
+    {
+      CHECK_EQUAL(5, etl::clamp(5, 0, 10));
+      CHECK_EQUAL(0, etl::clamp(-5, 0, 10));
+      CHECK_EQUAL(10, etl::clamp(15, 0, 10));
+    }
+
+    //*************************************************************************
+    TEST(clamp_compile_time)
+    {
+      CHECK_EQUAL(5,  (etl::clamp<int, 0, 10>(5)));
+      CHECK_EQUAL(0,  (etl::clamp<int, 0, 10>(-5)));
+      CHECK_EQUAL(10, (etl::clamp<int, 0, 10>(15)));
+    }
+
+    //*************************************************************************
+    TEST(clamp_constexpr)
+    {
+      constexpr int result1 = etl::clamp(5, 0, 10);
+      constexpr int result2 = etl::clamp(-5, 0, 10);
+      constexpr int result3 = etl::clamp(15, 0, 10);
+
+      constexpr int result4 = etl::clamp<int, 0, 10>(5);
+      constexpr int result5 = etl::clamp<int, 0, 10>(-5);
+      constexpr int result6 = etl::clamp<int, 0, 10>(15);
+
+      CHECK_EQUAL(5,  result1);
+      CHECK_EQUAL(0,  result2);
+      CHECK_EQUAL(10, result3);
+
+      CHECK_EQUAL(5, result4);
+      CHECK_EQUAL(0, result5);
+      CHECK_EQUAL(10, result6);
     }
   };
 }

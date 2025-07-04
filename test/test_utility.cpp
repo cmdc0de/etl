@@ -33,6 +33,7 @@ SOFTWARE.
 #include <map>
 #include <vector>
 #include <algorithm>
+#include <type_traits>
 
 #include "data.h"
 
@@ -411,14 +412,14 @@ namespace
     }
 
     //*************************************************************************
-    TEST(test_functor)
+    TEST(test_functor_deprecated)
     {
       constexpr etl::functor<int, int> fw1(TestGlobal);
       CHECK_EQUAL(2, fw1(1));
     }
 
     //*************************************************************************
-    TEST(test_member_function_wrapper)
+    TEST(test_member_function_wrapper_deprecated)
     {
       constexpr int(*pf)(int) = &etl::member_function_wrapper<int(int)>::function<TestClass, test, &TestClass::MemberFunction>;
 
@@ -426,11 +427,366 @@ namespace
     }
 
     //*************************************************************************
-    TEST(test_functor_wrapper)
+    TEST(test_functor_wrapper_deprecated)
     {
       constexpr int(*pf)(int) = &etl::functor_wrapper<int(int)>::function<TestClass, test>;
 
       CHECK_EQUAL(2, pf(1));
     }
+
+    //*************************************************************************
+#if ETL_USING_CPP17
+    TEST(test_function_as_functor)
+    {
+      constexpr etl::function_as_functor<TestGlobal> faf;
+
+      CHECK_EQUAL(2, faf(1));
+    }
+#endif
+
+    //*************************************************************************
+    TEST(test_function_ptr_as_functor)
+    {
+      using function_type = decltype(TestGlobal);
+
+      constexpr function_type* fptr = TestGlobal;
+
+      constexpr etl::function_ptr_as_functor<function_type> fpaf(fptr);
+
+      CHECK_EQUAL(2, fpaf(1));
+    }
+
+    //*************************************************************************
+#if ETL_USING_CPP17
+    TEST(test_functor_as_static)
+    {
+      using fas_t = etl::functor_as_static<test>;
+
+      CHECK_EQUAL(2, fas_t::call(1));
+    }
+#endif
+
+    //*************************************************************************
+#if ETL_USING_CPP17
+    TEST(test_member_function_as_static)
+    {
+      using mfas_t = etl::member_function_as_static<&TestClass::MemberFunction, test>;
+
+      CHECK_EQUAL(2, mfas_t::call(1));
+    }
+#endif
+
+#if ETL_USING_CPP17
+    //*************************************************************************
+    TEST(test_member_function_as_functor)
+    {
+      constexpr etl::member_function_as_functor<&TestClass::MemberFunction, test> mfaf;
+
+      CHECK_EQUAL(2, mfaf(1));
+    }
+#endif
+
+    //*************************************************************************
+    struct SF
+    {
+
+    };
+
+    //*********************************
+    enum class forward_call_type
+    {
+      LValue,
+      ConstLValue,
+      RValue,
+      ConstRValue
+    };
+
+    //*********************************
+    std::ostream& operator << (std::ostream& os, forward_call_type type)
+    {
+      switch (type)
+      {
+        case forward_call_type::LValue:
+        {
+          os << "LValue";
+          break;
+        }
+
+        case forward_call_type::ConstLValue:
+        {
+          os << "ConstLValue";
+          break;
+        }
+
+        case forward_call_type::RValue:
+        {
+          os << "RValue";
+          break;
+        }
+
+        case forward_call_type::ConstRValue:
+        {
+          os << "ConstRValue";
+          break;
+        }
+
+        default:
+        {
+          os << "Unknown type";
+          break;
+        }
+      }
+
+      return os;
+    }
+
+    //*********************************
+    forward_call_type function_f(SF&)
+    {
+      return forward_call_type::LValue;
+    }
+
+    //*********************************
+    forward_call_type function_f(const SF&)
+    {
+      return forward_call_type::ConstLValue;
+    }
+
+    //*********************************
+    forward_call_type function_f(SF&&)
+    {
+      return forward_call_type::RValue;
+    }
+
+    //*********************************
+    forward_call_type function_f(const SF&&)
+    {
+      return forward_call_type::ConstRValue;
+    }
+
+    //*********************************
+    template <typename T>
+    forward_call_type template_function_f(T&& t)
+    {
+      return function_f(etl::forward<T>(t));
+    }
+
+    //*********************************
+    TEST(test_forward)
+    {
+      SF s1;
+      const SF s2;
+
+      CHECK_EQUAL(forward_call_type::LValue,      template_function_f(s1));
+      CHECK_EQUAL(forward_call_type::RValue,      template_function_f(etl::move(s1)));
+      CHECK_EQUAL(forward_call_type::ConstLValue, template_function_f(s2));
+      CHECK_EQUAL(forward_call_type::ConstRValue, template_function_f(etl::move(s2)));
+    }
+
+    //*************************************************************************
+    struct TFL
+    {
+    };
+
+    struct UFL
+    {
+    };
+
+    enum class forward_like_call_type
+    {
+      LValue,
+      ConstLValue,
+      RValue,
+      ConstRValue
+    };
+
+    //*********************************
+    std::ostream& operator << (std::ostream& os, forward_like_call_type type)
+    {
+      switch (type)
+      {
+        case forward_like_call_type::LValue:
+        {
+          os << "LValue";
+          break;
+        }
+
+        case forward_like_call_type::ConstLValue:
+        {
+          os << "ConstLValue";
+          break;
+        }
+
+        case forward_like_call_type::RValue:
+        {
+          os << "RValue";
+          break;
+        }
+
+        case forward_like_call_type::ConstRValue:
+        {
+          os << "ConstRValue";
+          break;
+        }
+
+        default:
+        {
+          os << "Unknown type";
+          break;
+        }
+      }
+
+      return os;
+    }
+
+    //*********************************
+    forward_like_call_type function_fl(UFL&)
+    {
+      return forward_like_call_type::LValue;
+    }
+
+    //*********************************
+    forward_like_call_type function_fl(const UFL&)
+    {
+      return forward_like_call_type::ConstLValue;
+    }
+
+    //*********************************
+    forward_like_call_type function_fl(UFL&&)
+    {
+      return forward_like_call_type::RValue;
+    }
+
+    //*********************************
+    forward_like_call_type function_fl(const UFL&&)
+    {
+      return forward_like_call_type::ConstRValue;
+    }
+
+    //*********************************
+    template <typename T, typename U>
+    forward_like_call_type template_function_fl(U&& u)
+    {
+      return function_fl(etl::forward_like<T>(u));
+    }
+
+    //*********************************
+    TEST(test_forward_like)
+    {
+      UFL u1;
+      const UFL u2;
+      UFL& u3 = u1;
+      const UFL& u4 = u2;
+
+      CHECK_EQUAL(forward_like_call_type::LValue,      template_function_fl<TFL&>(u1));
+      CHECK_EQUAL(forward_like_call_type::ConstLValue, template_function_fl<const TFL&>(u1));
+      CHECK_EQUAL(forward_like_call_type::RValue,      template_function_fl<TFL&&>(u1));
+      CHECK_EQUAL(forward_like_call_type::ConstRValue, template_function_fl<const TFL&&>(u1));
+
+      CHECK_EQUAL(forward_like_call_type::LValue,      template_function_fl<TFL&>(etl::move(u1)));
+      CHECK_EQUAL(forward_like_call_type::ConstLValue, template_function_fl<const TFL&>(etl::move(u1)));
+      CHECK_EQUAL(forward_like_call_type::RValue,      template_function_fl<TFL&&>(etl::move(u1)));
+      CHECK_EQUAL(forward_like_call_type::ConstRValue, template_function_fl<const TFL&&>(etl::move(u1)));
+
+      CHECK_EQUAL(forward_like_call_type::ConstLValue, template_function_fl<TFL&>(u2));
+      CHECK_EQUAL(forward_like_call_type::ConstLValue, template_function_fl<const TFL&>(u2));
+      CHECK_EQUAL(forward_like_call_type::ConstRValue, template_function_fl<TFL&&>(u2));
+      CHECK_EQUAL(forward_like_call_type::ConstRValue, template_function_fl<const TFL&&>(u2));
+
+      CHECK_EQUAL(forward_like_call_type::ConstLValue, template_function_fl<TFL&>(etl::move(u2)));
+      CHECK_EQUAL(forward_like_call_type::ConstLValue, template_function_fl<const TFL&>(etl::move(u2)));
+      CHECK_EQUAL(forward_like_call_type::ConstRValue, template_function_fl<TFL&&>(etl::move(u2)));
+      CHECK_EQUAL(forward_like_call_type::ConstRValue, template_function_fl<const TFL&&>(etl::move(u2)));
+
+      CHECK_EQUAL(forward_like_call_type::LValue,      template_function_fl<TFL&>(u3));
+      CHECK_EQUAL(forward_like_call_type::ConstLValue, template_function_fl<const TFL&>(u3));
+      CHECK_EQUAL(forward_like_call_type::RValue,      template_function_fl<TFL&&>(u3));
+      CHECK_EQUAL(forward_like_call_type::ConstRValue, template_function_fl<const TFL&&>(u3));
+
+      CHECK_EQUAL(forward_like_call_type::LValue,      template_function_fl<TFL&>(etl::move(u3)));
+      CHECK_EQUAL(forward_like_call_type::ConstLValue, template_function_fl<const TFL&>(etl::move(u3)));
+      CHECK_EQUAL(forward_like_call_type::RValue,      template_function_fl<TFL&&>(etl::move(u3)));
+      CHECK_EQUAL(forward_like_call_type::ConstRValue, template_function_fl<const TFL&&>(etl::move(u3)));
+
+      CHECK_EQUAL(forward_like_call_type::ConstLValue, template_function_fl<TFL&>(u4));
+      CHECK_EQUAL(forward_like_call_type::ConstLValue, template_function_fl<const TFL&>(u4));
+      CHECK_EQUAL(forward_like_call_type::ConstRValue, template_function_fl<TFL&&>(u4));
+      CHECK_EQUAL(forward_like_call_type::ConstRValue, template_function_fl<const TFL&&>(u4));
+
+      CHECK_EQUAL(forward_like_call_type::ConstLValue, template_function_fl<TFL&>(etl::move(u4)));
+      CHECK_EQUAL(forward_like_call_type::ConstLValue, template_function_fl<const TFL&>(etl::move(u4)));
+      CHECK_EQUAL(forward_like_call_type::ConstRValue, template_function_fl<TFL&&>(etl::move(u4)));
+      CHECK_EQUAL(forward_like_call_type::ConstRValue, template_function_fl<const TFL&&>(etl::move(u4)));
+    }
+
+#if ETL_USING_BUILTIN_UNDERLYING_TYPE
+    //*********************************
+    TEST(test_to_underlying)
+    {
+      enum enum0_t : int8_t
+      {
+        a0 = 'e',
+        a1 = 't',
+        a2 = 'l',
+        a3 = '3'
+      };
+
+      enum class enum1_t : unsigned char
+      {
+        b0 = 2,
+        b1 = 3,
+        b2 = 5,
+      };
+
+      enum enum2_t : int32_t
+      {
+        c0 = -2,
+        c1 = 100,
+      };
+
+      enum0_t e0 = enum0_t::a1;
+      enum1_t e1 = enum1_t::b2;
+      enum2_t e2 = enum2_t::c0;
+
+      CHECK_TRUE((etl::is_same<int8_t,        etl::underlying_type_t<enum0_t>>::value));
+      CHECK_TRUE((etl::is_same<unsigned char, etl::underlying_type_t<enum1_t>>::value));
+      CHECK_TRUE((etl::is_same<int32_t,       etl::underlying_type_t<enum2_t>>::value));
+
+      CHECK_EQUAL(etl::to_underlying(e0), 't');
+      CHECK_EQUAL(etl::to_underlying(e1), 5);
+      CHECK_EQUAL(etl::to_underlying(e2), -2);
+      CHECK_EQUAL(etl::to_underlying(enum0_t::a0), 'e');
+      CHECK_EQUAL(etl::to_underlying(enum0_t::a2), 'l');
+      CHECK_EQUAL(etl::to_underlying(enum0_t::a3), '3');
+      CHECK_EQUAL(etl::to_underlying(enum1_t::b1), 3);
+      CHECK_EQUAL(etl::to_underlying(enum2_t::c1), 100);
+    }
+#endif
+
+#if ETL_HAS_PACKED
+    //*********************************
+    TEST(test_packed)
+    {
+      struct Unpacked
+      {
+        uint32_t a = 0x12345678;
+        uint8_t  b = 0x9A;
+        uint32_t c = 0x87654321;
+      };
+
+      ETL_PACKED_STRUCT(Packed)
+      {
+        uint32_t a = 0x12345678;
+        uint8_t  b = 0x9A;
+        uint32_t c = 0x87654321;
+      }; ETL_END_PACKED
+
+      Unpacked unpacked;
+      Packed   packed;
+
+      CHECK_TRUE(sizeof(unpacked) > sizeof(packed));
+      CHECK_EQUAL(9U, sizeof(packed));
+    }
+#endif
   };
 }

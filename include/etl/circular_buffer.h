@@ -170,7 +170,7 @@ namespace etl
     size_type buffer_size;
     size_type in;            ///< Index to the next write.
     size_type out;           ///< Index to the next read.
-    ETL_DECLARE_DEBUG_COUNT  ///< Internal debugging.
+    ETL_DECLARE_DEBUG_COUNT;  ///< Internal debugging.
   };
 
   //***************************************************************************
@@ -244,6 +244,22 @@ namespace etl
       pointer operator ->() const
       {
         return &picb->pbuffer[current];
+      }
+
+      //*************************************************************************
+      /// [] operator
+      //*************************************************************************
+      reference operator [](size_t index)
+      {
+        return picb->pbuffer[(current + index) % picb->buffer_size];
+      }
+
+      //*************************************************************************
+      /// [] operator
+      //*************************************************************************
+      const_reference operator [](size_t index) const
+      {
+        return picb->pbuffer[(current + index) % picb->buffer_size];
       }
 
       //*************************************************************************
@@ -336,6 +352,18 @@ namespace etl
       }
 
       //*************************************************************************
+      /// Add offset.
+      //*************************************************************************
+      friend iterator operator +(int n, const iterator& rhs)
+      {
+        iterator temp = rhs;
+
+        temp += n;
+
+        return temp;
+      }
+
+      //*************************************************************************
       /// Subtract offset.
       //*************************************************************************
       friend iterator operator -(const iterator& lhs, int n)
@@ -410,7 +438,7 @@ namespace etl
       //***************************************************
       pointer get_buffer() const
       {
-        return pbuffer;
+        return picb->pbuffer;
       }
 
     protected:
@@ -515,6 +543,14 @@ namespace etl
       const_pointer operator ->() const
       {
         return &(picb->pbuffer[current]);
+      }
+
+      //*************************************************************************
+      /// [] operator
+      //*************************************************************************
+      const_reference operator [](size_t index) const
+      {
+        return picb->pbuffer[(current + index) % picb->buffer_size];
       }
 
       //*************************************************************************
@@ -681,7 +717,7 @@ namespace etl
       //***************************************************
       pointer get_buffer() const
       {
-        return pbuffer;
+        return picb->pbuffer;
       }
 
     protected:
@@ -933,7 +969,7 @@ namespace etl
       ETL_ASSERT(!empty(), ETL_ERROR(circular_buffer_empty));
       pbuffer[out].~T();
       increment_out();
-      ETL_DECREMENT_DEBUG_COUNT
+      ETL_DECREMENT_DEBUG_COUNT;
     }
 
     //*************************************************************************
@@ -954,9 +990,9 @@ namespace etl
     {
       if ETL_IF_CONSTEXPR(etl::is_trivially_destructible<T>::value)
       {
-        in    = 0U;
-        out   = 0U;
-        ETL_RESET_DEBUG_COUNT
+        in  = 0U;
+        out = 0U;
+        ETL_RESET_DEBUG_COUNT;
       }
       else
       {
@@ -998,22 +1034,6 @@ namespace etl
       return distance(rhs, lhs);
     }
 
-    //*************************************************************************
-    /// - operator for reverse_iterator
-    //*************************************************************************
-    friend difference_type operator -(const reverse_iterator& lhs, const reverse_iterator& rhs)
-    {
-      return distance(lhs.base(), rhs.base());
-    }
-
-    //*************************************************************************
-    /// - operator for const_reverse_iterator
-    //*************************************************************************
-    friend difference_type operator -(const const_reverse_iterator& lhs, const const_reverse_iterator& rhs)
-    {
-      return distance(lhs.base(), rhs.base());
-    }
-
   protected:
 
     //*************************************************************************
@@ -1043,9 +1063,9 @@ namespace etl
     template <typename TIterator>
     static difference_type distance(const TIterator& other)
     {
-      const difference_type index = other.get_index();
-      const difference_type reference_index = other.container().out;
-      const size_t buffer_size = other.container().buffer_size;
+      const difference_type index           = other.get_index();
+      const difference_type reference_index = static_cast<difference_type>(other.container().out);
+      const size_t buffer_size              = other.container().buffer_size;
 
       if (index < reference_index)
       {
@@ -1208,11 +1228,9 @@ namespace etl
     /// Fix the internal pointers after a low level memory copy.
     //*************************************************************************
 #ifdef ETL_ICIRCULAR_BUFFER_REPAIR_ENABLE
-    virtual
-#endif
+      virtual void repair() ETL_OVERRIDE
+#else
       void repair()
-#ifdef ETL_ICIRCULAR_BUFFER_REPAIR_ENABLE
-      ETL_OVERRIDE
 #endif
     {
       ETL_ASSERT(etl::is_trivially_copyable<T>::value, ETL_ERROR(etl::circular_buffer_incompatible_type));
@@ -1367,6 +1385,25 @@ namespace etl
 #endif
     }
 
+#if ETL_USING_CPP11
+    //*************************************************************************
+    /// Swap with another circular buffer
+    //*************************************************************************
+    void swap(circular_buffer_ext&& other) ETL_NOEXCEPT
+    {
+      using ETL_OR_STD::swap; // Allow ADL
+
+      swap(this->in, other.in);
+      swap(this->out, other.out);
+      swap(this->pbuffer, other.pbuffer);
+      swap(this->buffer_size, other.buffer_size);
+
+#if defined(ETL_DEBUG_COUNT)
+      this->etl_debug_count.swap(other.etl_debug_count);
+#endif
+    }
+#endif
+
     //*************************************************************************
     /// set_buffer
     //*************************************************************************
@@ -1395,11 +1432,9 @@ namespace etl
     /// Fix the internal pointers after a low level memory copy.
     //*************************************************************************
 #ifdef ETL_ICIRCULAR_BUFFER_REPAIR_ENABLE
-    virtual
-#endif
-      void repair()
-#ifdef ETL_ICIRCULAR_BUFFER_REPAIR_ENABLE
-      ETL_OVERRIDE
+    virtual void repair() ETL_OVERRIDE
+#else
+    void repair()
 #endif
     {
     }
@@ -1422,6 +1457,17 @@ namespace etl
   {
     lhs.swap(rhs);
   }
+
+#if ETL_USING_CPP11
+  //*************************************************************************
+  /// Overloaded swap for etl::circular_buffer_ext<T, 0>
+  //*************************************************************************
+  template <typename T>
+  void swap(etl::circular_buffer_ext<T>& lhs, etl::circular_buffer_ext<T>&& rhs)
+  {
+    lhs.swap(rhs);
+  }
+#endif
 
   //*************************************************************************
   /// Equality operator

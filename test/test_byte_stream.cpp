@@ -31,10 +31,13 @@ SOFTWARE.
 #include "etl/byte_stream.h"
 #include "etl/optional.h"
 #include "etl/span.h"
+#include "etl/array.h"
 
 #include <array>
 #include <numeric>
 #include <vector>
+
+#include "etl/private/diagnostic_useless_cast_push.h"
 
 namespace
 {
@@ -1315,10 +1318,12 @@ namespace
 
       static std::vector<char> result;
 
-      etl::byte_stream_writer::callback_type callback([&](etl::byte_stream_writer::callback_parameter_type sp) 
-                                                      { 
-                                                        std::copy(sp.begin(), sp.end(), std::back_inserter(result));
-                                                      });
+      auto lambda = [&](etl::byte_stream_writer::callback_parameter_type sp) 
+        { 
+          std::copy(sp.begin(), sp.end(), std::back_inserter(result));
+        };
+
+      etl::byte_stream_writer::callback_type callback(lambda);
 
       etl::byte_stream_writer writer(storage.data(), storage.size(), etl::endian::big, callback);
 
@@ -1345,3 +1350,5 @@ namespace
     }
   };
 }
+
+#include "etl/private/diagnostic_pop.h"

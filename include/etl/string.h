@@ -48,7 +48,7 @@ namespace etl
   {
     inline namespace string_literals
     {
-      constexpr etl::string_view operator ""_sv(const char* str, size_t length) noexcept
+      inline constexpr etl::string_view operator ""_sv(const char* str, size_t length) noexcept
       {
         return etl::string_view{ str, length };
       }
@@ -72,6 +72,7 @@ namespace etl
     typedef istring interface_type;
 
     typedef istring::value_type value_type;
+    typedef istring::size_type  size_type;
 
     static ETL_CONSTANT size_t MAX_SIZE = MAX_SIZE_;
 
@@ -91,6 +92,7 @@ namespace etl
     string(const etl::string<MAX_SIZE_>& other)
       : istring(reinterpret_cast<value_type*>(&buffer), MAX_SIZE)
     {
+      this->initialise();
       this->assign(other);
     }
 
@@ -101,6 +103,7 @@ namespace etl
     string(const etl::istring& other)
       : istring(reinterpret_cast<value_type*>(&buffer), MAX_SIZE)
     {
+      this->initialise();
       this->assign(other);
     }
 
@@ -115,6 +118,7 @@ namespace etl
     {
       ETL_ASSERT(position < other.size(), ETL_ERROR(string_out_of_bounds));
 
+      this->initialise();
       this->assign(other, position, length);
     }
 
@@ -125,7 +129,8 @@ namespace etl
     ETL_EXPLICIT_STRING_FROM_CHAR string(const value_type* text)
       : istring(reinterpret_cast<value_type*>(&buffer), MAX_SIZE)
     {
-      this->assign(text, text + etl::char_traits<value_type>::length(text));
+      this->initialise();
+      this->assign(text);
     }
 
     //*************************************************************************
@@ -136,6 +141,7 @@ namespace etl
     string(const value_type* text, size_t count)
       : istring(reinterpret_cast<value_type*>(&buffer), MAX_SIZE)
     {
+      this->initialise();
       this->assign(text, text + count);
     }
 
@@ -161,6 +167,7 @@ namespace etl
     string(TIterator first, TIterator last, typename etl::enable_if<!etl::is_integral<TIterator>::value, int>::type = 0)
       : istring(reinterpret_cast<value_type*>(&buffer), MAX_SIZE)
     {
+      this->initialise();
       this->assign(first, last);
     }
 
@@ -171,6 +178,7 @@ namespace etl
     string(std::initializer_list<value_type> init)
       : istring(reinterpret_cast<value_type*>(&buffer), MAX_SIZE)
     {
+      this->initialise();
       this->assign(init.begin(), init.end());
     }
 #endif
@@ -182,6 +190,7 @@ namespace etl
     explicit string(const etl::string_view& view)
       : istring(reinterpret_cast<value_type*>(&buffer), MAX_SIZE)
     {
+      this->initialise();
       this->assign(view.begin(), view.end());
     }
 
@@ -244,11 +253,22 @@ namespace etl
     }
 
     //*************************************************************************
+    /// Assignment operator.
+    //*************************************************************************
+    string& operator = (const etl::string_view& view)
+    {
+      this->assign(view);
+
+      return *this;
+    }
+
+    //*************************************************************************
     /// Fix the internal pointers after a low level memory copy.
     //*************************************************************************
-    void repair()
 #if ETL_HAS_ISTRING_REPAIR
-      ETL_OVERRIDE
+    virtual void repair() ETL_OVERRIDE
+#else
+    void repair()
 #endif
     {
       etl::istring::repair_buffer(buffer);
@@ -260,7 +280,7 @@ namespace etl
   };
 
   template <size_t MAX_SIZE_>
-  ETL_CONSTANT size_t string<MAX_SIZE_>::MAX_SIZE;
+  ETL_CONSTANT typename string<MAX_SIZE_>::size_type string<MAX_SIZE_>::MAX_SIZE;
 
   //***************************************************************************
   /// A string implementation that uses a fixed size external buffer.
@@ -292,6 +312,7 @@ namespace etl
     string_ext(const etl::string_ext& other, value_type* buffer, size_type buffer_size)
       : istring(buffer, buffer_size - 1U)
     {
+      this->initialise();
       this->assign(other);
     }
 
@@ -302,6 +323,7 @@ namespace etl
     string_ext(const etl::istring& other, value_type* buffer, size_type buffer_size)
       : istring(buffer, buffer_size - 1U)
     {
+      this->initialise();
       this->assign(other);
     }
 
@@ -316,6 +338,7 @@ namespace etl
     {
       ETL_ASSERT(position < other.size(), ETL_ERROR(string_out_of_bounds));
 
+      this->initialise();
       this->assign(other, position, length);
     }
 
@@ -333,6 +356,7 @@ namespace etl
       }
       else
       {
+        this->initialise();
         this->assign(text, text + etl::strlen(text));
       }
     }
@@ -345,6 +369,7 @@ namespace etl
     string_ext(const value_type* text, size_type count, value_type* buffer, size_type buffer_size)
       : istring(buffer, buffer_size - 1U)
     {
+      this->initialise();
       this->assign(text, text + count);
     }
 
@@ -358,6 +383,16 @@ namespace etl
     {
       this->initialise();
       this->resize(count, c);
+    }
+
+    //*************************************************************************
+    /// From string_view.
+    ///\param view The string_view.
+    //*************************************************************************
+    explicit string_ext(const etl::string_view& view, value_type* buffer, size_type buffer_size)
+      : istring(buffer, buffer_size - 1U)
+    {
+      this->assign(view.begin(), view.end());
     }
 
     //*************************************************************************
@@ -385,16 +420,6 @@ namespace etl
 #endif
 
     //*************************************************************************
-    /// From string_view.
-    ///\param view The string_view.
-    //*************************************************************************
-    explicit string_ext(const etl::string_view& view, value_type* buffer, size_type buffer_size)
-      : istring(buffer, buffer_size - 1U)
-    {
-      this->assign(view.begin(), view.end());
-    }
-
-    //*************************************************************************
     /// Assignment operator.
     //*************************************************************************
     string_ext& operator = (const string_ext& rhs)
@@ -406,7 +431,6 @@ namespace etl
 
       return *this;
     }
-
 
     //*************************************************************************
     /// Assignment operator.
@@ -432,11 +456,22 @@ namespace etl
     }
 
     //*************************************************************************
+    /// Assignment operator.
+    //*************************************************************************
+    string_ext& operator = (const etl::string_view& view)
+    {
+      this->assign(view);
+
+      return *this;
+    }
+
+    //*************************************************************************
     /// Fix the internal pointers after a low level memory copy.
     //*************************************************************************
-    void repair()
 #if ETL_HAS_ISTRING_REPAIR
-      ETL_OVERRIDE
+    virtual void repair() ETL_OVERRIDE
+#else
+    void repair()
 #endif
     {
     }

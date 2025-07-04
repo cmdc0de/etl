@@ -37,6 +37,7 @@ SOFTWARE.
 #include <vector>
 
 #include "etl/map.h"
+#include "etl/string.h"
 
 #include "data.h"
 
@@ -86,6 +87,7 @@ namespace
   SUITE(test_map)
   {
     //*************************************************************************
+#include "etl/private/diagnostic_null_dereference_push.h"
     template <typename T1, typename T2>
     bool Check_Equal(T1 begin1, T1 end1, T2 begin2)
     {
@@ -102,6 +104,7 @@ namespace
 
       return true;
     }
+#include "etl/private/diagnostic_pop.h"
 
     //*************************************************************************
     struct SetupFixture
@@ -206,7 +209,7 @@ namespace
     {
       Data data;
 
-      CHECK(data.size() == size_t(0UL));
+      CHECK(data.size() == 0UL);
       CHECK(data.empty());
       CHECK(data.capacity() == MAX_SIZE);
       CHECK(data.max_size() == MAX_SIZE);
@@ -389,6 +392,7 @@ namespace
       data1.insert(DataM::value_type(std::string("3"), etl::move(d3)));
       data1.insert(DataM::value_type(std::string("4"), ItemM(4)));
 
+      data2.insert(DataM::value_type(std::string("5"), ItemM(5)));
       data2 = std::move(data1);
 
       CHECK(1 == data2.at("1").value);
@@ -1057,7 +1061,7 @@ namespace
       Data data(compare_data.begin(), compare_data.end());
       data.clear();
 
-      CHECK(data.size() == size_t(0UL));
+      CHECK(data.size() == 0UL);
     }
 
     //*************************************************************************
@@ -1065,9 +1069,9 @@ namespace
     {
       const Data data(initial_data.begin(), initial_data.end());
 
-      CHECK(data.count("3") == size_t(1UL));
+      CHECK(data.count("3") == 1UL);
 
-      CHECK(data.count("A") == size_t(0UL));
+      CHECK(data.count("A") == 0UL);
     }
 
     //*************************************************************************
@@ -1077,9 +1081,9 @@ namespace
 
       const EMap data(initial_data.begin(), initial_data.end());
 
-      CHECK(data.count(Key("3")) == size_t(1UL));
+      CHECK(data.count(Key("3")) == 1UL);
 
-      CHECK(data.count(Key("A")) == size_t(0UL));
+      CHECK(data.count(Key("A")) == 0UL);
     }
 
     //*************************************************************************
@@ -1572,7 +1576,7 @@ namespace
 #if ETL_USING_CPP17 && ETL_HAS_INITIALIZER_LIST && !defined(ETL_TEMPLATE_DEDUCTION_GUIDE_TESTS_DISABLED)
     TEST_FIXTURE(SetupFixture, test_map_template_deduction)
     {
-      using Pair = std::pair<const std::string, int>;
+      using Pair = std::pair<const etl::string<1>, int>;
 
       etl::map data { Pair{"0", 0}, Pair{"1", 1}, Pair{"2", 2}, Pair{"3", 3}, Pair{"4", 4}, Pair{"5", 5} };
 
@@ -1593,9 +1597,9 @@ namespace
 #if ETL_HAS_INITIALIZER_LIST
     TEST_FIXTURE(SetupFixture, test_make_map)
     {
-      using Pair = ETL_OR_STD::pair<const std::string, int>;
+      using Pair = ETL_OR_STD::pair<const etl::string<1>, int>;
 
-      auto data = etl::make_map<std::string, int, std::less<std::string>>(Pair{ "0", 0 }, Pair{ "1", 1 }, Pair{ "2", 2 }, Pair{ "3", 3 }, Pair{ "4", 4 }, Pair{ "5", 5 });
+      auto data = etl::make_map<const etl::string<1>, int, std::less<etl::string<1>>>(Pair{ "0", 0 }, Pair{ "1", 1 }, Pair{ "2", 2 }, Pair{ "3", 3 }, Pair{ "4", 4 }, Pair{ "5", 5 });
 
       auto v = *data.begin();
       using Type = decltype(v);

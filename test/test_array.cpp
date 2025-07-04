@@ -47,8 +47,10 @@ namespace
   {
     static const size_t SIZE = 10UL;
 
-    typedef etl::array<int, SIZE> Data;
-    typedef std::array<int, SIZE> Compare_Data;
+    using Data         = etl::array<int, SIZE>;
+    using Compare_Data = std::array<int, SIZE>;
+
+    using ZeroData     = etl::array<int, 0>;
 
     Compare_Data compare_data = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
     Compare_Data swap_data    = { 9, 8, 7, 6, 5, 4, 3, 2, 1, 0 };
@@ -60,6 +62,16 @@ namespace
 
       CHECK_EQUAL(data.size(), size_t(SIZE));
       CHECK_EQUAL(data.max_size(), SIZE);
+    }
+
+    //*************************************************************************
+    TEST(test_constructor_zero_sized_array)
+    {
+      ZeroData data;
+
+      CHECK_TRUE(data.empty());
+      CHECK_EQUAL(data.size(), size_t(0));
+      CHECK_EQUAL(data.max_size(), 0);
     }
 
 #if ETL_USING_CPP17 && ETL_HAS_INITIALIZER_LIST && !defined(ETL_TEMPLATE_DEDUCTION_GUIDE_TESTS_DISABLED)
@@ -375,20 +387,27 @@ namespace
 
       Data data = { 0 };
 
+      Data::iterator result;
+
       // Initial data.
-      data.assign(std::begin(initial), std::end(initial));
+      result = data.assign(std::begin(initial), std::end(initial));
+      CHECK(result == data.end());
       bool isEqual = std::equal(data.begin(), data.end(), std::begin(initial));
       CHECK(isEqual);
 
       // Assign smaller.
-      data.assign(std::begin(initial), std::end(initial));
-      data.assign(&source[0], &source[5]);
+      result = data.assign(std::begin(initial), std::end(initial));
+      CHECK(result == data.end());
+      result = data.assign(&source[0], &source[5]);
+      CHECK(result == &data[5]);
       isEqual = std::equal(data.begin(), data.end(), std::begin(check1));
       CHECK(isEqual);
 
       // Assign smaller + default.
-      data.assign(std::begin(initial), std::end(initial));
-      data.assign(&source[0], &source[5], 99);
+      result = data.assign(std::begin(initial), std::end(initial));
+      CHECK(result == data.end());
+      result = data.assign(&source[0], &source[5], 99);
+      CHECK(result == &data[5]);
       isEqual = std::equal(data.begin(), data.end(), std::begin(check2));
       CHECK(isEqual);
     }
@@ -654,7 +673,7 @@ namespace
 #if ETL_USING_CPP17 && ETL_HAS_INITIALIZER_LIST && !defined(ETL_TEMPLATE_DEDUCTION_GUIDE_TESTS_DISABLED)
     TEST(test_array_template_deduction)
     {
-      etl::array data{ char(0), short(1), int(2), long(3), 4, 5, 6, 7, 8, 9 };
+      etl::array data{ char(0), short(1), 2, long(3), 4, 5, 6, 7, 8, 9 };
 
       using Type = std::remove_reference_t<decltype(data[0])>;
       CHECK((std::is_same_v<long, Type>));

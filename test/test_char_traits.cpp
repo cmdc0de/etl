@@ -32,6 +32,8 @@ SOFTWARE.
 
 #include "etl/char_traits.h"
 
+#include "etl/private/diagnostic_useless_cast_push.h"
+
 namespace
 {
   template <typename T>
@@ -53,15 +55,478 @@ namespace
     //*************************************************************************
     TEST(test_strlen)
     {
-      char data1[etl::strlen("qwerty")];
-      char data2[etl::strlen(L"qwerty")];
-      char data3[etl::strlen(u"qwerty")];
-      char data4[etl::strlen(U"qwerty")];
+      CHECK_EQUAL(0U, etl::strlen((const char*)0));
+      CHECK_EQUAL(0U, etl::strlen((const wchar_t*)0));
+      CHECK_EQUAL(0U, etl::strlen((const char16_t*)0));
+      CHECK_EQUAL(0U, etl::strlen((const char32_t*)0));
+
+      CHECK_EQUAL(0U, etl::strlen(""));
+      CHECK_EQUAL(0U, etl::strlen(L""));
+      CHECK_EQUAL(0U, etl::strlen(u""));
+      CHECK_EQUAL(0U, etl::strlen(U""));
+
+      CHECK_EQUAL(6U, etl::strlen("qwerty"));
+      CHECK_EQUAL(6U, etl::strlen(L"qwerty"));
+      CHECK_EQUAL(6U, etl::strlen(u"qwerty"));
+      CHECK_EQUAL(6U, etl::strlen(U"qwerty"));
+    }
+
+#if ETL_USING_CPP14
+    //*************************************************************************
+    TEST(test_strlen_constexpr)
+    {
+      constexpr size_t Size1 = etl::strlen("qwerty");
+      constexpr size_t Size2 = etl::strlen(L"qwerty");
+      constexpr size_t Size3 = etl::strlen(u"qwerty");
+      constexpr size_t Size4 = etl::strlen(U"qwerty");
+
+      char data1[Size1];
+      char data2[Size2];
+      char data3[Size3];
+      char data4[Size4];
 
       CHECK_EQUAL(6U, sizeof(data1));
       CHECK_EQUAL(6U, sizeof(data2));
       CHECK_EQUAL(6U, sizeof(data3));
       CHECK_EQUAL(6U, sizeof(data4));
+    }
+#endif
+
+    //*************************************************************************
+    TEST(test_strcmp_char)
+    {
+      const char s1[] = "ABCDEF";
+      const char s2[] = "ABCDEF";
+      const char s3[] = "ABDDEF";
+      const char s4[] = "ABCDE";
+
+      CHECK_TRUE(etl::strcmp(s1, s2) == 0);
+      CHECK_TRUE(etl::strcmp(s2, s1) == 0);
+      CHECK_TRUE(etl::strcmp(s1, s3) < 0);
+      CHECK_TRUE(etl::strcmp(s3, s1) > 0 );
+      CHECK_TRUE(etl::strcmp(s1, s4) > 0);
+      CHECK_TRUE(etl::strcmp(s4, s1) < 0);
+    }
+
+#if ETL_HAS_CHAR8_T
+    //*************************************************************************
+    TEST(test_strcmp_char8_t)
+    {
+      const char8_t s1[] = u8"ABCDEF";
+      const char8_t s2[] = u8"ABCDEF";
+      const char8_t s3[] = u8"ABDDEF";
+      const char8_t s4[] = u8"ABCDE";
+
+      CHECK_TRUE(etl::strcmp(s1, s2) == 0);
+      CHECK_TRUE(etl::strcmp(s2, s1) == 0);
+      CHECK_TRUE(etl::strcmp(s1, s3) < 0);
+      CHECK_TRUE(etl::strcmp(s3, s1) > 0);
+      CHECK_TRUE(etl::strcmp(s1, s4) > 0);
+      CHECK_TRUE(etl::strcmp(s4, s1) < 0);
+    }
+#endif
+
+    //*************************************************************************
+    TEST(test_strcmp_wchar_t)
+    {
+      const wchar_t s1[] = L"ABCDEF";
+      const wchar_t s2[] = L"ABCDEF";
+      const wchar_t s3[] = L"ABDDEF";
+      const wchar_t s4[] = L"ABCDE";
+
+      CHECK_TRUE(etl::strcmp(s1, s2) == 0);
+      CHECK_TRUE(etl::strcmp(s2, s1) == 0);
+      CHECK_TRUE(etl::strcmp(s1, s3) < 0);
+      CHECK_TRUE(etl::strcmp(s3, s1) > 0);
+      CHECK_TRUE(etl::strcmp(s1, s4) > 0);
+      CHECK_TRUE(etl::strcmp(s4, s1) < 0);
+    }
+
+    //*************************************************************************
+    TEST(test_strcmp_char16_t)
+    {
+      const char16_t s1[] = u"ABCDEF";
+      const char16_t s2[] = u"ABCDEF";
+      const char16_t s3[] = u"ABDDEF";
+      const char16_t s4[] = u"ABCDE";
+
+      CHECK_TRUE(etl::strcmp(s1, s2) == 0);
+      CHECK_TRUE(etl::strcmp(s2, s1) == 0);
+      CHECK_TRUE(etl::strcmp(s1, s3) < 0);
+      CHECK_TRUE(etl::strcmp(s3, s1) > 0);
+      CHECK_TRUE(etl::strcmp(s1, s4) > 0);
+      CHECK_TRUE(etl::strcmp(s4, s1) < 0);
+    }
+
+    //*************************************************************************
+    TEST(test_strcmp_char32_t)
+    {
+      const char32_t s1[] = U"ABCDEF";
+      const char32_t s2[] = U"ABCDEF";
+      const char32_t s3[] = U"ABDDEF";
+      const char32_t s4[] = U"ABCDE";
+
+      CHECK_TRUE(etl::strcmp(s1, s2) == 0);
+      CHECK_TRUE(etl::strcmp(s1, s3) < 0);
+      CHECK_TRUE(etl::strcmp(s3, s1) > 0);
+      CHECK_TRUE(etl::strcmp(s1, s4) > 0);
+      CHECK_TRUE(etl::strcmp(s4, s1) < 0);
+    }
+
+    //*************************************************************************
+    TEST(test_strncmp_char)
+    {
+      const char s1[] = "ABCDEF";
+      const char s2[] = "ABCDEF";
+      const char s3[] = "ABDDEF";
+      const char s4[] = "ABCDE";
+
+      CHECK_TRUE(etl::strncmp(s1, s2, 0) == 0);
+      CHECK_TRUE(etl::strncmp(s1, s2, 1) == 0);
+      CHECK_TRUE(etl::strncmp(s1, s2, 2) == 0);
+      CHECK_TRUE(etl::strncmp(s1, s2, 3) == 0);
+      CHECK_TRUE(etl::strncmp(s1, s2, 4) == 0);
+      CHECK_TRUE(etl::strncmp(s1, s2, 5) == 0);
+      CHECK_TRUE(etl::strncmp(s1, s2, 6) == 0);
+      CHECK_TRUE(etl::strncmp(s1, s3, 0) == 0);
+      CHECK_TRUE(etl::strncmp(s3, s1, 0) == 0);
+      CHECK_TRUE(etl::strncmp(s1, s3, 1) == 0);
+      CHECK_TRUE(etl::strncmp(s3, s1, 1) == 0);
+      CHECK_TRUE(etl::strncmp(s1, s3, 2) == 0);
+      CHECK_TRUE(etl::strncmp(s3, s1, 2) == 0);
+      CHECK_TRUE(etl::strncmp(s1, s3, 3) < 0);
+      CHECK_TRUE(etl::strncmp(s3, s1, 3) > 0);
+      CHECK_TRUE(etl::strncmp(s1, s3, 4) < 0);
+      CHECK_TRUE(etl::strncmp(s3, s1, 4) > 0);
+      CHECK_TRUE(etl::strncmp(s1, s3, 5) < 0);
+      CHECK_TRUE(etl::strncmp(s3, s1, 5) > 0);
+      CHECK_TRUE(etl::strncmp(s1, s3, 6) < 0);
+      CHECK_TRUE(etl::strncmp(s3, s1, 6) > 0);
+      CHECK_TRUE(etl::strncmp(s1, s4, 0) == 0);
+      CHECK_TRUE(etl::strncmp(s4, s1, 0) == 0);
+      CHECK_TRUE(etl::strncmp(s1, s4, 1) == 0);
+      CHECK_TRUE(etl::strncmp(s4, s1, 1) == 0);
+      CHECK_TRUE(etl::strncmp(s1, s4, 2) == 0);
+      CHECK_TRUE(etl::strncmp(s4, s1, 2) == 0);
+      CHECK_TRUE(etl::strncmp(s1, s4, 3) == 0);
+      CHECK_TRUE(etl::strncmp(s4, s1, 3) == 0);
+      CHECK_TRUE(etl::strncmp(s1, s4, 4) == 0);
+      CHECK_TRUE(etl::strncmp(s4, s1, 4) == 0);
+      CHECK_TRUE(etl::strncmp(s1, s4, 5) == 0);
+      CHECK_TRUE(etl::strncmp(s4, s1, 5) == 0);
+      CHECK_TRUE(etl::strncmp(s1, s4, 6) > 0);
+      CHECK_TRUE(etl::strncmp(s4, s1, 6) < 0);
+    }
+
+#if ETL_HAS_CHAR8_T
+    //*************************************************************************
+    TEST(test_strncmp_char8_t)
+    {
+      const char8_t s1[] = u8"ABCDEF";
+      const char8_t s2[] = u8"ABCDEF";
+      const char8_t s3[] = u8"ABDDEF";
+      const char8_t s4[] = u8"ABCDE";
+
+      CHECK_TRUE(etl::strncmp(s1, s2, 0) == 0);
+      CHECK_TRUE(etl::strncmp(s1, s2, 1) == 0);
+      CHECK_TRUE(etl::strncmp(s1, s2, 2) == 0);
+      CHECK_TRUE(etl::strncmp(s1, s2, 3) == 0);
+      CHECK_TRUE(etl::strncmp(s1, s2, 4) == 0);
+      CHECK_TRUE(etl::strncmp(s1, s2, 5) == 0);
+      CHECK_TRUE(etl::strncmp(s1, s2, 6) == 0);
+      CHECK_TRUE(etl::strncmp(s1, s3, 0) == 0);
+      CHECK_TRUE(etl::strncmp(s3, s1, 0) == 0);
+      CHECK_TRUE(etl::strncmp(s1, s3, 1) == 0);
+      CHECK_TRUE(etl::strncmp(s3, s1, 1) == 0);
+      CHECK_TRUE(etl::strncmp(s1, s3, 2) == 0);
+      CHECK_TRUE(etl::strncmp(s3, s1, 2) == 0);
+      CHECK_TRUE(etl::strncmp(s1, s3, 3) < 0);
+      CHECK_TRUE(etl::strncmp(s3, s1, 3) > 0);
+      CHECK_TRUE(etl::strncmp(s1, s3, 4) < 0);
+      CHECK_TRUE(etl::strncmp(s3, s1, 4) > 0);
+      CHECK_TRUE(etl::strncmp(s1, s3, 5) < 0);
+      CHECK_TRUE(etl::strncmp(s3, s1, 5) > 0);
+      CHECK_TRUE(etl::strncmp(s1, s3, 6) < 0);
+      CHECK_TRUE(etl::strncmp(s3, s1, 6) > 0);
+      CHECK_TRUE(etl::strncmp(s1, s4, 0) == 0);
+      CHECK_TRUE(etl::strncmp(s4, s1, 0) == 0);
+      CHECK_TRUE(etl::strncmp(s1, s4, 1) == 0);
+      CHECK_TRUE(etl::strncmp(s4, s1, 1) == 0);
+      CHECK_TRUE(etl::strncmp(s1, s4, 2) == 0);
+      CHECK_TRUE(etl::strncmp(s4, s1, 2) == 0);
+      CHECK_TRUE(etl::strncmp(s1, s4, 3) == 0);
+      CHECK_TRUE(etl::strncmp(s4, s1, 3) == 0);
+      CHECK_TRUE(etl::strncmp(s1, s4, 4) == 0);
+      CHECK_TRUE(etl::strncmp(s4, s1, 4) == 0);
+      CHECK_TRUE(etl::strncmp(s1, s4, 5) == 0);
+      CHECK_TRUE(etl::strncmp(s4, s1, 5) == 0);
+      CHECK_TRUE(etl::strncmp(s1, s4, 6) > 0);
+      CHECK_TRUE(etl::strncmp(s4, s1, 6) < 0);
+    }
+#endif
+
+    //*************************************************************************
+    TEST(test_strncmp_wchar_t)
+    {
+      const wchar_t s1[] = L"ABCDEF";
+      const wchar_t s2[] = L"ABCDEF";
+      const wchar_t s3[] = L"ABDDEF";
+      const wchar_t s4[] = L"ABCDE";
+
+      CHECK_TRUE(etl::strncmp(s1, s2, 0) == 0);
+      CHECK_TRUE(etl::strncmp(s1, s2, 1) == 0);
+      CHECK_TRUE(etl::strncmp(s1, s2, 2) == 0);
+      CHECK_TRUE(etl::strncmp(s1, s2, 3) == 0);
+      CHECK_TRUE(etl::strncmp(s1, s2, 4) == 0);
+      CHECK_TRUE(etl::strncmp(s1, s2, 5) == 0);
+      CHECK_TRUE(etl::strncmp(s1, s2, 6) == 0);
+      CHECK_TRUE(etl::strncmp(s1, s3, 0) == 0);
+      CHECK_TRUE(etl::strncmp(s3, s1, 0) == 0);
+      CHECK_TRUE(etl::strncmp(s1, s3, 1) == 0);
+      CHECK_TRUE(etl::strncmp(s3, s1, 1) == 0);
+      CHECK_TRUE(etl::strncmp(s1, s3, 2) == 0);
+      CHECK_TRUE(etl::strncmp(s3, s1, 2) == 0);
+      CHECK_TRUE(etl::strncmp(s1, s3, 3) < 0);
+      CHECK_TRUE(etl::strncmp(s3, s1, 3) > 0);
+      CHECK_TRUE(etl::strncmp(s1, s3, 4) < 0);
+      CHECK_TRUE(etl::strncmp(s3, s1, 4) > 0);
+      CHECK_TRUE(etl::strncmp(s1, s3, 5) < 0);
+      CHECK_TRUE(etl::strncmp(s3, s1, 5) > 0);
+      CHECK_TRUE(etl::strncmp(s1, s3, 6) < 0);
+      CHECK_TRUE(etl::strncmp(s3, s1, 6) > 0);
+      CHECK_TRUE(etl::strncmp(s1, s4, 0) == 0);
+      CHECK_TRUE(etl::strncmp(s4, s1, 0) == 0);
+      CHECK_TRUE(etl::strncmp(s1, s4, 1) == 0);
+      CHECK_TRUE(etl::strncmp(s4, s1, 1) == 0);
+      CHECK_TRUE(etl::strncmp(s1, s4, 2) == 0);
+      CHECK_TRUE(etl::strncmp(s4, s1, 2) == 0);
+      CHECK_TRUE(etl::strncmp(s1, s4, 3) == 0);
+      CHECK_TRUE(etl::strncmp(s4, s1, 3) == 0);
+      CHECK_TRUE(etl::strncmp(s1, s4, 4) == 0);
+      CHECK_TRUE(etl::strncmp(s4, s1, 4) == 0);
+      CHECK_TRUE(etl::strncmp(s1, s4, 5) == 0);
+      CHECK_TRUE(etl::strncmp(s4, s1, 5) == 0);
+      CHECK_TRUE(etl::strncmp(s1, s4, 6) > 0);
+      CHECK_TRUE(etl::strncmp(s4, s1, 6) < 0);
+    }
+
+    //*************************************************************************
+    TEST(test_strncmp_char16_t)
+    {
+      const char16_t s1[] = u"ABCDEF";
+      const char16_t s2[] = u"ABCDEF";
+      const char16_t s3[] = u"ABDDEF";
+      const char16_t s4[] = u"ABCDE";
+
+      CHECK_TRUE(etl::strncmp(s1, s2, 0) == 0);
+      CHECK_TRUE(etl::strncmp(s1, s2, 1) == 0);
+      CHECK_TRUE(etl::strncmp(s1, s2, 2) == 0);
+      CHECK_TRUE(etl::strncmp(s1, s2, 3) == 0);
+      CHECK_TRUE(etl::strncmp(s1, s2, 4) == 0);
+      CHECK_TRUE(etl::strncmp(s1, s2, 5) == 0);
+      CHECK_TRUE(etl::strncmp(s1, s2, 6) == 0);
+      CHECK_TRUE(etl::strncmp(s1, s3, 0) == 0);
+      CHECK_TRUE(etl::strncmp(s3, s1, 0) == 0);
+      CHECK_TRUE(etl::strncmp(s1, s3, 1) == 0);
+      CHECK_TRUE(etl::strncmp(s3, s1, 1) == 0);
+      CHECK_TRUE(etl::strncmp(s1, s3, 2) == 0);
+      CHECK_TRUE(etl::strncmp(s3, s1, 2) == 0);
+      CHECK_TRUE(etl::strncmp(s1, s3, 3) < 0);
+      CHECK_TRUE(etl::strncmp(s3, s1, 3) > 0);
+      CHECK_TRUE(etl::strncmp(s1, s3, 4) < 0);
+      CHECK_TRUE(etl::strncmp(s3, s1, 4) > 0);
+      CHECK_TRUE(etl::strncmp(s1, s3, 5) < 0);
+      CHECK_TRUE(etl::strncmp(s3, s1, 5) > 0);
+      CHECK_TRUE(etl::strncmp(s1, s3, 6) < 0);
+      CHECK_TRUE(etl::strncmp(s3, s1, 6) > 0);
+      CHECK_TRUE(etl::strncmp(s1, s4, 0) == 0);
+      CHECK_TRUE(etl::strncmp(s4, s1, 0) == 0);
+      CHECK_TRUE(etl::strncmp(s1, s4, 1) == 0);
+      CHECK_TRUE(etl::strncmp(s4, s1, 1) == 0);
+      CHECK_TRUE(etl::strncmp(s1, s4, 2) == 0);
+      CHECK_TRUE(etl::strncmp(s4, s1, 2) == 0);
+      CHECK_TRUE(etl::strncmp(s1, s4, 3) == 0);
+      CHECK_TRUE(etl::strncmp(s4, s1, 3) == 0);
+      CHECK_TRUE(etl::strncmp(s1, s4, 4) == 0);
+      CHECK_TRUE(etl::strncmp(s4, s1, 4) == 0);
+      CHECK_TRUE(etl::strncmp(s1, s4, 5) == 0);
+      CHECK_TRUE(etl::strncmp(s4, s1, 5) == 0);
+      CHECK_TRUE(etl::strncmp(s1, s4, 6) > 0);
+      CHECK_TRUE(etl::strncmp(s4, s1, 6) < 0);
+    }
+
+    //*************************************************************************
+    TEST(test_strncmp_char32_t)
+    {
+      const char32_t s1[] = U"ABCDEF";
+      const char32_t s2[] = U"ABCDEF";
+      const char32_t s3[] = U"ABDDEF";
+      const char32_t s4[] = U"ABCDE";
+
+      CHECK_TRUE(etl::strncmp(s1, s2, 0) == 0);
+      CHECK_TRUE(etl::strncmp(s1, s2, 1) == 0);
+      CHECK_TRUE(etl::strncmp(s1, s2, 2) == 0);
+      CHECK_TRUE(etl::strncmp(s1, s2, 3) == 0);
+      CHECK_TRUE(etl::strncmp(s1, s2, 4) == 0);
+      CHECK_TRUE(etl::strncmp(s1, s2, 5) == 0);
+      CHECK_TRUE(etl::strncmp(s1, s2, 6) == 0);
+      CHECK_TRUE(etl::strncmp(s1, s3, 0) == 0);
+      CHECK_TRUE(etl::strncmp(s3, s1, 0) == 0);
+      CHECK_TRUE(etl::strncmp(s1, s3, 1) == 0);
+      CHECK_TRUE(etl::strncmp(s3, s1, 1) == 0);
+      CHECK_TRUE(etl::strncmp(s1, s3, 2) == 0);
+      CHECK_TRUE(etl::strncmp(s3, s1, 2) == 0);
+      CHECK_TRUE(etl::strncmp(s1, s3, 3) < 0);
+      CHECK_TRUE(etl::strncmp(s3, s1, 3) > 0);
+      CHECK_TRUE(etl::strncmp(s1, s3, 4) < 0);
+      CHECK_TRUE(etl::strncmp(s3, s1, 4) > 0);
+      CHECK_TRUE(etl::strncmp(s1, s3, 5) < 0);
+      CHECK_TRUE(etl::strncmp(s3, s1, 5) > 0);
+      CHECK_TRUE(etl::strncmp(s1, s3, 6) < 0);
+      CHECK_TRUE(etl::strncmp(s3, s1, 6) > 0);
+      CHECK_TRUE(etl::strncmp(s1, s4, 0) == 0);
+      CHECK_TRUE(etl::strncmp(s4, s1, 0) == 0);
+      CHECK_TRUE(etl::strncmp(s1, s4, 1) == 0);
+      CHECK_TRUE(etl::strncmp(s4, s1, 1) == 0);
+      CHECK_TRUE(etl::strncmp(s1, s4, 2) == 0);
+      CHECK_TRUE(etl::strncmp(s4, s1, 2) == 0);
+      CHECK_TRUE(etl::strncmp(s1, s4, 3) == 0);
+      CHECK_TRUE(etl::strncmp(s4, s1, 3) == 0);
+      CHECK_TRUE(etl::strncmp(s1, s4, 4) == 0);
+      CHECK_TRUE(etl::strncmp(s4, s1, 4) == 0);
+      CHECK_TRUE(etl::strncmp(s1, s4, 5) == 0);
+      CHECK_TRUE(etl::strncmp(s4, s1, 5) == 0);
+      CHECK_TRUE(etl::strncmp(s1, s4, 6) > 0);
+      CHECK_TRUE(etl::strncmp(s4, s1, 6) < 0);
+    }
+
+    //*************************************************************************
+    TEST(test_strcpy_char)
+    {
+      const char src[] = "ABCDEF";
+      char dst[7U];
+
+      auto result = etl::strcpy(dst, src);
+
+      CHECK_TRUE(etl::strcmp(src, dst) == 0);
+      CHECK_TRUE(etl::strcmp(dst, result) == 0);
+    }
+
+#if ETL_HAS_CHAR8_T
+    //*************************************************************************
+    TEST(test_strcpy_char8_t)
+    {
+      const char8_t src[] = u8"ABCDEF";
+      char8_t dst[7U];
+
+      auto result = etl::strcpy(dst, src);
+
+      CHECK_TRUE(etl::strcmp(src, dst) == 0);
+      CHECK_TRUE(etl::strcmp(dst, result) == 0);
+    }
+#endif
+
+    //*************************************************************************
+    TEST(test_strcpy_wchar_t)
+    {
+      const wchar_t src[] = L"ABCDEF";
+      wchar_t dst[7U];
+
+      auto result = etl::strcpy(dst, src);
+
+      CHECK_TRUE(etl::strcmp(src, dst) == 0);
+      CHECK_TRUE(etl::strcmp(dst, result) == 0);
+    }
+
+    //*************************************************************************
+    TEST(test_strcpy_char16_t)
+    {
+      const char16_t src[] = u"ABCDEF";
+      char16_t dst[7U];
+
+      auto result = etl::strcpy(dst, src);
+
+      CHECK_TRUE(etl::strcmp(src, dst) == 0);
+      CHECK_TRUE(etl::strcmp(dst, result) == 0);
+    }
+
+    //*************************************************************************
+    TEST(test_strcpy_char32_t)
+    {
+      const char32_t src[] = U"ABCDEF";
+      char32_t dst[7U];
+
+      auto result = etl::strcpy(dst, src);
+
+      CHECK_TRUE(etl::strcmp(src, dst) == 0);
+      CHECK_TRUE(etl::strcmp(dst, result) == 0);
+    }
+
+    //*************************************************************************
+    TEST(test_strncpy_char)
+    {
+      const char src[] = "ABCDEF";
+      const char expected[] = "ABCDE";
+      char dst[7U];
+
+      auto result = etl::strncpy(dst, src, 5);
+
+      CHECK_TRUE(etl::strcmp(expected, dst) == 0);
+      CHECK_TRUE(etl::strcmp(dst, result) == 0);
+    }
+
+#if ETL_HAS_CHAR8_T
+    //*************************************************************************
+    TEST(test_strncpy_char8_t)
+    {
+      const char8_t src[] = u8"ABCDEF";
+      const char8_t expected[] = u8"ABCDE";
+      char8_t dst[7U];
+
+      auto result = etl::strncpy(dst, src, 5);
+
+      CHECK_TRUE(etl::strcmp(expected, dst) == 0);
+      CHECK_TRUE(etl::strcmp(dst, result) == 0);
+    }
+#endif
+
+    //*************************************************************************
+    TEST(test_strncpy_wchar_t)
+    {
+      const wchar_t src[] = L"ABCDEF";
+      const wchar_t expected[] = L"ABCDE";
+      wchar_t dst[7U];
+
+      auto result = etl::strncpy(dst, src, 5);
+
+      CHECK_TRUE(etl::strcmp(expected, dst) == 0);
+      CHECK_TRUE(etl::strcmp(dst, result) == 0);
+    }
+
+    //*************************************************************************
+    TEST(test_strncpy_char16_t)
+    {
+      const char16_t src[] = u"ABCDEF";
+      const char16_t expected[] = u"ABCDE";
+      char16_t dst[7U];
+
+      auto result = etl::strncpy(dst, src, 5);
+
+      CHECK_TRUE(etl::strcmp(expected, dst) == 0);
+      CHECK_TRUE(etl::strcmp(dst, result) == 0);
+    }
+
+    //*************************************************************************
+    TEST(test_strncpy_char32_t)
+    {
+      const char32_t src[] = U"ABCDEF";
+      const char32_t expected[] = U"ABCDE";
+      char32_t dst[7U];
+
+      auto result = etl::strncpy(dst, src, 5);
+
+      CHECK_TRUE(etl::strcmp(expected, dst) == 0);
+      CHECK_TRUE(etl::strcmp(dst, result) == 0);
     }
 
     //*************************************************************************
@@ -287,3 +752,5 @@ namespace
     }
   };
 }
+
+#include "etl/private/diagnostic_pop.h"

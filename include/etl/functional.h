@@ -32,6 +32,7 @@ SOFTWARE.
 #define ETL_FUNCTIONAL_INCLUDED
 
 #include "platform.h"
+#include "utility.h"
 
 ///\defgroup functional functional
 ///\ingroup utilities
@@ -112,6 +113,39 @@ namespace etl
   }
 
   //***************************************************************************
+  /// unwrap_reference.
+  //***************************************************************************
+  template <class T>
+  struct unwrap_reference
+  {
+    typedef T type;
+  };
+
+  template <typename T>
+  struct unwrap_reference<etl::reference_wrapper<T> >
+  {
+    typedef T& type;
+  };
+
+#if ETL_USING_CPP11
+  template <typename T>
+  using unwrap_reference_t = typename unwrap_reference<T>::type;
+#endif
+
+  //***************************************************************************
+  /// unwrap_ref_decay.
+  //***************************************************************************
+  template <typename T>
+  struct unwrap_ref_decay : etl::unwrap_reference<typename etl::decay<T>::type> {};
+
+#if ETL_USING_CPP11 
+  template <typename T>
+  using unwrap_ref_decay_t = typename unwrap_ref_decay<T>::type;
+#endif
+
+  //***************************************************************************
+  /// unary_function
+  //***************************************************************************
   template <typename TArgumentType, typename TResultType>
   struct unary_function
   {
@@ -119,6 +153,8 @@ namespace etl
     typedef TResultType   result_type;
   };
 
+  //***************************************************************************
+  /// binary_function
   //***************************************************************************
   template <typename TFirstArgumentType, typename TSecondArgumentType, typename TResultType>
   struct binary_function
@@ -528,6 +564,73 @@ namespace etl
       return ~lhs;
     }
   };
+
+#if ETL_USING_CPP11
+  namespace private_functional
+  {
+    //***************************************************************************
+    template<typename TReturnType, typename TClassType, typename... TArgs>
+    class mem_fn_impl
+    {
+    public:
+
+      typedef TReturnType(TClassType::* MemberFunctionType)(TArgs...);
+
+      ETL_CONSTEXPR mem_fn_impl(MemberFunctionType member_function_)
+        : member_function(member_function_)
+      {
+      }
+
+      ETL_CONSTEXPR TReturnType operator()(TClassType& instance, TArgs... args) const
+      {
+        return (instance.*member_function)(etl::forward<TArgs>(args)...);
+      }
+
+    private:
+
+      MemberFunctionType member_function;
+    };
+
+    //***************************************************************************
+    template<typename TReturnType, typename TClassType, typename... TArgs>
+    class const_mem_fn_impl
+    {
+    public:
+
+      typedef TReturnType(TClassType::* MemberFunctionType)(TArgs...) const;
+
+      ETL_CONSTEXPR const_mem_fn_impl(MemberFunctionType member_function_)
+        : member_function(member_function_)
+      {
+      }
+
+      ETL_CONSTEXPR TReturnType operator()(const TClassType& instance, TArgs... args) const
+      {
+        return (instance.*member_function)(etl::forward<TArgs>(args)...);
+      }
+
+    private:
+
+      MemberFunctionType member_function;
+    };
+  }
+
+  //***************************************************************************
+  template<typename TReturnType, typename TClassType, typename... TArgs>
+  ETL_CONSTEXPR
+  private_functional::mem_fn_impl<TReturnType, TClassType, TArgs...> mem_fn(TReturnType(TClassType::* member_function)(TArgs...))
+  {
+    return private_functional::mem_fn_impl<TReturnType, TClassType, TArgs...>(member_function);
+  }
+
+  //***************************************************************************
+  template<typename TReturnType, typename TClassType, typename... TArgs>
+  ETL_CONSTEXPR
+  private_functional::const_mem_fn_impl<TReturnType, TClassType, TArgs...> mem_fn(TReturnType(TClassType::* member_function)(TArgs...) const)
+  {
+    return private_functional::const_mem_fn_impl<TReturnType, TClassType, TArgs...>(member_function);
+  }
+#endif
 }
 
 #endif

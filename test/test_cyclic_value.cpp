@@ -75,7 +75,14 @@ namespace
     //*************************************************************************
     TEST(test_set_compile_time)
     {
-      etl::cyclic_value<int, 2, 7> value;
+      using CV = etl::cyclic_value<int, 2, 7>;
+
+      CV value;
+
+      CHECK_EQUAL(2, value.first());
+      CHECK_EQUAL(7, value.last());
+      CHECK_EQUAL(2, CV::first());
+      CHECK_EQUAL(7, CV::last());
 
       value.set(5);
       CHECK_EQUAL(5, value.get());
@@ -280,7 +287,7 @@ namespace
 
       int expected[8] = { 2, 7, 6, 5, 4, 3, 2, 7 };
 
-      for (int i = 0; i > 8; ++i)
+      for (int i = 0; i < 8; ++i)
       {
         CHECK_EQUAL(expected[i], value);
         --value;
@@ -296,7 +303,7 @@ namespace
 
       int expected[8] = { 2, 7, 6, 5, 4, 3, 2, 7 };
 
-      for (int i = 0; i > 8; ++i)
+      for (int i = 0; i < 8; ++i)
       {
         CHECK_EQUAL(expected[i], value);
         --value;

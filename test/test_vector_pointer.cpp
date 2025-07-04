@@ -360,6 +360,7 @@ namespace
     {
       Data data(initial_data.begin(), initial_data.end());
       Data other_data;
+      other_data.push_back(nullptr);
 
       other_data = std::move(data);
 
@@ -1069,6 +1070,52 @@ namespace
     }
 
     //*************************************************************************
+    TEST(test_emplace_default)
+    {
+      static int initial = 0;
+
+      // First fill with Initial values.
+      etl::vector<int*, SIZE> data;
+      data.resize(SIZE, &initial);
+      data.clear();
+
+      // Then emplace Default values.
+      for (size_t i = 0; i < SIZE; ++i)
+      {
+        data.emplace(data.begin());
+      }
+
+      // Compare with an array of default values.
+      std::array<int*, SIZE> compare_data;
+      compare_data.fill(nullptr);
+
+      CHECK_TRUE(std::equal(compare_data.begin(), compare_data.end(), data.begin()));
+    }
+
+    //*************************************************************************
+    TEST(test_emplace_back_default)
+    {
+      static int initial = 0;
+
+      // First fill with initial values.
+      etl::vector<int*, SIZE> data;
+      data.resize(SIZE, &initial);
+      data.clear();
+
+      // Then emplace default values.
+      for (size_t i = 0; i < SIZE; ++i)
+      {
+        data.emplace_back();
+      }
+
+      // Compare with an array of default values.
+      std::array<int*, SIZE> compare_data;
+      compare_data.fill(nullptr);
+
+      CHECK_TRUE(std::equal(compare_data.begin(), compare_data.end(), data.begin()));
+    }
+
+    //*************************************************************************
     TEST_FIXTURE(SetupFixture, test_pop_back)
     {
       Compare_Data compare_data(initial_data.begin(), initial_data.end());
@@ -1337,6 +1384,29 @@ namespace
         data.assign(initial_data.begin(), initial_data.begin() + INITIAL_SIZE);
         compare_data.assign(initial_data.begin(), initial_data.begin() + INITIAL_SIZE);
         data.insert(data.begin() + offset, insert_data.begin(), insert_data.end());
+        compare_data.insert(compare_data.begin() + offset, insert_data.begin(), insert_data.end());
+
+        bool is_equal = std::equal(data.begin(),
+                                   data.end(),
+                                   compare_data.begin());
+
+        CHECK(is_equal);
+      }
+    }
+
+    //*************************************************************************
+    TEST_FIXTURE(SetupFixture, test_insert_position_pointer_range)
+    {
+      const size_t INITIAL_SIZE = 5;
+
+      for (size_t offset = 0; offset <= INITIAL_SIZE; ++offset)
+      {
+        Compare_Data compare_data;
+        Data data;
+
+        data.assign(initial_data.data(), initial_data.data() + INITIAL_SIZE);
+        compare_data.assign(initial_data.begin(), initial_data.begin() + INITIAL_SIZE);
+        data.insert(data.data() + offset, insert_data.data(), insert_data.data() + insert_data.size());
         compare_data.insert(compare_data.begin() + offset, insert_data.begin(), insert_data.end());
 
         bool is_equal = std::equal(data.begin(),

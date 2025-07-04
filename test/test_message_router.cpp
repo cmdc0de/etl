@@ -68,22 +68,11 @@ namespace
   //};
 
   //***********************************
-  struct Interface : public etl::imessage
-  {
-    virtual int VirtualFunction() const = 0;
-  };
-
-  //***********************************
-  struct Message1 : public etl::message<MESSAGE1, Interface>
+  struct Message1 : public etl::message<MESSAGE1>
   {
     Message1(etl::imessage_router& callback_)
       : callback(callback_)
     {
-    }
-
-    int VirtualFunction() const override
-    {
-      return 1;
     }
 
     etl::imessage_router& callback;
@@ -153,7 +142,7 @@ namespace
     {
       ++message1_count;
       etl::send_message(msg.callback, message5);
-      CHECK_EQUAL(1, msg.VirtualFunction());
+      //CHECK_EQUAL(1, msg.VirtualFunction());
     }
 
     void on_receive(const Message2& msg)
@@ -228,7 +217,7 @@ namespace
       ++message1_count;
       sender_id = msg.callback.get_message_router_id();
       etl::send_message(msg.callback, message5);
-      CHECK_EQUAL(1, msg.VirtualFunction());
+      //CHECK_EQUAL(1, msg.VirtualFunction());
     }
 
     void on_receive(const Message2& msg)
@@ -262,6 +251,77 @@ namespace
     int message_unknown_count;
     int callback_count;
     int sender_id;
+  };
+
+  //***************************************************************************
+  // Router that handles messages 1, 2, 3.
+  // 'receive' is overridden.
+  //***************************************************************************
+  class Router3 : public etl::message_router<Router3, Message1, Message2, Message3>
+  {
+  public:
+
+    using base = etl::message_router<Router3, Message1, Message2, Message3>;
+
+    Router3()
+      : message_router(ROUTER3)
+      , message1_received(false)
+      , message2_received(false)
+      , message3_received(false)
+      , unknown_message_received(false)
+    {
+    }
+
+    void receive(const etl::imessage& msg) override
+    {
+      switch (msg.get_message_id())
+      {
+        case MESSAGE1:
+        {
+          message1_received = true;
+          break;
+        }
+
+        case MESSAGE2:
+        {
+          message2_received = true;
+          break;
+        }
+
+        case MESSAGE3:
+        {
+          message3_received = true;
+          break;
+        }
+
+        default:
+        {
+          unknown_message_received = true;
+          break;
+        }
+      }
+    }
+
+    void on_receive(const Message1&)
+    {
+    }
+
+    void on_receive(const Message2&)
+    {
+    }
+
+    void on_receive(const Message3&)
+    {
+    }
+
+    void on_receive_unknown(const etl::imessage&)
+    {
+    }
+
+    bool message1_received;
+    bool message2_received;
+    bool message3_received;
+    bool unknown_message_received;
   };
 
   etl::imessage_router* p_router;
@@ -516,6 +576,7 @@ namespace
       CHECK(r2.accepts(message5.get_message_id()));
     }
 
+#if ETL_HAS_VIRTUAL_MESSAGES
     //*************************************************************************
     TEST(message_router_queue)
     {
@@ -588,6 +649,7 @@ namespace
       CHECK_EQUAL(4, r1.callback_count);
       queue.pop();
     }
+#endif
 
     //*************************************************************************
     TEST(message_router_successor)
@@ -649,6 +711,27 @@ namespace
       CHECK_EQUAL(1, r1.message3_count);
       CHECK_EQUAL(0, r1.message4_count);
       CHECK_EQUAL(0, r1.message_unknown_count);
+    }
+
+    //*************************************************************************
+    TEST(message_router_with_overloaded_receive)
+    {
+      Router3 router;
+
+      Message1 message1(router);
+      Message2 message2(router);
+      Message3 message3(router);
+
+      router.receive(message1);
+      CHECK_TRUE(router.message1_received);
+
+      router.receive(message2);
+      CHECK_TRUE(router.message2_received);
+
+      router.receive(message3);
+      CHECK_TRUE(router.message3_received);
+
+      CHECK_FALSE(router.unknown_message_received);
     }
   };
 }

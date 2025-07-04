@@ -43,6 +43,10 @@ SOFTWARE.
 #include "iterator.h"
 #include "functional.h"
 #include "utility.h"
+#include "largest.h"
+#include "gcd.h"
+#include "error_handler.h"
+#include "exception.h"
 
 #include <stdint.h>
 #include <string.h>
@@ -81,6 +85,27 @@ namespace etl
 
   template <typename TIterator, typename TCompare>
   ETL_CONSTEXPR14 void insertion_sort(TIterator first, TIterator last, TCompare compare);
+
+  class algorithm_exception : public etl::exception
+  {
+  public:
+
+    algorithm_exception(string_type reason_, string_type file_name_, numeric_type line_number_)
+      : exception(reason_, file_name_, line_number_)
+    {
+    }
+  };
+
+  class algorithm_error : public algorithm_exception
+  {
+  public:
+
+    algorithm_error(string_type file_name_, numeric_type line_number_)
+      : algorithm_exception(ETL_ERROR_TEXT("algorithm:error", ETL_ALGORITHM_FILE_ID"A"), file_name_, line_number_)
+    {
+    }
+  };
+
 }
 
 //*****************************************************************************
@@ -88,6 +113,37 @@ namespace etl
 //*****************************************************************************
 namespace etl
 {
+  namespace private_algorithm
+  {
+    template <bool use_swap>
+    struct swap_impl;
+
+    // Generic swap
+    template <>
+    struct swap_impl<false>
+    {
+      template <typename TIterator1, typename TIterator2>
+      static void do_swap(TIterator1 a, TIterator2 b)
+      {
+        typename etl::iterator_traits<TIterator1>::value_type tmp = *a;
+        *a = *b;
+        *b = tmp;
+      }
+    };
+
+    // Specialised swap
+    template <>
+    struct swap_impl<true>
+    {
+      template <typename TIterator1, typename TIterator2>
+      static void do_swap(TIterator1 a, TIterator2 b)
+      {
+        using ETL_OR_STD::swap; // Allow ADL
+        swap(*a, *b);
+      }
+    };
+  }
+
   //***************************************************************************
   // iter_swap
   //***************************************************************************
@@ -99,8 +155,20 @@ namespace etl
 #endif
   void iter_swap(TIterator1 a, TIterator2 b)
   {
-    using ETL_OR_STD::swap; // Allow ADL
-    swap(*a, *b);
+    typedef etl::iterator_traits<TIterator1> traits1;
+    typedef etl::iterator_traits<TIterator2> traits2;
+
+    typedef typename traits1::value_type v1;
+    typedef typename traits2::value_type v2;
+
+    typedef typename traits1::reference r1;
+    typedef typename traits2::reference r2;
+
+    const bool use_swap = etl::is_same<v1, v2>::value  &&
+                          etl::is_reference<r1>::value &&
+                          etl::is_reference<r2>::value;
+
+    private_algorithm::swap_impl<use_swap>::do_swap(a, b);
   }
 
   //***************************************************************************
@@ -124,6 +192,18 @@ namespace etl
     }
 
     return first2;
+  }
+
+  //***************************************************************************
+  // generate
+  template <typename TIterator, typename TFunction>
+  ETL_CONSTEXPR14
+  void generate(TIterator db, TIterator de, TFunction funct)
+  {
+    while (db != de)
+    {
+      *db++ = funct();
+    }
   }
 
   //***************************************************************************
@@ -229,8 +309,8 @@ namespace etl
   {
     return std::move(sb, se, db);
   }
-#else
-  // non-pointer or not trivially copyable
+#elif ETL_USING_CPP11
+  // For C++11
   template <typename TIterator1, typename TIterator2>
   ETL_CONSTEXPR14 TIterator2 move(TIterator1 sb, TIterator1 se, TIterator2 db)
   {
@@ -243,19 +323,25 @@ namespace etl
 
     return db;
   }
+#else
+  // For C++03
+  template <typename TIterator1, typename TIterator2>
+  ETL_CONSTEXPR14 TIterator2 move(TIterator1 sb, TIterator1 se, TIterator2 db)
+  {
+    return copy(sb, se, db);
+  }
 #endif
 
   //***************************************************************************
   // move_backward
 #if ETL_USING_STL && ETL_USING_CPP20
   template <typename TIterator1, typename TIterator2>
-  ETL_CONSTEXPR20
-    TIterator2 move_backward(TIterator1 sb, TIterator1 se, TIterator2 de)
+  ETL_CONSTEXPR20 TIterator2 move_backward(TIterator1 sb, TIterator1 se, TIterator2 de)
   {
     return std::move_backward(sb, se, de);
   }
-#else
-  // non-pointer or not trivially copyable
+#elif ETL_USING_CPP11
+  // For C++11
   template <typename TIterator1, typename TIterator2>
   ETL_CONSTEXPR14 TIterator2 move_backward(TIterator1 sb, TIterator1 se, TIterator2 de)
   {
@@ -266,6 +352,13 @@ namespace etl
 
     return de;
   }
+#else
+  // For C++03
+  template <typename TIterator1, typename TIterator2>
+  ETL_CONSTEXPR14 TIterator2 move_backward(TIterator1 sb, TIterator1 se, TIterator2 de)
+  {
+    return etl::copy_backward(sb, se, de);
+  }
 #endif
 
   //***************************************************************************
@@ -273,6 +366,7 @@ namespace etl
   //***************************************************************************
   // Pointers
   template <typename TIterator>
+  ETL_CONSTEXPR14
   typename etl::enable_if<etl::is_pointer<TIterator>::value, void>::type
     reverse(TIterator b, TIterator e)
   {
@@ -288,6 +382,7 @@ namespace etl
 
   // Non-pointers
   template <typename TIterator>
+  ETL_CONSTEXPR14
   typename etl::enable_if<!etl::is_pointer<TIterator>::value, void>::type
     reverse(TIterator b, TIterator e)
   {
@@ -560,6 +655,7 @@ namespace etl
   //***************************************************************************
   // equal
 #if ETL_USING_STL && ETL_USING_CPP20
+  // Three parameter
   template <typename TIterator1, typename TIterator2>
   [[nodiscard]]
   constexpr
@@ -568,6 +664,7 @@ namespace etl
     return std::equal(first1, last1, first2);
   }
 
+  // Three parameter + predicate
   template <typename TIterator1, typename TIterator2, typename TPredicate>
   [[nodiscard]]
   constexpr
@@ -575,8 +672,27 @@ namespace etl
   {
     return std::equal(first1, last1, first2, predicate);
   }
+
+  // Four parameter
+  template <typename TIterator1, typename TIterator2>
+  [[nodiscard]]
+  constexpr
+  bool equal(TIterator1 first1, TIterator1 last1, TIterator2 first2, TIterator2 last2)
+  {
+    return std::equal(first1, last1, first2, last2);
+  }
+
+  // Four parameter + Predicate
+  template <typename TIterator1, typename TIterator2, typename TPredicate>
+  [[nodiscard]]
+  constexpr
+  bool equal(TIterator1 first1, TIterator1 last1, TIterator2 first2, TIterator2 last2, TPredicate predicate)
+  {
+    return std::equal(first1, last1, first2, last2, predicate);
+  }
+
 #else
-  // Not pointer types or not trivially copyable.
+
   template <typename TIterator1, typename TIterator2>
   ETL_NODISCARD
   ETL_CONSTEXPR14
@@ -639,8 +755,8 @@ namespace etl
   // Four parameter, Predicate
   template <typename TIterator1, typename TIterator2, typename TPredicate>
   ETL_NODISCARD
-    ETL_CONSTEXPR14
-    bool equal(TIterator1 first1, TIterator1 last1, TIterator2 first2, TIterator2 last2, TPredicate predicate)
+  ETL_CONSTEXPR14
+  bool equal(TIterator1 first1, TIterator1 last1, TIterator2 first2, TIterator2 last2, TPredicate predicate)
   {
     while ((first1 != last1) && (first2 != last2))
     {
@@ -837,12 +953,12 @@ namespace etl
 
       while ((value_index > top_index) && compare(first[parent], value))
       {
-        first[value_index] = etl::move(first[parent]);
+        first[value_index] = ETL_MOVE(first[parent]);
         value_index = parent;
         parent = (value_index - 1) / 2;
       }
 
-      first[value_index] = etl::move(value);
+      first[value_index] = ETL_MOVE(value);
     }
 
     // Adjust Heap Helper
@@ -859,18 +975,18 @@ namespace etl
           --child2nd;
         }
 
-        first[value_index] = etl::move(first[child2nd]);
+        first[value_index] = ETL_MOVE(first[child2nd]);
         value_index = child2nd;
         child2nd = 2 * (child2nd + 1);
       }
 
       if (child2nd == length)
       {
-        first[value_index] = etl::move(first[child2nd - 1]);
+        first[value_index] = ETL_MOVE(first[child2nd - 1]);
         value_index = child2nd - 1;
       }
 
-      push_heap(first, value_index, top_index, etl::move(value), compare);
+      push_heap(first, value_index, top_index, ETL_MOVE(value), compare);
     }
 
     // Is Heap Helper
@@ -903,10 +1019,10 @@ namespace etl
     typedef typename etl::iterator_traits<TIterator>::value_type value_t;
     typedef typename etl::iterator_traits<TIterator>::difference_type distance_t;
 
-    value_t value = etl::move(last[-1]);
-    last[-1] = etl::move(first[0]);
+    value_t value = ETL_MOVE(last[-1]);
+    last[-1] = ETL_MOVE(first[0]);
 
-    private_heap::adjust_heap(first, distance_t(0), distance_t(last - first - 1), etl::move(value), compare);
+    private_heap::adjust_heap(first, distance_t(0), distance_t(last - first - 1), ETL_MOVE(value), compare);
   }
 
   // Pop Heap
@@ -925,7 +1041,7 @@ namespace etl
     typedef typename etl::iterator_traits<TIterator>::difference_type difference_t;
     typedef typename etl::iterator_traits<TIterator>::value_type      value_t;
 
-    private_heap::push_heap(first, difference_t(last - first - 1), difference_t(0), value_t(etl::move(*(last - 1))), compare);
+    private_heap::push_heap(first, difference_t(last - first - 1), difference_t(0), value_t(ETL_MOVE(*(last - 1))), compare);
   }
 
   // Push Heap
@@ -953,7 +1069,7 @@ namespace etl
 
     while (true)
     {
-      private_heap::adjust_heap(first, parent, length, etl::move(*(first + parent)), compare);
+      private_heap::adjust_heap(first, parent, length, ETL_MOVE(*(first + parent)), compare);
 
       if (parent == 0)
       {
@@ -1067,21 +1183,148 @@ namespace etl
   //***************************************************************************
   namespace private_algorithm
   {
+#if ETL_USING_CPP11
     //*********************************
+    // For random access iterators
     template <typename TIterator>
     ETL_CONSTEXPR14
-    TIterator rotate_general(TIterator first, TIterator middle, TIterator last)
+    typename etl::enable_if<etl::is_random_access_iterator<TIterator>::value, TIterator>::type
+      rotate_general(TIterator first, TIterator middle, TIterator last) 
     {
+      if (first == middle || middle == last)
+      {
+        return first;
+      }
+
+      typedef typename etl::iterator_traits<TIterator>::value_type value_type;
+
+      int n = last - first;
+      int m = middle - first;
+      int gcd_nm = (n == 0 || m == 0) ? n + m : etl::gcd(n, m);
+
+      TIterator result = first + (last - middle);
+
+      for (int i = 0; i < gcd_nm; i++) 
+      {
+        value_type temp = ETL_MOVE(*(first + i));
+        int j = i;
+        
+        while (true) 
+        {
+          int k = j + m;
+          
+          if (k >= n)
+          {
+            k = k - n;
+          }
+          
+          if (k == i)
+          {
+            break;
+          }
+
+          *(first + j) = ETL_MOVE(*(first + k));
+          j = k;
+        }
+
+        *(first + j) = ETL_MOVE(temp);
+      }
+
+      return result;
+    }
+#else
+    //*********************************
+    // For random access iterators
+    template <typename TIterator>
+    ETL_CONSTEXPR14
+    typename etl::enable_if<etl::is_random_access_iterator<TIterator>::value, TIterator>::type
+      rotate_general(TIterator first, TIterator middle, TIterator last)
+    {
+      if (first == middle || middle == last)
+      {
+        return first;
+      }
+
+      typedef typename etl::iterator_traits<TIterator>::value_type value_type;
+
+      int n = last - first;
+      int m = middle - first;
+      int gcd_nm = (n == 0 || m == 0) ? n + m : etl::gcd(n, m);
+
+      TIterator result = first + (last - middle);
+
+      for (int i = 0; i < gcd_nm; i++)
+      {
+        value_type temp = *(first + i);
+        int j = i;
+
+        while (true)
+        {
+          int k = j + m;
+
+          if (k >= n)
+          {
+            k = k - n;
+          }
+
+          if (k == i)
+          {
+            break;
+          }
+
+          *(first + j) = *(first + k);
+          j = k;
+        }
+
+        *(first + j) = temp;
+      }
+
+      return result;
+    }
+#endif
+
+    //*********************************
+    // For bidirectional iterators
+    template <typename TIterator>
+    ETL_CONSTEXPR14
+    typename etl::enable_if<etl::is_bidirectional_iterator<TIterator>::value, TIterator>::type
+      rotate_general(TIterator first, TIterator middle, TIterator last)
+    {
+      if (first == middle || middle == last)
+      {
+        return first;
+      }
+
+      TIterator result = first;
+      etl::advance(result, etl::distance(middle, last));
+
+      reverse(first, middle);
+      reverse(middle, last);
+      reverse(first, last);
+
+      return result;
+    }
+
+    //*********************************
+    // For forward iterators
+    template <typename TIterator>
+    ETL_CONSTEXPR14
+    typename etl::enable_if<etl::is_forward_iterator<TIterator>::value, TIterator>::type
+      rotate_general(TIterator first, TIterator middle, TIterator last)
+    {
+      if (first == middle || middle == last)
+      {
+        return first;
+      }
+
       TIterator next = middle;
+      TIterator result = first;
+      etl::advance(result, etl::distance(middle, last));
 
       while (first != next)
       {
-        using ETL_OR_STD::swap; // Allow ADL
-
-        swap(*first, *next);
-
-        ++first;
-        ++next;
+        using ETL_OR_STD::swap;
+        swap(*first++, *next++);
 
         if (next == last)
         {
@@ -1093,10 +1336,11 @@ namespace etl
         }
       }
 
-      return first;
+      return result;
     }
 
     //*********************************
+    // Simplified algorithm for rotate left by one
     template <typename TIterator>
     ETL_CONSTEXPR14
     TIterator rotate_left_by_one(TIterator first, TIterator last)
@@ -1104,19 +1348,20 @@ namespace etl
       typedef typename etl::iterator_traits<TIterator>::value_type value_type;
 
       // Save the first item.
-      value_type temp(etl::move(*first));
+      value_type temp(ETL_MOVE(*first));
 
       // Move the rest.
       TIterator result = etl::move(etl::next(first), last, first);
 
       // Restore the first item in its rotated position.
-      *result = etl::move(temp);
+      *result = ETL_MOVE(temp);
 
       // The new position of the first item.
       return result;
     }
 
     //*********************************
+    // Simplified for algorithm rotate right by one
     template <typename TIterator>
     ETL_CONSTEXPR14
     TIterator rotate_right_by_one(TIterator first, TIterator last)
@@ -1125,13 +1370,13 @@ namespace etl
 
       // Save the last item.
       TIterator previous = etl::prev(last);
-      value_type temp(etl::move(*previous));
+      value_type temp(ETL_MOVE(*previous));
 
       // Move the rest.
       TIterator result = etl::move_backward(first, previous, last);
 
       // Restore the last item in its rotated position.
-      *first = etl::move(temp);
+      *first = ETL_MOVE(temp);
 
       // The new position of the first item.
       return result;
@@ -1150,7 +1395,18 @@ namespace etl
 
     if (etl::next(middle) == last)
     {
-      return private_algorithm::rotate_right_by_one(first, last);
+#if ETL_USING_CPP20
+      if ETL_IF_CONSTEXPR(etl::is_forward_iterator<TIterator>::value)
+      {
+        return private_algorithm::rotate_general(first, middle, last);
+      }
+      else
+      {
+        return private_algorithm::rotate_right_by_one(first, last);
+      }
+#else
+      return private_algorithm::rotate_general(first, middle, last);
+#endif
     }
 
     return private_algorithm::rotate_general(first, middle, last);
@@ -1217,16 +1473,20 @@ namespace etl
                         TCompare  compare)
   {
     TIterator minimum = begin;
-    ++begin;
 
-    while (begin != end)
+    if (begin != end)
     {
-      if (compare(*begin, *minimum))
-      {
-        minimum = begin;
-      }
-
       ++begin;
+
+      while (begin != end)
+      {
+        if (compare(*begin, *minimum))
+        {
+          minimum = begin;
+        }
+
+        ++begin;
+      }
     }
 
     return minimum;
@@ -1261,16 +1521,20 @@ namespace etl
                         TCompare  compare)
   {
     TIterator maximum = begin;
-    ++begin;
 
-    while (begin != end)
+    if (begin != end)
     {
-      if (!compare(*begin, *maximum))
-      {
-        maximum = begin;
-      }
-
       ++begin;
+
+      while (begin != end)
+      {
+        if (!compare(*begin, *maximum))
+        {
+          maximum = begin;
+        }
+
+        ++begin;
+      }
     }
 
     return maximum;
@@ -1306,21 +1570,25 @@ namespace etl
   {
     TIterator minimum = begin;
     TIterator maximum = begin;
-    ++begin;
 
-    while (begin != end)
+    if (begin != end)
     {
-      if (compare(*begin, *minimum))
-      {
-        minimum = begin;
-      }
-
-      if (compare(*maximum, *begin))
-      {
-        maximum = begin;
-      }
-
       ++begin;
+
+      while (begin != end)
+      {
+        if (compare(*begin, *minimum))
+        {
+          minimum = begin;
+        }
+
+        if (compare(*maximum, *begin))
+        {
+          maximum = begin;
+        }
+
+        ++begin;
+      }
     }
 
     return ETL_OR_STD::pair<TIterator, TIterator>(minimum, maximum);
@@ -1883,7 +2151,7 @@ namespace etl
   {
     while (first != last)
     {
-      sum = etl::move(sum) + *first;
+      sum = ETL_MOVE(sum) + *first;
       ++first;
     }
       
@@ -1900,7 +2168,7 @@ namespace etl
   {
     while (first != last)
     {
-      sum = operation(etl::move(sum), *first);
+      sum = operation(ETL_MOVE(sum), *first);
       ++first;
     }
 
@@ -1912,17 +2180,31 @@ namespace etl
   ///\ingroup algorithm
   //***************************************************************************
   template<typename T, typename TCompare>
-  ETL_CONSTEXPR 
-  const T& clamp(const T& value, const T& low, const T& high, TCompare compare)
+  ETL_CONSTEXPR
+  T clamp(const T& value, const T& low, const T& high, TCompare compare)
   {
     return compare(value, low) ? low : compare(high, value) ? high : value;
   }
   
   template <typename T>
-  ETL_CONSTEXPR 
-  const T& clamp(const T& value, const T& low, const T& high )
+  ETL_CONSTEXPR
+  T clamp(const T& value, const T& low, const T& high)
   {
     return clamp(value, low, high, etl::less<T>());
+  }
+
+  template<typename T, T Low, T High, typename TCompare>
+  ETL_CONSTEXPR
+  T clamp(const T& value, TCompare compare)
+  {
+    return compare(value, Low) ? Low : compare(High, value) ? High : value;
+  }
+
+  template <typename T, T Low, T High>
+  ETL_CONSTEXPR
+  T clamp(const T& value)
+  {
+    return clamp<T, Low, High>(value, etl::less<T>());
   }
 
   //***************************************************************************
@@ -1932,22 +2214,19 @@ namespace etl
   template <typename TIterator, typename T>
   ETL_CONSTEXPR14
   TIterator remove(TIterator first, TIterator last, const T& value)
-  {
+  {    
     first = etl::find(first, last, value);
-      
+
     if (first != last)
     {
       TIterator itr = first;
 
-      while (itr != last)
+      while (++itr != last)
       {
         if (!(*itr == value))
         {
-          *first = etl::move(*itr);
-          ++first;
+          *first++ = ETL_MOVE(*itr);
         }
-
-        ++itr;
       }
     }
       
@@ -1968,19 +2247,16 @@ namespace etl
     {
       TIterator itr = first;
 
-      while (itr != last)
+      while (++itr != last)
       {
         if (!predicate(*itr))
         {
-          *first = etl::move(*itr);
-          ++first;
+          *first++ = ETL_MOVE(*itr);
         }
-
-        ++itr;
       }
     }
 
-    return first;
+    return first; 
   }
 }
 
@@ -2005,16 +2281,27 @@ namespace etl
   ETL_CONSTEXPR14
   typename etl::enable_if<etl::is_random_iterator<TInputIterator>::value &&
                           etl::is_random_iterator<TOutputIterator>::value, TOutputIterator>::type
-   copy_s(TInputIterator  i_begin,
-          TInputIterator  i_end,
-          TOutputIterator o_begin,
-          TOutputIterator o_end)
+    copy_s(TInputIterator  i_begin,
+           TInputIterator  i_end,
+           TOutputIterator o_begin,
+           TOutputIterator o_end)
   {
-      size_t s_size = etl::distance(i_begin, i_end);
-      size_t d_size = etl::distance(o_begin, o_end);
-      size_t size   = (s_size < d_size) ? s_size : d_size;
+    typedef typename iterator_traits<TInputIterator>::difference_type  s_size_type;
+    typedef typename iterator_traits<TOutputIterator>::difference_type d_size_type;
 
-      return etl::copy(i_begin, i_begin + size, o_begin);
+#if ETL_USING_CPP11
+    typedef typename etl::common_type<s_size_type, d_size_type>::type  min_size_type;
+#else
+    typedef typename etl::largest_type<s_size_type, d_size_type>::type  min_size_type;
+#endif
+
+    s_size_type s_size = etl::distance(i_begin, i_end);
+    ETL_ASSERT(s_size >= 0, ETL_ERROR(algorithm_error));
+    d_size_type d_size = etl::distance(o_begin, o_end);
+    ETL_ASSERT(d_size >= 0, ETL_ERROR(algorithm_error));
+    min_size_type size = etl::min<min_size_type>(s_size, d_size);
+
+    return etl::copy(i_begin, i_begin + size, o_begin);
   }
 
   //***************************************************************************
@@ -2100,7 +2387,7 @@ namespace etl
   //***************************************************************************
   /// copy_if
   /// A safer form of copy_if where it terminates when the first end iterator is reached.
-  /// There is currently no STL equivelent.
+  /// There is currently no STL equivalent.
   ///\ingroup algorithm
   //***************************************************************************
   template <typename TInputIterator,
@@ -2177,9 +2464,15 @@ namespace etl
          TOutputIterator o_begin,
          TOutputIterator o_end)
   {
-    size_t s_size = etl::distance(i_begin, i_end);
-    size_t d_size = etl::distance(o_begin, o_end);
-    size_t size = (s_size < d_size) ? s_size : d_size;
+    using s_size_type = typename iterator_traits<TInputIterator>::difference_type;
+    using d_size_type = typename iterator_traits<TOutputIterator>::difference_type;
+    using min_size_type = typename etl::common_type<s_size_type, d_size_type>::type;
+
+    s_size_type s_size = etl::distance(i_begin, i_end);
+    ETL_ASSERT(s_size >= 0, ETL_ERROR(algorithm_error));
+    d_size_type d_size = etl::distance(o_begin, o_end);
+    ETL_ASSERT(d_size >= 0, ETL_ERROR(algorithm_error));
+    min_size_type size = etl::min<min_size_type>(s_size, d_size);
 
     return etl::move(i_begin, i_begin + size, o_begin);
   }
@@ -2986,6 +3279,196 @@ namespace etl
   constexpr const TIterator& multimin_iter_compare(TCompare compare, const TIterator& t, const Tx&... tx)
   {
     return multimin_iter_compare(compare, t, multimin_iter_compare(compare, tx...));
+  }
+#endif
+
+  //***************************************************************************
+  /// partition
+  /// For forward iterators only
+  /// Does at most etl::distance(first, last) swaps.
+  //***************************************************************************
+  template <typename TIterator, typename TPredicate>
+  ETL_CONSTEXPR14 
+  typename etl::enable_if<etl::is_forward_iterator<TIterator>::value, TIterator>::type
+    partition(TIterator first, TIterator last, TPredicate predicate)
+  {
+    first = etl::find_if_not(first, last, predicate);
+
+    if (first == last)
+    {
+      return first;
+    }
+
+    for (TIterator i = etl::next(first); i != last; ++i)
+    {
+      if (predicate(*i))
+      {
+        using ETL_OR_STD::swap;
+        swap(*i, *first);
+        ++first;
+      }
+    }
+
+    return first;
+  }
+
+  //***************************************************************************
+  /// partition
+  /// For iterators that support bidirectional iteration.
+  /// Does at most (etl::distance(first, last) / 2) swaps.
+  //***************************************************************************
+  template <typename TIterator, typename TPredicate>
+  ETL_CONSTEXPR14
+  typename etl::enable_if<etl::is_bidirectional_iterator_concept<TIterator>::value, TIterator>::type
+    partition(TIterator first, TIterator last, TPredicate predicate) 
+  {
+    while (first != last)
+    {
+      first = etl::find_if_not(first, last, predicate);
+
+      if (first == last)
+      {
+        break;
+      }
+
+      last = etl::find_if(etl::reverse_iterator<TIterator>(last),
+                          etl::reverse_iterator<TIterator>(first),
+                          predicate).base();
+
+      if (first == last)
+      {
+        break;
+      }
+
+      --last;
+      using ETL_OR_STD::swap;
+      swap(*first, *last);
+      ++first;
+    }
+
+    return first;
+  }
+
+  //*********************************************************
+  namespace private_algorithm
+  {
+    using ETL_OR_STD::swap;
+
+    template <typename TIterator, typename TCompare>
+#if (ETL_USING_CPP20 && ETL_USING_STL) || (ETL_USING_CPP14 && ETL_NOT_USING_STL && !defined(ETL_IN_UNIT_TEST))
+    constexpr
+#endif
+    TIterator nth_partition(TIterator first, TIterator last, TCompare compare)
+    {
+      typedef typename etl::iterator_traits<TIterator>::value_type value_type;
+
+      TIterator  pivot = last; // Maybe find a better pivot choice?
+      value_type pivot_value = *pivot;
+
+      // Swap the pivot with the last, if necessary.
+      if (pivot != last)
+      {
+        swap(*pivot, *last);
+      }
+
+      TIterator i = first;
+
+      for (TIterator j = first; j < last; ++j)
+      {
+        if (!compare(pivot_value, *j)) // Hack to get '*j <= pivot_value' in terms of 'pivot_value < *j'
+        {
+          swap(*i, *j);
+          ++i;
+        }
+      }
+
+      swap(*i, *last);
+
+      return i;
+    }
+  }
+
+  //*********************************************************
+  /// nth_element
+  /// see https://en.cppreference.com/w/cpp/algorithm/nth_element
+  //*********************************************************
+#if ETL_USING_CPP11
+  template <typename TIterator, typename TCompare = etl::less<typename etl::iterator_traits<TIterator>::value_type>>
+#if (ETL_USING_CPP20 && ETL_USING_STL) || (ETL_USING_CPP14 && ETL_NOT_USING_STL && !defined(ETL_IN_UNIT_TEST))
+  constexpr
+#endif
+  typename etl::enable_if<etl::is_random_access_iterator_concept<TIterator>::value, void>::type
+    nth_element(TIterator first, TIterator nth, TIterator last, TCompare compare = TCompare())
+  {
+    if (first == last)
+    {
+      return;
+    }
+
+    // 'last' must point to the actual last value.
+    --last;
+
+    while (first <= last)
+    {
+      TIterator p = private_algorithm::nth_partition(first, last, compare);
+
+      if (p == nth)
+      {
+        return;
+      }
+      else if (p > nth)
+      {
+        last = p - 1;
+      }
+      else
+      {
+        first = p + 1;
+      }
+    }
+  }
+
+#else
+
+  //*********************************************************
+  template <typename TIterator, typename TCompare>
+  typename etl::enable_if<etl::is_random_access_iterator_concept<TIterator>::value, void>::type
+    nth_element(TIterator first, TIterator nth, TIterator last, TCompare compare)
+  {
+    if (first == last)
+    {
+      return;
+    }
+
+    // 'last' must point to the actual last value.
+    --last;
+
+    while (first <= last)
+    {
+      TIterator p = private_algorithm::nth_partition(first, last, compare);
+
+      if (p == nth)
+      {
+        return;
+      }
+      else if (p > nth)
+      {
+        last = p - 1;
+      }
+      else
+      {
+        first = p + 1;
+      }
+    }
+  }
+
+  //*********************************************************
+  template <typename TIterator>
+  typename etl::enable_if<etl::is_random_access_iterator_concept<TIterator>::value, void>::type
+    nth_element(TIterator first, TIterator nth, TIterator last)
+  {
+    typedef etl::less<typename etl::iterator_traits<TIterator>::value_type> compare_t;
+
+    nth_element(first, last, compare_t());
   }
 #endif
 }

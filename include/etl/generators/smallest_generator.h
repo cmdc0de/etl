@@ -52,12 +52,12 @@ cog.outl("//********************************************************************
 // To generate to header file, run this at the command line.
 // Note: You will need Python and COG installed.
 //
-// python -m cogapp -d -e -osmallest.h -DNTypes=<n> smallest_generator.h
+// cog -d -e -osmallest.h -DNTypes=<n> smallest_generator.h
 // Where <n> is the number of types to support.
 //
 // e.g.
 // To generate handlers for up to 16 types...
-// python -m cogapp -d -e -osmallest.h -DNTypes=16 smallest_generator.h
+// cog -d -e -osmallest.h -DNTypes=16 smallest_generator.h
 //
 // See generate.bat
 //***************************************************************************
@@ -140,7 +140,7 @@ namespace etl
   cog.outl("/// Supports up to %s types." % NTypes)
   cog.outl("/// Defines 'value_type' which is the type of the smallest parameter.")
   cog.outl("/// Defines 'size' which is the size of the smallest parameter.")
-  cog.outl("///\ingroup smallest")
+  cog.outl("///\\ingroup smallest")
   cog.outl("//***************************************************************************")
   cog.out("template <typename T1, ")
   for n in range(2, int(NTypes)):

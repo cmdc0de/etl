@@ -28,6 +28,8 @@ SOFTWARE.
 
 #include "unit_test_framework.h"
 
+#include "etl/platform.h"
+
 #include "etl/message_packet.h"
 
 #include <string>
@@ -48,21 +50,24 @@ namespace
   struct Message1 : public etl::message<MESSAGE1>
   {
     Message1(int x_)
-      : x(x_)
+      : etl::message<MESSAGE1>()
+      , x(x_)
       , moved(false)
       , copied(false)
     {
     }
 
     Message1(const Message1& other)
-      : x(other.x)
+      : etl::message<MESSAGE1>()
+      , x(other.x)
       , moved(false)
       , copied(true)
     {
     }
 
     Message1(Message1&& other)
-      : x(other.x)
+      : etl::message<MESSAGE1>()
+      , x(std::move(other.x))
       , moved(true)
       , copied(false)
     {
@@ -78,7 +83,7 @@ namespace
 
     Message1& operator =(Message1&& other)
     {
-      x = other.x;
+      x = std::move(other.x);
       moved = true;
       copied = false;
       return *this;
@@ -92,21 +97,24 @@ namespace
   struct Message2 : public etl::message<MESSAGE2>
   {
     Message2(double x_)
-      : x(x_)
+      : etl::message<MESSAGE2>()
+      , x(x_)
       , moved(false)
       , copied(false)
     {
     }
 
     Message2(const Message2& other)
-      : x(other.x)
+      : etl::message<MESSAGE2>()
+      , x(other.x)
       , moved(false)
       , copied(true)
     {
     }
 
     Message2(Message2&& other)
-      : x(other.x)
+      : etl::message<MESSAGE2>()
+      , x(std::move(other.x))
       , moved(true)
       , copied(false)
     {
@@ -122,7 +130,7 @@ namespace
 
     Message2& operator =(Message2&& other)
     {
-      x = other.x;
+      x = std::move(other.x);
       moved = true;
       copied = false;
       return *this;
@@ -135,22 +143,33 @@ namespace
 
   struct Message3 : public etl::message<MESSAGE3>
   {
-    Message3(std::string x_)
-      : x(x_)
+    Message3(const std::string& x_)
+      : etl::message<MESSAGE3>()
+      , x(x_)
       , moved(false)
       , copied(false)
     {
     }
 
+    Message3(std::string&& x_)
+      : etl::message<MESSAGE3>()
+      , x(std::move(x_))
+      , moved(true)
+      , copied(false)
+    {
+    }
+
     Message3(const Message3& other)
-      : x(other.x)
+      : etl::message<MESSAGE3>()
+      , x(other.x)
       , moved(false)
       , copied(true)
     {
     }
 
     Message3(Message3&& other)
-      : x(other.x)
+      : etl::message<MESSAGE3>()
+      , x(std::move(other.x))
       , moved(true)
       , copied(false)
     {
@@ -166,7 +185,7 @@ namespace
 
     Message3& operator =(Message3&& other)
     {
-      x = other.x;
+      x = std::move(other.x);
       moved = true;
       copied = false;
       return *this;
@@ -182,6 +201,16 @@ namespace
   };
 
   using Packet = etl::message_packet<Message1, Message2, Message3>;
+
+  struct Object
+  {
+    void Push(const etl::message_packet<Message1, Message2>& p)
+    {
+      ::new (buffer) etl::message_packet<Message1, Message2>(p);
+    }
+
+    char buffer[100];
+  };
 
   SUITE(test_message_packet)
   {
@@ -199,6 +228,7 @@ namespace
 
       // Should cause a static assert.
       //Packet packet4(message4);
+      //Packet packet4((Message4()));
 
       CHECK_EQUAL(MESSAGE1, packet1.get().get_message_id());
       CHECK_EQUAL(MESSAGE2, packet2.get().get_message_id());
@@ -434,12 +464,28 @@ namespace
       CHECK(Packet::accepts<Message2>());
       CHECK(Packet::accepts<Message3>());
       CHECK(!Packet::accepts<Message4>());
-
+       
       // From static message id.
       CHECK(Packet::accepts<MESSAGE1>());
       CHECK(Packet::accepts<MESSAGE2>());
       CHECK(Packet::accepts<MESSAGE3>());
       CHECK(!Packet::accepts<MESSAGE4>());
+    }
+
+    //*************************************************************************
+    TEST(test_message_packet_push_to_queue_bug_845)
+    {
+      using Packet = etl::message_packet<Message1, Message2>;
+
+      Object obj;
+
+      Message1 message1(1);
+      Message2 message2(1.2);
+      Packet packet1(message1);
+      Packet packet2(message2);
+
+      obj.Push(packet1);
+      obj.Push(packet2);
     }
   };
 }

@@ -35,6 +35,8 @@ SOFTWARE.
 #include <algorithm>
 #include <string>
 
+#include "etl/private/diagnostic_useless_cast_push.h"
+
 namespace
 {
   // Test classes for polymorphic tests.
@@ -202,7 +204,7 @@ namespace
 
   typedef etl::legacy::variant<D1, D2, D3, D4> test_variant_emplace;
 
-  SUITE(test_variant)
+  SUITE(test_variant_legacy)
   {
     TEST(test_alignment)
     {
@@ -250,6 +252,34 @@ namespace
       // String.
       std::string text("Some Text");
       test_variant_3a variant_text(text);
+
+      CHECK(variant_text.is_type<std::string>());
+      CHECK(variant_text.is_valid());
+      CHECK_EQUAL(text, variant_text.get<std::string>());
+    }
+
+    //*************************************************************************
+    TEST(test_constructor_in_place_value)
+    {
+      // Char.
+      char c = 'a';
+      test_variant_3a variant_char(etl::in_place_index_t<0>(), c);
+
+      CHECK(variant_char.is_type<char>());
+      CHECK(variant_char.is_valid());
+      CHECK_EQUAL(c, variant_char.get<char>());
+
+      // Int.
+      int i = 1;
+      test_variant_3a variant_int(etl::in_place_index_t<1>(), i);
+
+      CHECK(variant_int.is_type<int>());
+      CHECK(variant_int.is_valid());
+      CHECK_EQUAL(i, variant_int.get<int>());
+
+      // String.
+      std::string text("Some Text");
+      test_variant_3a variant_text(etl::in_place_index_t<2>(), text);
 
       CHECK(variant_text.is_type<std::string>());
       CHECK(variant_text.is_valid());
@@ -690,9 +720,11 @@ namespace
       ui16 = variant8;
       CHECK_EQUAL(ui16, variant8.get<uint16_t>());
 
+#include "etl/private/diagnostic_useless_cast_push.h"
       variant8 = int32_t(5);
       i32 = variant8;
       CHECK_EQUAL(i32, variant8.get<int32_t>());
+#include "etl/private/diagnostic_pop.h"
 
       variant8 = uint32_t(6);
       ui32 = variant8;
@@ -908,7 +940,7 @@ namespace
     {
       test_variant_3 variant;
       variant = int8_t{};
-      // c++98 should generate a const ref of dispatchern.
+      // c++98 should generate a const ref of dispatcher.
       int16_t type = etl::legacy::visit<int16_t>(variant_test_visit_dispatcher{}, variant);
       CHECK_EQUAL(1, type);
       test_variant_3 const& variant_const = variant;
@@ -931,3 +963,5 @@ namespace
     }
   };
 }
+
+#include "etl/private/diagnostic_pop.h"

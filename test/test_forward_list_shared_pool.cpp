@@ -96,7 +96,7 @@ namespace
       PoolDC pool;
       DataDC data(pool);
 
-      CHECK_EQUAL(data.size(), size_t(0UL));
+      CHECK_EQUAL(data.size(), 0UL);
       CHECK(data.empty());
       CHECK(!data.full());
       CHECK_EQUAL(data.available(), SIZE);
@@ -496,9 +496,9 @@ namespace
       data2.assign(sorted_data.begin(), sorted_data.end());
       CHECK_EQUAL(sorted_data.size(), data2.size());
       data1.clear();
-      CHECK_EQUAL(size_t(0UL), data1.size());
+      CHECK_EQUAL(0UL, data1.size());
       data2.clear();
-      CHECK_EQUAL(size_t(0UL), data2.size());
+      CHECK_EQUAL(0UL, data2.size());
     }
 
     //*************************************************************************
@@ -520,12 +520,12 @@ namespace
       data1.resize(SIZE);
       CHECK_EQUAL(SIZE, data1.size());
       data1.clear();
-      CHECK_EQUAL(size_t(0UL), data1.size());
+      CHECK_EQUAL(0UL, data1.size());
 
       data2.resize(SIZE);
       CHECK_EQUAL(SIZE, data2.size());
       data2.clear();
-      CHECK_EQUAL(size_t(0UL), data2.size());
+      CHECK_EQUAL(0UL, data2.size());
     }
 
     //*************************************************************************
@@ -1478,20 +1478,20 @@ namespace
     //*************************************************************************
     TEST_FIXTURE(SetupFixture, test_reverse_empty)
     {
-      CompareDataNDC compare_data;
       PoolNDC2 pool;
       DataNDC data1(pool);
       DataNDC data2(pool);
 
-      compare_data.reverse();
       data1.reverse();
       data2.reverse();
 
-      are_equal = std::equal(data1.begin(), data1.end(), compare_data.begin());
-      CHECK(are_equal);
+      CHECK_TRUE(data1.empty());
+      CHECK_FALSE(data1.full());
+      CHECK_EQUAL(0, data1.size());
 
-      are_equal = std::equal(data1.begin(), data1.end(), compare_data.begin());
-      CHECK(are_equal);
+      CHECK_TRUE(data2.empty());
+      CHECK_FALSE(data2.full());
+      CHECK_EQUAL(0, data2.size());
     }
 
     //*************************************************************************

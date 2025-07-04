@@ -31,13 +31,25 @@ SOFTWARE.
 #ifndef ETL_DETERMINE_COMPILER_LANGUAGE_SUPPORT_H_INCLUDED
 #define ETL_DETERMINE_COMPILER_LANGUAGE_SUPPORT_H_INCLUDED
 
-#include <math.h>
+//#include <math.h>
 
 #include "determine_compiler.h"
 
 // Determine C++23 support
 #if !defined(ETL_CPP23_SUPPORTED)
-  #define ETL_CPP23_SUPPORTED 0
+  #if defined(__cplusplus)
+    #if defined(ETL_COMPILER_MICROSOFT)
+      #define ETL_CPP23_SUPPORTED (__cplusplus >= 202302L)
+    #elif defined(ETL_COMPILER_ARM5)
+      #define ETL_CPP23_SUPPORTED 0
+    #elif defined(ETL_COMPILER_GCC)
+      #define ETL_CPP23_SUPPORTED (__cplusplus >= 202302L)
+    #else
+      #define ETL_CPP23_SUPPORTED (__cplusplus >= 202302L)
+    #endif
+  #else
+    #define ETL_CPP23_SUPPORTED 0
+  #endif
 #endif
 
 #if ETL_CPP23_SUPPORTED
@@ -58,6 +70,12 @@ SOFTWARE.
       #endif
     #elif defined(ETL_COMPILER_ARM5)
       #define ETL_CPP20_SUPPORTED 0
+    #elif defined(ETL_COMPILER_GCC)
+      #if (__GNUC__ == 10)
+        #define ETL_CPP20_SUPPORTED (__cplusplus >= 201709L)
+      #else
+        #define ETL_CPP20_SUPPORTED (__cplusplus >= 202002L)
+      #endif
     #else
       #define ETL_CPP20_SUPPORTED (__cplusplus >= 202002L)
     #endif
@@ -179,22 +197,24 @@ SOFTWARE.
 #endif
 
 // Language standard
-#if ETL_USING_CPP23
-  #define ETL_LANGUAGE_STANDARD 23
-#elif ETL_USING_CPP20
-  #define ETL_LANGUAGE_STANDARD 20
-#elif ETL_USING_CPP17
-  #define ETL_LANGUAGE_STANDARD 17
-#elif ETL_USING_CPP14
-  #define ETL_LANGUAGE_STANDARD 14
-#elif ETL_USING_CPP11
-  #define ETL_LANGUAGE_STANDARD 11
-#else
-  #define ETL_LANGUAGE_STANDARD 3
+#if !defined(ETL_LANGUAGE_STANDARD)
+  #if ETL_USING_CPP23
+    #define ETL_LANGUAGE_STANDARD 23
+  #elif ETL_USING_CPP20
+    #define ETL_LANGUAGE_STANDARD 20
+  #elif ETL_USING_CPP17
+    #define ETL_LANGUAGE_STANDARD 17
+  #elif ETL_USING_CPP14
+    #define ETL_LANGUAGE_STANDARD 14
+  #elif ETL_USING_CPP11
+    #define ETL_LANGUAGE_STANDARD 11
+  #else
+    #define ETL_LANGUAGE_STANDARD 3
+  #endif
 #endif
 
 // NAN not defined or Rowley CrossWorks
-#if !defined(NAN) || defined(__CROSSWORKS_ARM) || defined(ETL_COMPILER_ARM5) || defined(ARDUINO)
+#if !defined(ETL_NO_CPP_NAN_SUPPORT) && (!defined(NAN) || defined(__CROSSWORKS_ARM) || defined(ETL_COMPILER_ARM5) || defined(ARDUINO))
   #define ETL_NO_CPP_NAN_SUPPORT
 #endif
 

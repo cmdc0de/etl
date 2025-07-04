@@ -34,6 +34,7 @@ SOFTWARE.
 #include <numeric>
 
 #include "etl/private/diagnostic_unused_function_push.h"
+#include "etl/private/diagnostic_useless_cast_push.h"
 
 namespace
 {
@@ -93,7 +94,7 @@ namespace etl
 
 namespace
 {
-  SUITE(test_bit_stream_reader)
+  SUITE(test_bit_stream_reader_big_endian)
   {
     //*************************************************************************
     TEST(test_read_bool)
@@ -209,7 +210,7 @@ namespace
     TEST(test_read_int8_t)
     {
       std::array<char, 4U> storage = { char(0x01), char(0x5A), char(0xA5), char(0xFF) };
-      std::array<char, 4U> expected = { int8_t(0x01), int8_t(0x5A), int8_t(0xA5), int8_t(0xFF) };
+      std::array<int8_t, 4U> expected = { int8_t(0x01), int8_t(0x5A), int8_t(0xA5), int8_t(0xFF) };
 
       etl::bit_stream_reader bit_stream(storage.data(), storage.size(), etl::endian::big);
 
@@ -245,7 +246,7 @@ namespace
     TEST(test_read_checked_int8_t_using_non_member_function)
     {
       std::array<char, 4U> storage = { char(0x01), char(0x5A), char(0xA5), char(0xFF) };
-      std::array<char, 4U> expected = { int8_t(0x01), int8_t(0x5A), int8_t(0xA5), int8_t(0xFF) };
+      std::array<int8_t, 4U> expected = { int8_t(0x01), int8_t(0x5A), int8_t(0xA5), int8_t(0xFF) };
 
       etl::bit_stream_reader bit_stream(storage.data(), storage.size(), etl::endian::big);
 
@@ -281,7 +282,7 @@ namespace
     TEST(test_read_unchecked_int8_t_using_non_member_function)
     {
       std::array<char, 4U> storage = { char(0x01), char(0x5A), char(0xA5), char(0xFF) };
-      std::array<char, 4U> expected = { int8_t(0x01), int8_t(0x5A), int8_t(0xA5), int8_t(0xFF) };
+      std::array<int8_t, 4U> expected = { int8_t(0x01), int8_t(0x5A), int8_t(0xA5), int8_t(0xFF) };
 
       etl::bit_stream_reader bit_stream(storage.data(), storage.size(), etl::endian::big);
 
@@ -306,7 +307,7 @@ namespace
     TEST(test_read_int8_t_5bits)
     {
       std::array<char, 3U> storage = { char(0x0E), char(0x8B), char(0xF0) };
-      std::array<char, 4U> expected = { int8_t(0x01), int8_t(0xFA), int8_t(0x05), int8_t(0xFF) };
+      std::array<int8_t, 4U> expected = { int8_t(0x01), int8_t(0xFA), int8_t(0x05), int8_t(0xFF) };
 
       etl::bit_stream_reader bit_stream(storage.data(), storage.size(), etl::endian::big);
 
@@ -1047,6 +1048,366 @@ namespace
     }
 
     //*************************************************************************
+    TEST(test_read_multiple_variable_size_using_span_char_dynamic_extent_input)
+    {
+      //int8_t   c1 = 90;         // 0x5A       6 bits
+      //uint16_t s1 = 4660;       // 0x1234     13 bits
+      //int32_t  i1 = 0x89ABCDEF; // 0x89ABCDEF 23 bits
+      //int32_t  i2 = 0xFEDCBA98; // 0xFEDCBA98 25 bits
+      //uint16_t s2 = 22136;      // 0x5678     11 bits
+      //int8_t   c2 = -91;        // 0xA5       7 bits
+
+      std::array<char, 11U> storage = { char(0x6A), char(0x46), char(0x8A), char(0xF3),
+                                        char(0x7B), char(0xDB), char(0x97), char(0x53),
+                                        char(0x19), char(0xE1), char(0x28) };
+
+      auto storage_span = etl::span<char, etl::dynamic_extent>(storage.data(), storage.size());
+
+      etl::bit_stream_reader bit_stream(storage_span, etl::endian::big);
+
+      CHECK_EQUAL(storage.size(), bit_stream.size_bytes());
+
+      auto result_c1 = bit_stream.read<int8_t>(6U);
+      CHECK(result_c1.has_value());
+      CHECK_EQUAL(int8_t(0x1A), result_c1.value());
+
+      auto result_s1 = bit_stream.read<uint16_t>(13U);
+      CHECK(result_s1.has_value());
+      CHECK_EQUAL(uint16_t(0x1234), result_s1.value());
+
+      auto result_i1 = bit_stream.read<int32_t>(23U);
+      CHECK(result_i1.has_value());
+      CHECK_EQUAL(int32_t(0x002BCDEF), result_i1.value());
+
+      auto result_i2 = bit_stream.read<int32_t>(25U);
+      CHECK(result_i2.has_value());
+      CHECK_EQUAL(int32_t(0x00DCBA98), result_i2.value());
+
+      auto result_s2 = bit_stream.read<uint16_t>(11U);
+      CHECK(result_s2.has_value());
+      CHECK_EQUAL(uint16_t(0x0678), result_s2.value());
+
+      auto result_c2 = bit_stream.read<int8_t>(7U);
+      CHECK(result_c2.has_value());
+      CHECK_EQUAL(int8_t(0x25), result_c2.value());
+    }
+
+    //*************************************************************************
+    TEST(test_read_multiple_variable_size_using_span_unsigned_char_dynamic_extent_input)
+    {
+      //int8_t   c1 = 90;         // 0x5A       6 bits
+      //uint16_t s1 = 4660;       // 0x1234     13 bits
+      //int32_t  i1 = 0x89ABCDEF; // 0x89ABCDEF 23 bits
+      //int32_t  i2 = 0xFEDCBA98; // 0xFEDCBA98 25 bits
+      //uint16_t s2 = 22136;      // 0x5678     11 bits
+      //int8_t   c2 = -91;        // 0xA5       7 bits
+
+      std::array<unsigned char, 11U> storage = { (unsigned char)(0x6A), (unsigned char)(0x46), (unsigned char)(0x8A), (unsigned char)(0xF3),
+                                                 (unsigned char)(0x7B), (unsigned char)(0xDB), (unsigned char)(0x97), (unsigned char)(0x53),
+                                                 (unsigned char)(0x19), (unsigned char)(0xE1), (unsigned char)(0x28) };
+
+      auto storage_span = etl::span<unsigned char, etl::dynamic_extent>(storage.data(), storage.size());
+
+      etl::bit_stream_reader bit_stream(storage_span, etl::endian::big);
+
+      CHECK_EQUAL(storage.size(), bit_stream.size_bytes());
+
+      auto result_c1 = bit_stream.read<int8_t>(6U);
+      CHECK(result_c1.has_value());
+      CHECK_EQUAL(int8_t(0x1A), result_c1.value());
+
+      auto result_s1 = bit_stream.read<uint16_t>(13U);
+      CHECK(result_s1.has_value());
+      CHECK_EQUAL(uint16_t(0x1234), result_s1.value());
+
+      auto result_i1 = bit_stream.read<int32_t>(23U);
+      CHECK(result_i1.has_value());
+      CHECK_EQUAL(int32_t(0x002BCDEF), result_i1.value());
+
+      auto result_i2 = bit_stream.read<int32_t>(25U);
+      CHECK(result_i2.has_value());
+      CHECK_EQUAL(int32_t(0x00DCBA98), result_i2.value());
+
+      auto result_s2 = bit_stream.read<uint16_t>(11U);
+      CHECK(result_s2.has_value());
+      CHECK_EQUAL(uint16_t(0x0678), result_s2.value());
+
+      auto result_c2 = bit_stream.read<int8_t>(7U);
+      CHECK(result_c2.has_value());
+      CHECK_EQUAL(int8_t(0x25), result_c2.value());
+    }
+
+    //*************************************************************************
+    TEST(test_read_multiple_variable_size_using_span_char_fixed_extent_input)
+    {
+      //int8_t   c1 = 90;         // 0x5A       6 bits
+      //uint16_t s1 = 4660;       // 0x1234     13 bits
+      //int32_t  i1 = 0x89ABCDEF; // 0x89ABCDEF 23 bits
+      //int32_t  i2 = 0xFEDCBA98; // 0xFEDCBA98 25 bits
+      //uint16_t s2 = 22136;      // 0x5678     11 bits
+      //int8_t   c2 = -91;        // 0xA5       7 bits
+
+      std::array<char, 11U> storage = { char(0x6A), char(0x46), char(0x8A), char(0xF3),
+                                        char(0x7B), char(0xDB), char(0x97), char(0x53),
+                                        char(0x19), char(0xE1), char(0x28) };
+
+      auto storage_span = etl::span<char, 11U>(storage.data(), storage.size());
+
+      etl::bit_stream_reader bit_stream(storage_span, etl::endian::big);
+
+      CHECK_EQUAL(storage.size(), bit_stream.size_bytes());
+
+      auto result_c1 = bit_stream.read<int8_t>(6U);
+      CHECK(result_c1.has_value());
+      CHECK_EQUAL(int8_t(0x1A), result_c1.value());
+
+      auto result_s1 = bit_stream.read<uint16_t>(13U);
+      CHECK(result_s1.has_value());
+      CHECK_EQUAL(uint16_t(0x1234), result_s1.value());
+
+      auto result_i1 = bit_stream.read<int32_t>(23U);
+      CHECK(result_i1.has_value());
+      CHECK_EQUAL(int32_t(0x002BCDEF), result_i1.value());
+
+      auto result_i2 = bit_stream.read<int32_t>(25U);
+      CHECK(result_i2.has_value());
+      CHECK_EQUAL(int32_t(0x00DCBA98), result_i2.value());
+
+      auto result_s2 = bit_stream.read<uint16_t>(11U);
+      CHECK(result_s2.has_value());
+      CHECK_EQUAL(uint16_t(0x0678), result_s2.value());
+
+      auto result_c2 = bit_stream.read<int8_t>(7U);
+      CHECK(result_c2.has_value());
+      CHECK_EQUAL(int8_t(0x25), result_c2.value());
+    }
+
+    //*************************************************************************
+    TEST(test_read_multiple_variable_size_using_span_unsigned_char_fixed_extent_input)
+    {
+      //int8_t   c1 = 90;         // 0x5A       6 bits
+      //uint16_t s1 = 4660;       // 0x1234     13 bits
+      //int32_t  i1 = 0x89ABCDEF; // 0x89ABCDEF 23 bits
+      //int32_t  i2 = 0xFEDCBA98; // 0xFEDCBA98 25 bits
+      //uint16_t s2 = 22136;      // 0x5678     11 bits
+      //int8_t   c2 = -91;        // 0xA5       7 bits
+
+      std::array<unsigned char, 11U> storage = { (unsigned char)(0x6A), (unsigned char)(0x46), (unsigned char)(0x8A), (unsigned char)(0xF3),
+                                                 (unsigned char)(0x7B), (unsigned char)(0xDB), (unsigned char)(0x97), (unsigned char)(0x53),
+                                                 (unsigned char)(0x19), (unsigned char)(0xE1), (unsigned char)(0x28) };
+
+      auto storage_span = etl::span<unsigned char, 11U>(storage.data(), storage.size());
+
+      etl::bit_stream_reader bit_stream(storage_span, etl::endian::big);
+
+      CHECK_EQUAL(storage.size(), bit_stream.size_bytes());
+
+      auto result_c1 = bit_stream.read<int8_t>(6U);
+      CHECK(result_c1.has_value());
+      CHECK_EQUAL(int8_t(0x1A), result_c1.value());
+
+      auto result_s1 = bit_stream.read<uint16_t>(13U);
+      CHECK(result_s1.has_value());
+      CHECK_EQUAL(uint16_t(0x1234), result_s1.value());
+
+      auto result_i1 = bit_stream.read<int32_t>(23U);
+      CHECK(result_i1.has_value());
+      CHECK_EQUAL(int32_t(0x002BCDEF), result_i1.value());
+
+      auto result_i2 = bit_stream.read<int32_t>(25U);
+      CHECK(result_i2.has_value());
+      CHECK_EQUAL(int32_t(0x00DCBA98), result_i2.value());
+
+      auto result_s2 = bit_stream.read<uint16_t>(11U);
+      CHECK(result_s2.has_value());
+      CHECK_EQUAL(uint16_t(0x0678), result_s2.value());
+
+      auto result_c2 = bit_stream.read<int8_t>(7U);
+      CHECK(result_c2.has_value());
+      CHECK_EQUAL(int8_t(0x25), result_c2.value());
+    }
+
+    //*************************************************************************
+    TEST(test_read_multiple_variable_size_using_span_const_char_dynamic_extent_input)
+    {
+      //int8_t   c1 = 90;         // 0x5A       6 bits
+      //uint16_t s1 = 4660;       // 0x1234     13 bits
+      //int32_t  i1 = 0x89ABCDEF; // 0x89ABCDEF 23 bits
+      //int32_t  i2 = 0xFEDCBA98; // 0xFEDCBA98 25 bits
+      //uint16_t s2 = 22136;      // 0x5678     11 bits
+      //int8_t   c2 = -91;        // 0xA5       7 bits
+
+      std::array<const char, 11U> storage = { char(0x6A), char(0x46), char(0x8A), char(0xF3),
+                                              char(0x7B), char(0xDB), char(0x97), char(0x53),
+                                              char(0x19), char(0xE1), char(0x28) };
+
+      auto storage_span = etl::span<const char, etl::dynamic_extent>(storage.data(), storage.size());
+
+      etl::bit_stream_reader bit_stream(storage_span, etl::endian::big);
+
+      CHECK_EQUAL(storage.size(), bit_stream.size_bytes());
+
+      auto result_c1 = bit_stream.read<int8_t>(6U);
+      CHECK(result_c1.has_value());
+      CHECK_EQUAL(int8_t(0x1A), result_c1.value());
+
+      auto result_s1 = bit_stream.read<uint16_t>(13U);
+      CHECK(result_s1.has_value());
+      CHECK_EQUAL(uint16_t(0x1234), result_s1.value());
+
+      auto result_i1 = bit_stream.read<int32_t>(23U);
+      CHECK(result_i1.has_value());
+      CHECK_EQUAL(int32_t(0x002BCDEF), result_i1.value());
+
+      auto result_i2 = bit_stream.read<int32_t>(25U);
+      CHECK(result_i2.has_value());
+      CHECK_EQUAL(int32_t(0x00DCBA98), result_i2.value());
+
+      auto result_s2 = bit_stream.read<uint16_t>(11U);
+      CHECK(result_s2.has_value());
+      CHECK_EQUAL(uint16_t(0x0678), result_s2.value());
+
+      auto result_c2 = bit_stream.read<int8_t>(7U);
+      CHECK(result_c2.has_value());
+      CHECK_EQUAL(int8_t(0x25), result_c2.value());
+    }
+
+    //*************************************************************************
+    TEST(test_read_multiple_variable_size_using_span_const_unsigned_char_dynamic_extent_input)
+    {
+      //int8_t   c1 = 90;         // 0x5A       6 bits
+      //uint16_t s1 = 4660;       // 0x1234     13 bits
+      //int32_t  i1 = 0x89ABCDEF; // 0x89ABCDEF 23 bits
+      //int32_t  i2 = 0xFEDCBA98; // 0xFEDCBA98 25 bits
+      //uint16_t s2 = 22136;      // 0x5678     11 bits
+      //int8_t   c2 = -91;        // 0xA5       7 bits
+
+      std::array<const unsigned char, 11U> storage = { (unsigned char)(0x6A), (unsigned char)(0x46), (unsigned char)(0x8A), (unsigned char)(0xF3),
+                                                       (unsigned char)(0x7B), (unsigned char)(0xDB), (unsigned char)(0x97), (unsigned char)(0x53),
+                                                       (unsigned char)(0x19), (unsigned char)(0xE1), (unsigned char)(0x28) };
+
+      auto storage_span = etl::span<const unsigned char, etl::dynamic_extent>(storage.data(), storage.size());
+
+      etl::bit_stream_reader bit_stream(storage_span, etl::endian::big);
+
+      CHECK_EQUAL(storage.size(), bit_stream.size_bytes());
+
+      auto result_c1 = bit_stream.read<int8_t>(6U);
+      CHECK(result_c1.has_value());
+      CHECK_EQUAL(int8_t(0x1A), result_c1.value());
+
+      auto result_s1 = bit_stream.read<uint16_t>(13U);
+      CHECK(result_s1.has_value());
+      CHECK_EQUAL(uint16_t(0x1234), result_s1.value());
+
+      auto result_i1 = bit_stream.read<int32_t>(23U);
+      CHECK(result_i1.has_value());
+      CHECK_EQUAL(int32_t(0x002BCDEF), result_i1.value());
+
+      auto result_i2 = bit_stream.read<int32_t>(25U);
+      CHECK(result_i2.has_value());
+      CHECK_EQUAL(int32_t(0x00DCBA98), result_i2.value());
+
+      auto result_s2 = bit_stream.read<uint16_t>(11U);
+      CHECK(result_s2.has_value());
+      CHECK_EQUAL(uint16_t(0x0678), result_s2.value());
+
+      auto result_c2 = bit_stream.read<int8_t>(7U);
+      CHECK(result_c2.has_value());
+      CHECK_EQUAL(int8_t(0x25), result_c2.value());
+    }
+
+    //*************************************************************************
+    TEST(test_read_multiple_variable_size_using_span_const_char_fixed_extent_input)
+    {
+      //int8_t   c1 = 90;         // 0x5A       6 bits
+      //uint16_t s1 = 4660;       // 0x1234     13 bits
+      //int32_t  i1 = 0x89ABCDEF; // 0x89ABCDEF 23 bits
+      //int32_t  i2 = 0xFEDCBA98; // 0xFEDCBA98 25 bits
+      //uint16_t s2 = 22136;      // 0x5678     11 bits
+      //int8_t   c2 = -91;        // 0xA5       7 bits
+
+      std::array<const char, 11U> storage = { char(0x6A), char(0x46), char(0x8A), char(0xF3),
+                                              char(0x7B), char(0xDB), char(0x97), char(0x53),
+                                              char(0x19), char(0xE1), char(0x28) };
+
+      auto storage_span = etl::span<const char, 11U>(storage.data(), storage.size());
+
+      etl::bit_stream_reader bit_stream(storage_span, etl::endian::big);
+
+      CHECK_EQUAL(storage.size(), bit_stream.size_bytes());
+
+      auto result_c1 = bit_stream.read<int8_t>(6U);
+      CHECK(result_c1.has_value());
+      CHECK_EQUAL(int8_t(0x1A), result_c1.value());
+
+      auto result_s1 = bit_stream.read<uint16_t>(13U);
+      CHECK(result_s1.has_value());
+      CHECK_EQUAL(uint16_t(0x1234), result_s1.value());
+
+      auto result_i1 = bit_stream.read<int32_t>(23U);
+      CHECK(result_i1.has_value());
+      CHECK_EQUAL(int32_t(0x002BCDEF), result_i1.value());
+
+      auto result_i2 = bit_stream.read<int32_t>(25U);
+      CHECK(result_i2.has_value());
+      CHECK_EQUAL(int32_t(0x00DCBA98), result_i2.value());
+
+      auto result_s2 = bit_stream.read<uint16_t>(11U);
+      CHECK(result_s2.has_value());
+      CHECK_EQUAL(uint16_t(0x0678), result_s2.value());
+
+      auto result_c2 = bit_stream.read<int8_t>(7U);
+      CHECK(result_c2.has_value());
+      CHECK_EQUAL(int8_t(0x25), result_c2.value());
+    }
+
+    //*************************************************************************
+    TEST(test_read_multiple_variable_size_using_span_const_unsigned_char_fixed_extent_input)
+    {
+      //int8_t   c1 = 90;         // 0x5A       6 bits
+      //uint16_t s1 = 4660;       // 0x1234     13 bits
+      //int32_t  i1 = 0x89ABCDEF; // 0x89ABCDEF 23 bits
+      //int32_t  i2 = 0xFEDCBA98; // 0xFEDCBA98 25 bits
+      //uint16_t s2 = 22136;      // 0x5678     11 bits
+      //int8_t   c2 = -91;        // 0xA5       7 bits
+
+      std::array<const unsigned char, 11U> storage = { (unsigned char)(0x6A), (unsigned char)(0x46), (unsigned char)(0x8A), (unsigned char)(0xF3),
+                                                       (unsigned char)(0x7B), (unsigned char)(0xDB), (unsigned char)(0x97), (unsigned char)(0x53),
+                                                       (unsigned char)(0x19), (unsigned char)(0xE1), (unsigned char)(0x28) };
+
+      auto storage_span = etl::span<const unsigned char, 11U>(storage.data(), storage.size());
+
+      etl::bit_stream_reader bit_stream(storage_span, etl::endian::big);
+
+      CHECK_EQUAL(storage.size(), bit_stream.size_bytes());
+
+      auto result_c1 = bit_stream.read<int8_t>(6U);
+      CHECK(result_c1.has_value());
+      CHECK_EQUAL(int8_t(0x1A), result_c1.value());
+
+      auto result_s1 = bit_stream.read<uint16_t>(13U);
+      CHECK(result_s1.has_value());
+      CHECK_EQUAL(uint16_t(0x1234), result_s1.value());
+
+      auto result_i1 = bit_stream.read<int32_t>(23U);
+      CHECK(result_i1.has_value());
+      CHECK_EQUAL(int32_t(0x002BCDEF), result_i1.value());
+
+      auto result_i2 = bit_stream.read<int32_t>(25U);
+      CHECK(result_i2.has_value());
+      CHECK_EQUAL(int32_t(0x00DCBA98), result_i2.value());
+
+      auto result_s2 = bit_stream.read<uint16_t>(11U);
+      CHECK(result_s2.has_value());
+      CHECK_EQUAL(uint16_t(0x0678), result_s2.value());
+
+      auto result_c2 = bit_stream.read<int8_t>(7U);
+      CHECK(result_c2.has_value());
+      CHECK_EQUAL(int8_t(0x25), result_c2.value());
+    }
+
+    //*************************************************************************
     TEST(test_read_multiple_variable_size_using_non_member_functions)
     {
       //int8_t   c1 = 90;         // 0x5A       6 bits
@@ -1146,4 +1507,5 @@ namespace
   };
 }
 
+#include "etl/private/diagnostic_pop.h"
 #include "etl/private/diagnostic_pop.h"

@@ -46,7 +46,7 @@ namespace etl
   {
     inline namespace string_literals
     {
-      constexpr etl::u32string_view operator ""_sv(const char32_t* str, size_t length) noexcept
+      inline constexpr etl::u32string_view operator ""_sv(const char32_t* str, size_t length) noexcept
       {
         return etl::u32string_view{ str, length };
       }
@@ -89,6 +89,7 @@ namespace etl
     u32string(const etl::u32string<MAX_SIZE_>& other)
       : iu32string(reinterpret_cast<value_type*>(&buffer), MAX_SIZE)
     {
+      this->initialise();
       this->assign(other);
     }
 
@@ -99,6 +100,7 @@ namespace etl
     u32string(const etl::iu32string& other)
       : iu32string(reinterpret_cast<value_type*>(&buffer), MAX_SIZE)
     {
+      this->initialise();
       this->assign(other);
     }
 
@@ -113,6 +115,7 @@ namespace etl
     {
       ETL_ASSERT(position < other.size(), ETL_ERROR(string_out_of_bounds));
 
+      this->initialise();
       this->assign(other, position, length);
     }
 
@@ -123,7 +126,8 @@ namespace etl
     ETL_EXPLICIT_STRING_FROM_CHAR u32string(const value_type* text)
       : iu32string(reinterpret_cast<value_type*>(&buffer), MAX_SIZE)
     {
-      this->assign(text, text + etl::char_traits<value_type>::length(text));
+      this->initialise();
+      this->assign(text);
     }
 
     //*************************************************************************
@@ -134,6 +138,7 @@ namespace etl
     u32string(const value_type* text, size_type count)
       : iu32string(reinterpret_cast<value_type*>(&buffer), MAX_SIZE)
     {
+      this->initialise();
       this->assign(text, text + count);
     }
 
@@ -159,6 +164,7 @@ namespace etl
     u32string(TIterator first, TIterator last, typename etl::enable_if<!etl::is_integral<TIterator>::value, int>::type = 0)
       : iu32string(reinterpret_cast<value_type*>(&buffer), MAX_SIZE)
     {
+      this->initialise();
       this->assign(first, last);
     }
 
@@ -169,6 +175,7 @@ namespace etl
     u32string(std::initializer_list<value_type> init)
       : iu32string(reinterpret_cast<value_type*>(&buffer), MAX_SIZE)
     {
+      this->initialise();
       this->assign(init.begin(), init.end());
     }
 #endif
@@ -180,6 +187,7 @@ namespace etl
     explicit u32string(const etl::u32string_view& view)
       : iu32string(reinterpret_cast<value_type*>(&buffer), MAX_SIZE)
     {
+      this->initialise();
       this->assign(view.begin(), view.end());
     }
 
@@ -228,11 +236,22 @@ namespace etl
     }
 
     //*************************************************************************
+    /// Assignment operator.
+    //*************************************************************************
+    u32string& operator = (const etl::u32string_view& view)
+    {
+      this->assign(view);
+
+      return *this;
+    }
+
+    //*************************************************************************
     /// Fix the internal pointers after a low level memory copy.
     //*************************************************************************
-    void repair()
 #if ETL_HAS_ISTRING_REPAIR
-      ETL_OVERRIDE
+    virtual void repair() ETL_OVERRIDE
+#else
+    void repair()
 #endif
     {
       etl::iu32string::repair_buffer(buffer);
@@ -272,6 +291,7 @@ namespace etl
     u32string_ext(const etl::u32string_ext& other, value_type* buffer, size_type buffer_size)
       : iu32string(buffer, buffer_size - 1U)
     {
+      this->initialise();
       this->assign(other);
     }
 
@@ -282,6 +302,7 @@ namespace etl
     u32string_ext(const etl::iu32string& other, value_type* buffer, size_type buffer_size)
       : iu32string(buffer, buffer_size - 1U)
     {
+      this->initialise();
       this->assign(other);
     }
 
@@ -296,6 +317,7 @@ namespace etl
     {
       ETL_ASSERT(position < other.size(), ETL_ERROR(string_out_of_bounds));
 
+      this->initialise();
       this->assign(other, position, length);
     }
 
@@ -313,6 +335,7 @@ namespace etl
       }
       else
       {
+        this->initialise();
         this->assign(text, text + etl::strlen(text));
       }
     }
@@ -325,6 +348,7 @@ namespace etl
     u32string_ext(const value_type* text, size_type count, value_type* buffer, size_type buffer_size)
       : iu32string(buffer, buffer_size - 1U)
     {
+      this->initialise();
       this->assign(text, text + count);
     }
 
@@ -350,6 +374,7 @@ namespace etl
     u32string_ext(TIterator first, TIterator last, value_type* buffer, size_type buffer_size, typename etl::enable_if<!etl::is_integral<TIterator>::value, int>::type = 0)
       : iu32string(buffer, buffer_size - 1U)
     {
+      this->initialise();
       this->assign(first, last);
     }
 
@@ -360,17 +385,19 @@ namespace etl
     u32string_ext(std::initializer_list<value_type> init, value_type* buffer, size_type buffer_size)
       : iu32string(buffer, buffer_size - 1U)
     {
+      this->initialise();
       this->assign(init.begin(), init.end());
     }
 #endif
 
     //*************************************************************************
-    /// From u32string_view.
-    ///\param view The u32string_view.
+    /// From string_view.
+    ///\param view The string_view.
     //*************************************************************************
     explicit u32string_ext(const etl::u32string_view& view, value_type* buffer, size_type buffer_size)
       : iu32string(buffer, buffer_size - 1U)
     {
+      this->initialise();
       this->assign(view.begin(), view.end());
     }
 
@@ -386,7 +413,6 @@ namespace etl
 
       return *this;
     }
-
 
     //*************************************************************************
     /// Assignment operator.
@@ -412,11 +438,22 @@ namespace etl
     }
 
     //*************************************************************************
+    /// Assignment operator.
+    //*************************************************************************
+    u32string_ext& operator = (const etl::u32string_view& view)
+    {
+      this->assign(view);
+
+      return *this;
+    }
+
+    //*************************************************************************
     /// Fix the internal pointers after a low level memory copy.
     //*************************************************************************
-    void repair()
 #if ETL_HAS_ISTRING_REPAIR
-      ETL_OVERRIDE
+    virtual void repair() ETL_OVERRIDE
+#else
+    void repair()
 #endif
     {
     }

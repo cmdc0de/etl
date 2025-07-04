@@ -1,6 +1,4 @@
-
 ///\file
-
 /******************************************************************************
 The MIT License(MIT)
 Embedded Template Library.
@@ -48,13 +46,13 @@ namespace etl
     /// add_insert_iterator
     /// An output iterator used to add new values.
     //***************************************************
-    template <typename TFCS>
-    class add_insert_iterator : public etl::iterator<ETL_OR_STD::output_iterator_tag, void, void, void, void>
+    template <typename TFrame_Check_Sequence>
+    class add_insert_iterator : public etl::iterator<ETL_OR_STD::output_iterator_tag, typename TFrame_Check_Sequence::value_type>
     {
     public:
 
       //***********************************
-      explicit add_insert_iterator(TFCS& fcs) ETL_NOEXCEPT
+      explicit add_insert_iterator(TFrame_Check_Sequence& fcs) ETL_NOEXCEPT
         : p_fcs(&fcs)
       {
       }
@@ -86,7 +84,7 @@ namespace etl
 
     private:
 
-      TFCS* p_fcs;
+      TFrame_Check_Sequence* p_fcs;
     };
   }
 
@@ -109,7 +107,8 @@ namespace etl
     //*************************************************************************
     /// Default constructor.
     //*************************************************************************
-    frame_check_sequence()
+    ETL_CONSTEXPR14 frame_check_sequence() 
+      : frame_check()
     {
       reset();
     }
@@ -120,7 +119,7 @@ namespace etl
     /// \param end   End of the range.
     //*************************************************************************
     template<typename TIterator>
-    frame_check_sequence(TIterator begin, const TIterator end)
+    ETL_CONSTEXPR14 frame_check_sequence(TIterator begin, const TIterator end) : frame_check()
     {
       ETL_STATIC_ASSERT(sizeof(typename etl::iterator_traits<TIterator>::value_type) == 1, "Type not supported");
 
@@ -131,7 +130,7 @@ namespace etl
     //*************************************************************************
     /// Resets the FCS to the initial state.
     //*************************************************************************
-    void reset()
+    ETL_CONSTEXPR14 void reset()
     {
       frame_check = policy.initial();
     }
@@ -142,7 +141,7 @@ namespace etl
     /// \param end
     //*************************************************************************
     template<typename TIterator>
-    void add(TIterator begin, const TIterator end)
+    ETL_CONSTEXPR14 void add(TIterator begin, const TIterator end)
     {
       ETL_STATIC_ASSERT(sizeof(typename etl::iterator_traits<TIterator>::value_type) == 1, "Type not supported");
 
@@ -156,7 +155,7 @@ namespace etl
     //*************************************************************************
     /// \param value The uint8_t to add to the FCS.
     //*************************************************************************
-    void add(uint8_t value_)
+    ETL_CONSTEXPR14 void add(uint8_t value_)
     {
       frame_check = policy.add(frame_check, value_);
     }
@@ -164,7 +163,7 @@ namespace etl
     //*************************************************************************
     /// Gets the FCS value.
     //*************************************************************************
-    value_type value() const
+    ETL_CONSTEXPR14 value_type value() const
     {
       return policy.final(frame_check);
     }
@@ -172,7 +171,7 @@ namespace etl
     //*************************************************************************
     /// Conversion operator to value_type.
     //*************************************************************************
-    operator value_type () const
+    ETL_CONSTEXPR14 operator value_type () const
     {
       return policy.final(frame_check);
     }
@@ -180,7 +179,7 @@ namespace etl
     //*************************************************************************
     /// Gets an add_insert_iterator for input.
     //*************************************************************************
-    add_insert_iterator input()
+    ETL_CONSTEXPR14 add_insert_iterator input()
     {
       return add_insert_iterator(*this);
     }

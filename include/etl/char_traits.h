@@ -56,6 +56,24 @@ namespace etl
     typedef char      state_type;
   };
 
+  template<> struct char_traits_types<signed char>
+  {
+    typedef signed char char_type;
+    typedef int         int_type;
+    typedef long long   off_type;
+    typedef size_t      pos_type;
+    typedef signed char state_type;
+  };
+
+  template<> struct char_traits_types<unsigned char>
+  {
+    typedef unsigned char char_type;
+    typedef int           int_type;
+    typedef long long     off_type;
+    typedef size_t        pos_type;
+    typedef unsigned char state_type;
+  };
+
   template<> struct char_traits_types<wchar_t>
   {
     typedef wchar_t        char_type;
@@ -119,23 +137,25 @@ namespace etl
     }
 
     //*************************************************************************
-    static ETL_CONSTEXPR14 size_t length(const char_type* str)
+    static ETL_CONSTEXPR14 size_t length(const char_type* begin)
     {
-      size_t count = 0UL;
-
-      if (str != 0)
+      if (begin == ETL_NULLPTR)
       {
-        while (*str++ != 0)
-        {
-          ++count;
-        }
+        return 0;
       }
 
-      return count;
+      const char_type* end = begin;
+
+      while (*end++ != 0)
+      {
+        // Do nothing.
+      }
+
+      return size_t(end - begin) - 1;
     }
 
     //*************************************************************************
-    ETL_CONSTEXPR14 static size_t length(const char_type* str, size_t max_length)
+    static ETL_CONSTEXPR14 size_t length(const char_type* str, size_t max_length)
     {
       size_t count = 0UL;
 
@@ -264,7 +284,7 @@ namespace etl
   /// Alternative strlen for all character types.
   //***************************************************************************
   template <typename T>
-  ETL_CONSTEXPR size_t strlen(const T* t)
+  ETL_CONSTEXPR14 size_t strlen(const T* t)
   {
     return etl::char_traits<T>::length(t);
   }
@@ -273,9 +293,96 @@ namespace etl
   /// Alternative strlen for all character types, with maximum length.
   //***************************************************************************
   template <typename T>
-  size_t strlen(const T* t, size_t max_length)
+  ETL_CONSTEXPR14 size_t strlen(const T* t, size_t max_length)
   {
     return etl::char_traits<T>::length(t, max_length);
+  }
+
+  //***************************************************************************
+  /// Alternative strcmp for all character types.
+  //***************************************************************************
+  template <typename T>
+  ETL_CONSTEXPR14 int strcmp(const T* t1, const T* t2)
+  {
+    while ((*t1 != 0) || (*t2 != 0))
+    {
+      if (*t1 > *t2)
+      {
+        return 1;
+      }
+      
+      if (*t1 < *t2)
+      {
+        return -1;
+      }
+
+      ++t1;
+      ++t2;
+    }
+
+    return 0;
+  }
+
+  //***************************************************************************
+  /// Alternative strncmp for all character types.
+  //***************************************************************************
+  template <typename T>
+  ETL_CONSTEXPR14 int strncmp(const T* t1, const T* t2, size_t n)
+  {
+    while (((*t1 != 0) || (*t2 != 0)) && (n != 0))
+    {
+      if (*t1 < *t2)
+      {
+        return -1;
+      }
+      else if (*t1 > *t2)
+      {
+        return 1;
+      }
+
+      ++t1;
+      ++t2;
+      --n;
+    } 
+
+    return 0;
+  }
+
+  //***************************************************************************
+  /// Alternative strcpy for all character types.
+  //***************************************************************************
+  template <typename T>
+  ETL_CONSTEXPR14 T* strcpy(T* dst, const T* src)
+  {
+    T* result = dst;
+
+    while (*src != 0)
+    {
+      *dst++ = *src++;
+    }
+
+    *dst = 0;
+
+    return result;
+  }
+
+  //***************************************************************************
+  /// Alternative strncpy for all character types.
+  //***************************************************************************
+  template <typename T>
+  ETL_CONSTEXPR14 T* strncpy(T* dst, const T* src, size_t n)
+  {
+    T* result = dst;
+
+    while ((*src != 0) && (n != 0))
+    {
+      *dst++ = *src++;
+      --n;
+    }
+
+    *dst = 0;
+
+    return result;
   }
 }
 

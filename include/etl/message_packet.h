@@ -38,18 +38,20 @@ SOFTWARE.
 // To generate to header file, run this at the command line.
 // Note: You will need Python and COG installed.
 //
-// python -m cogapp -d -e -omessage_packet.h -DHandlers=<n> message_packet_generator.h
+// cog -d -e -omessage_packet.h -DHandlers=<n> message_packet_generator.h
 // Where <n> is the number of messages to support.
 //
 // e.g.
 // To generate handlers for up to 16 messages...
-// python -m cogapp -d -e -omessage_packet.h -DHandlers=16 message_packet_generator.h
+// cog -d -e -omessage_packet.h -DHandlers=16 message_packet_generator.h
 //
 // See generate.bat
 //***************************************************************************
 
 #ifndef ETL_MESSAGE_PACKET_INCLUDED
 #define ETL_MESSAGE_PACKET_INCLUDED
+
+#include "platform.h"
 
 #include "message.h"
 #include "error_handler.h"
@@ -84,18 +86,18 @@ namespace etl
   public:
 
     //********************************************
-#include "etl/private/diagnostic_uninitialized_push.h"
+#include "private/diagnostic_uninitialized_push.h"
     message_packet()
       : valid(false)
     {
     }
-#include "etl/private/diagnostic_pop.h"
+#include "private/diagnostic_pop.h"
 
     //********************************************
-    /// 
+    ///
     //********************************************
-#include "etl/private/diagnostic_uninitialized_push.h"
-    template <typename T>
+#include "private/diagnostic_uninitialized_push.h"
+    template <typename T, typename = typename etl::enable_if<IsIMessage<T> || IsInMessageList<T>, int>::type>
     explicit message_packet(T&& msg)
       : valid(true)
     {
@@ -117,16 +119,36 @@ namespace etl
       {
         add_new_message_type<T>(etl::forward<T>(msg));
       }
-      else if constexpr (IsMessagePacket<T>)
-      {
-        copy(etl::forward<T>(msg));
-      }
       else
       {
         ETL_STATIC_ASSERT(IsInMessageList<T>, "Message not in packet type list");
       }
     }
-#include "etl/private/diagnostic_pop.h"
+#include "private/diagnostic_pop.h"
+
+    //**********************************************
+    message_packet(const message_packet& other)
+    {
+      valid = other.is_valid();
+
+      if (valid)
+      {
+        add_new_message(other.get());
+      }
+    }
+
+#if ETL_USING_CPP11
+    //**********************************************
+    message_packet(message_packet&& other)
+    {
+      valid = other.is_valid();
+
+      if (valid)
+      {
+        add_new_message(etl::move(other.get()));
+      }
+    }
+#endif
 
     //**********************************************
     void copy(const message_packet& other)
@@ -151,6 +173,7 @@ namespace etl
     }
 
     //**********************************************
+#include "private/diagnostic_uninitialized_push.h"
     message_packet& operator =(const message_packet& rhs)
     {
       delete_current_message();
@@ -162,8 +185,10 @@ namespace etl
 
       return *this;
     }
+#include "private/diagnostic_pop.h"
 
     //**********************************************
+#include "private/diagnostic_uninitialized_push.h"
     message_packet& operator =(message_packet&& rhs)
     {
       delete_current_message();
@@ -175,6 +200,7 @@ namespace etl
 
       return *this;
     }
+#include "private/diagnostic_pop.h"
 
     //********************************************
     ~message_packet()
@@ -251,17 +277,45 @@ namespace etl
     }
 
     //********************************************
-#include "etl/private/diagnostic_uninitialized_push.h"
+#include "private/diagnostic_uninitialized_push.h"
     void delete_current_message()
     {
       if (valid)
       {
         etl::imessage* pmsg = static_cast<etl::imessage*>(data);
 
+#if ETL_HAS_VIRTUAL_MESSAGES
         pmsg->~imessage();
+#else
+        delete_message(pmsg);
+#endif
       }
     }
-#include "etl/private/diagnostic_pop.h"
+#include "private/diagnostic_pop.h"
+
+#if !ETL_HAS_VIRTUAL_MESSAGES
+    //********************************************
+    void delete_message(etl::imessage* pmsg)
+    {
+      (delete_message_type<TMessageTypes>(pmsg) || ...);
+    }
+
+    //********************************************
+    template <typename TType>
+    bool delete_message_type(etl::imessage* pmsg)
+    {
+      if (TType::ID == pmsg->get_message_id())
+      {
+        TType* p = static_cast<TType*>(pmsg);
+        p->~TType();
+        return true;
+      }
+      else
+      {
+        return false;
+      }
+    }
+#endif
 
     //********************************************
     void add_new_message(const etl::imessage& msg)
@@ -275,6 +329,7 @@ namespace etl
       (add_new_message_type<TMessageTypes>(etl::move(msg)) || ...);
     }
 
+#include "private/diagnostic_uninitialized_push.h"
     //********************************************
     /// Only enabled for types that are in the typelist.
     //********************************************
@@ -285,7 +340,9 @@ namespace etl
       void* p = data;
       new (p) etl::remove_reference_t<TMessage>((etl::forward<TMessage>(msg)));
     }
+#include "private/diagnostic_pop.h"
 
+#include "private/diagnostic_uninitialized_push.h"
     //********************************************
     template <typename TType>
     bool add_new_message_type(const etl::imessage& msg)
@@ -301,6 +358,7 @@ namespace etl
         return false;
       }
     }
+#include "private/diagnostic_pop.h"
 
     //********************************************
     template <typename TType>
@@ -336,15 +394,15 @@ namespace etl
   public:
 
     //********************************************
-  #include "etl/private/diagnostic_uninitialized_push.h"
+  #include "private/diagnostic_uninitialized_push.h"
     message_packet()
       : valid(false)
     {
     }
-  #include "etl/private/diagnostic_pop.h"
+  #include "private/diagnostic_pop.h"
 
     //********************************************
-  #include "etl/private/diagnostic_uninitialized_push.h"
+  #include "private/diagnostic_uninitialized_push.h"
     explicit message_packet(const etl::imessage& msg)
     {
       if (accepts(msg))
@@ -359,11 +417,11 @@ namespace etl
 
       ETL_ASSERT(valid, ETL_ERROR(unhandled_message_exception));
     }
-  #include "etl/private/diagnostic_pop.h"
+  #include "private/diagnostic_pop.h"
 
   #if ETL_USING_CPP11 && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION)
     //********************************************
-  #include "etl/private/diagnostic_uninitialized_push.h"
+  #include "private/diagnostic_uninitialized_push.h"
     explicit message_packet(etl::imessage&& msg)
     {
       if (accepts(msg))
@@ -378,12 +436,12 @@ namespace etl
 
       ETL_ASSERT(valid, ETL_ERROR(unhandled_message_exception));
     }
-  #include "etl/private/diagnostic_pop.h"
+  #include "private/diagnostic_pop.h"
   #endif
 
   #if ETL_USING_CPP11 && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION) && !defined(ETL_COMPILER_GREEN_HILLS)
     //********************************************
-  #include "etl/private/diagnostic_uninitialized_push.h"
+  #include "private/diagnostic_uninitialized_push.h"
     template <typename TMessage, typename = typename etl::enable_if<!etl::is_same<typename etl::remove_cvref<TMessage>::type, etl::message_packet<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16> >::value &&
                                                                     !etl::is_same<typename etl::remove_cvref<TMessage>::type, etl::imessage>::value &&
                                                                     !etl::is_one_of<typename etl::remove_cvref<TMessage>::type, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16>::value, int>::type>
@@ -397,10 +455,10 @@ namespace etl
 
       ETL_STATIC_ASSERT(Enabled, "Message not in packet type list");
     }
-  #include "etl/private/diagnostic_pop.h"
+  #include "private/diagnostic_pop.h"
   #else
     //********************************************
-  #include "etl/private/diagnostic_uninitialized_push.h"
+  #include "private/diagnostic_uninitialized_push.h"
     template <typename TMessage>
     explicit message_packet(const TMessage& /*msg*/, typename etl::enable_if<!etl::is_same<typename etl::remove_cvref<TMessage>::type, etl::message_packet<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16> >::value &&
                                                                          !etl::is_same<typename etl::remove_cvref<TMessage>::type, etl::imessage>::value &&
@@ -414,11 +472,11 @@ namespace etl
 
       ETL_STATIC_ASSERT(Enabled, "Message not in packet type list");
     }
-  #include "etl/private/diagnostic_pop.h"
+  #include "private/diagnostic_pop.h"
   #endif
 
     //**********************************************
-  #include "etl/private/diagnostic_uninitialized_push.h"
+  #include "private/diagnostic_uninitialized_push.h"
     message_packet(const message_packet& other)
       : valid(other.is_valid())
     {
@@ -427,11 +485,11 @@ namespace etl
         add_new_message(other.get());
       }
     }
-  #include "etl/private/diagnostic_pop.h"
+  #include "private/diagnostic_pop.h"
 
   #if ETL_USING_CPP11 && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION)
     //**********************************************
-  #include "etl/private/diagnostic_uninitialized_push.h"
+  #include "private/diagnostic_uninitialized_push.h"
     message_packet(message_packet&& other)
       : valid(other.is_valid())
     {
@@ -440,10 +498,11 @@ namespace etl
         add_new_message(etl::move(other.get()));
       }
     }
-  #include "etl/private/diagnostic_pop.h"
+  #include "private/diagnostic_pop.h"
   #endif
 
     //**********************************************
+  #include "private/diagnostic_uninitialized_push.h"
     message_packet& operator =(const message_packet& rhs)
     {
       delete_current_message();
@@ -455,9 +514,11 @@ namespace etl
 
       return *this;
     }
+  #include "private/diagnostic_pop.h"
 
   #if ETL_USING_CPP11 && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION)
     //**********************************************
+  #include "private/diagnostic_uninitialized_push.h"
     message_packet& operator =(message_packet&& rhs)
     {
       delete_current_message();
@@ -469,6 +530,7 @@ namespace etl
 
       return *this;
     }
+  #include "private/diagnostic_pop.h"
   #endif
 
     //********************************************
@@ -541,17 +603,46 @@ namespace etl
   private:
 
     //********************************************
-    #include "etl/private/diagnostic_uninitialized_push.h"
+    #include "private/diagnostic_uninitialized_push.h"
     void delete_current_message()
     {
       if (valid)
       {
         etl::imessage* pmsg = static_cast<etl::imessage*>(data);
 
+  #if ETL_HAS_VIRTUAL_MESSAGES
         pmsg->~imessage();
+  #else
+        delete_message(pmsg);
+  #endif
       }
     }
-    #include "etl/private/diagnostic_pop.h"
+    #include "private/diagnostic_pop.h"
+
+    //********************************************
+    void delete_message(etl::imessage* pmsg)
+    {
+      switch (pmsg->get_message_id())
+      {
+        case T1::ID: static_cast<const T1*>(pmsg)->~T1(); break;
+        case T2::ID: static_cast<const T2*>(pmsg)->~T2(); break;
+        case T3::ID: static_cast<const T3*>(pmsg)->~T3(); break;
+        case T4::ID: static_cast<const T4*>(pmsg)->~T4(); break;
+        case T5::ID: static_cast<const T5*>(pmsg)->~T5(); break;
+        case T6::ID: static_cast<const T6*>(pmsg)->~T6(); break;
+        case T7::ID: static_cast<const T7*>(pmsg)->~T7(); break;
+        case T8::ID: static_cast<const T8*>(pmsg)->~T8(); break;
+        case T9::ID: static_cast<const T9*>(pmsg)->~T9(); break;
+        case T10::ID: static_cast<const T10*>(pmsg)->~T10(); break;
+        case T11::ID: static_cast<const T11*>(pmsg)->~T11(); break;
+        case T12::ID: static_cast<const T12*>(pmsg)->~T12(); break;
+        case T13::ID: static_cast<const T13*>(pmsg)->~T13(); break;
+        case T14::ID: static_cast<const T14*>(pmsg)->~T14(); break;
+        case T15::ID: static_cast<const T15*>(pmsg)->~T15(); break;
+        case T16::ID: static_cast<const T16*>(pmsg)->~T16(); break;
+        default: ETL_ASSERT_FAIL(ETL_ERROR(unhandled_message_exception)); break;
+      }
+    }
 
     //********************************************
     void add_new_message(const etl::imessage& msg)
@@ -577,7 +668,7 @@ namespace etl
         case T14::ID: ::new (p) T14(static_cast<const T14&>(msg)); break;
         case T15::ID: ::new (p) T15(static_cast<const T15&>(msg)); break;
         case T16::ID: ::new (p) T16(static_cast<const T16&>(msg)); break;
-        default: ETL_ASSERT(false, ETL_ERROR(unhandled_message_exception)); break;
+        default: ETL_ASSERT_FAIL(ETL_ERROR(unhandled_message_exception)); break;
       }
     }
 
@@ -606,7 +697,7 @@ namespace etl
         case T14::ID: ::new (p) T14(static_cast<T14&&>(msg)); break;
         case T15::ID: ::new (p) T15(static_cast<T15&&>(msg)); break;
         case T16::ID: ::new (p) T16(static_cast<T16&&>(msg)); break;
-        default: ETL_ASSERT(false, ETL_ERROR(unhandled_message_exception)); break;
+        default: ETL_ASSERT_FAIL(ETL_ERROR(unhandled_message_exception)); break;
       }
     }
   #endif
@@ -627,15 +718,15 @@ namespace etl
   public:
 
     //********************************************
-  #include "etl/private/diagnostic_uninitialized_push.h"
+  #include "private/diagnostic_uninitialized_push.h"
     message_packet()
       : valid(false)
     {
     }
-  #include "etl/private/diagnostic_pop.h"
+  #include "private/diagnostic_pop.h"
 
     //********************************************
-  #include "etl/private/diagnostic_uninitialized_push.h"
+  #include "private/diagnostic_uninitialized_push.h"
     explicit message_packet(const etl::imessage& msg)
     {
       if (accepts(msg))
@@ -650,11 +741,11 @@ namespace etl
 
       ETL_ASSERT(valid, ETL_ERROR(unhandled_message_exception));
     }
-  #include "etl/private/diagnostic_pop.h"
+  #include "private/diagnostic_pop.h"
 
   #if ETL_USING_CPP11 && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION)
     //********************************************
-  #include "etl/private/diagnostic_uninitialized_push.h"
+  #include "private/diagnostic_uninitialized_push.h"
     explicit message_packet(etl::imessage&& msg)
     {
       if (accepts(msg))
@@ -669,12 +760,12 @@ namespace etl
 
       ETL_ASSERT(valid, ETL_ERROR(unhandled_message_exception));
     }
-  #include "etl/private/diagnostic_pop.h"
+  #include "private/diagnostic_pop.h"
   #endif
 
   #if ETL_USING_CPP11 && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION) && !defined(ETL_COMPILER_GREEN_HILLS)
     //********************************************
-  #include "etl/private/diagnostic_uninitialized_push.h"
+  #include "private/diagnostic_uninitialized_push.h"
     template <typename TMessage, typename = typename etl::enable_if<!etl::is_same<typename etl::remove_cvref<TMessage>::type, etl::message_packet<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15> >::value &&
                                                                     !etl::is_same<typename etl::remove_cvref<TMessage>::type, etl::imessage>::value &&
                                                                     !etl::is_one_of<typename etl::remove_cvref<TMessage>::type, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15>::value, int>::type>
@@ -688,10 +779,10 @@ namespace etl
 
       ETL_STATIC_ASSERT(Enabled, "Message not in packet type list");
     }
-  #include "etl/private/diagnostic_pop.h"
+  #include "private/diagnostic_pop.h"
   #else
     //********************************************
-  #include "etl/private/diagnostic_uninitialized_push.h"
+  #include "private/diagnostic_uninitialized_push.h"
     template <typename TMessage>
     explicit message_packet(const TMessage& /*msg*/, typename etl::enable_if<!etl::is_same<typename etl::remove_cvref<TMessage>::type, etl::message_packet<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15> >::value &&
                                                                          !etl::is_same<typename etl::remove_cvref<TMessage>::type, etl::imessage>::value &&
@@ -705,11 +796,11 @@ namespace etl
 
       ETL_STATIC_ASSERT(Enabled, "Message not in packet type list");
     }
-  #include "etl/private/diagnostic_pop.h"
+  #include "private/diagnostic_pop.h"
   #endif
 
     //**********************************************
-  #include "etl/private/diagnostic_uninitialized_push.h"
+  #include "private/diagnostic_uninitialized_push.h"
     message_packet(const message_packet& other)
       : valid(other.is_valid())
     {
@@ -718,11 +809,11 @@ namespace etl
         add_new_message(other.get());
       }
     }
-  #include "etl/private/diagnostic_pop.h"
+  #include "private/diagnostic_pop.h"
 
   #if ETL_USING_CPP11 && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION)
     //**********************************************
-  #include "etl/private/diagnostic_uninitialized_push.h"
+  #include "private/diagnostic_uninitialized_push.h"
     message_packet(message_packet&& other)
       : valid(other.is_valid())
     {
@@ -731,10 +822,11 @@ namespace etl
         add_new_message(etl::move(other.get()));
       }
     }
-  #include "etl/private/diagnostic_pop.h"
+  #include "private/diagnostic_pop.h"
   #endif
 
     //**********************************************
+  #include "private/diagnostic_uninitialized_push.h"
     message_packet& operator =(const message_packet& rhs)
     {
       delete_current_message();
@@ -746,9 +838,11 @@ namespace etl
 
       return *this;
     }
+  #include "private/diagnostic_pop.h"
 
   #if ETL_USING_CPP11 && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION)
     //**********************************************
+  #include "private/diagnostic_uninitialized_push.h"
     message_packet& operator =(message_packet&& rhs)
     {
       delete_current_message();
@@ -760,6 +854,7 @@ namespace etl
 
       return *this;
     }
+  #include "private/diagnostic_pop.h"
   #endif
 
     //********************************************
@@ -832,17 +927,46 @@ namespace etl
   private:
 
     //********************************************
-    #include "etl/private/diagnostic_uninitialized_push.h"
+    #include "private/diagnostic_uninitialized_push.h"
     void delete_current_message()
     {
       if (valid)
       {
         etl::imessage* pmsg = static_cast<etl::imessage*>(data);
 
+
+  #if ETL_HAS_VIRTUAL_MESSAGES
         pmsg->~imessage();
+  #else
+        delete_message(pmsg);
+  #endif
       }
     }
-    #include "etl/private/diagnostic_pop.h"
+    #include "private/diagnostic_pop.h"
+
+    //********************************************
+    void delete_message(etl::imessage* pmsg)
+    {
+      switch (pmsg->get_message_id())
+      {
+        case T1::ID: static_cast<const T1*>(pmsg)->~T1(); break;
+        case T2::ID: static_cast<const T2*>(pmsg)->~T2(); break;
+        case T3::ID: static_cast<const T3*>(pmsg)->~T3(); break;
+        case T4::ID: static_cast<const T4*>(pmsg)->~T4(); break;
+        case T5::ID: static_cast<const T5*>(pmsg)->~T5(); break;
+        case T6::ID: static_cast<const T6*>(pmsg)->~T6(); break;
+        case T7::ID: static_cast<const T7*>(pmsg)->~T7(); break;
+        case T8::ID: static_cast<const T8*>(pmsg)->~T8(); break;
+        case T9::ID: static_cast<const T9*>(pmsg)->~T9(); break;
+        case T10::ID: static_cast<const T10*>(pmsg)->~T10(); break;
+        case T11::ID: static_cast<const T11*>(pmsg)->~T11(); break;
+        case T12::ID: static_cast<const T12*>(pmsg)->~T12(); break;
+        case T13::ID: static_cast<const T13*>(pmsg)->~T13(); break;
+        case T14::ID: static_cast<const T14*>(pmsg)->~T14(); break;
+        case T15::ID: static_cast<const T15*>(pmsg)->~T15(); break;
+        default: ETL_ASSERT_FAIL(ETL_ERROR(unhandled_message_exception)); break;
+      }
+    }
 
     //********************************************
     void add_new_message(const etl::imessage& msg)
@@ -867,7 +991,7 @@ namespace etl
         case T13::ID: ::new (p) T13(static_cast<const T13&>(msg)); break;
         case T14::ID: ::new (p) T14(static_cast<const T14&>(msg)); break;
         case T15::ID: ::new (p) T15(static_cast<const T15&>(msg)); break;
-        default: break;
+        default: ETL_ASSERT_FAIL(ETL_ERROR(unhandled_message_exception)); break;
       }
     }
 
@@ -916,15 +1040,15 @@ namespace etl
   public:
 
     //********************************************
-  #include "etl/private/diagnostic_uninitialized_push.h"
+  #include "private/diagnostic_uninitialized_push.h"
     message_packet()
       : valid(false)
     {
     }
-  #include "etl/private/diagnostic_pop.h"
+  #include "private/diagnostic_pop.h"
 
     //********************************************
-  #include "etl/private/diagnostic_uninitialized_push.h"
+  #include "private/diagnostic_uninitialized_push.h"
     explicit message_packet(const etl::imessage& msg)
     {
       if (accepts(msg))
@@ -939,11 +1063,11 @@ namespace etl
 
       ETL_ASSERT(valid, ETL_ERROR(unhandled_message_exception));
     }
-  #include "etl/private/diagnostic_pop.h"
+  #include "private/diagnostic_pop.h"
 
   #if ETL_USING_CPP11 && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION)
     //********************************************
-  #include "etl/private/diagnostic_uninitialized_push.h"
+  #include "private/diagnostic_uninitialized_push.h"
     explicit message_packet(etl::imessage&& msg)
     {
       if (accepts(msg))
@@ -958,12 +1082,12 @@ namespace etl
 
       ETL_ASSERT(valid, ETL_ERROR(unhandled_message_exception));
     }
-  #include "etl/private/diagnostic_pop.h"
+  #include "private/diagnostic_pop.h"
   #endif
 
   #if ETL_USING_CPP11 && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION) && !defined(ETL_COMPILER_GREEN_HILLS)
     //********************************************
-  #include "etl/private/diagnostic_uninitialized_push.h"
+  #include "private/diagnostic_uninitialized_push.h"
     template <typename TMessage, typename = typename etl::enable_if<!etl::is_same<typename etl::remove_cvref<TMessage>::type, etl::message_packet<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14> >::value &&
                                                                     !etl::is_same<typename etl::remove_cvref<TMessage>::type, etl::imessage>::value &&
                                                                     !etl::is_one_of<typename etl::remove_cvref<TMessage>::type, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14>::value, int>::type>
@@ -977,10 +1101,10 @@ namespace etl
 
       ETL_STATIC_ASSERT(Enabled, "Message not in packet type list");
     }
-  #include "etl/private/diagnostic_pop.h"
+  #include "private/diagnostic_pop.h"
   #else
     //********************************************
-  #include "etl/private/diagnostic_uninitialized_push.h"
+  #include "private/diagnostic_uninitialized_push.h"
     template <typename TMessage>
     explicit message_packet(const TMessage& /*msg*/, typename etl::enable_if<!etl::is_same<typename etl::remove_cvref<TMessage>::type, etl::message_packet<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14> >::value &&
                                                                          !etl::is_same<typename etl::remove_cvref<TMessage>::type, etl::imessage>::value &&
@@ -994,11 +1118,11 @@ namespace etl
 
       ETL_STATIC_ASSERT(Enabled, "Message not in packet type list");
     }
-  #include "etl/private/diagnostic_pop.h"
+  #include "private/diagnostic_pop.h"
   #endif
 
     //**********************************************
-  #include "etl/private/diagnostic_uninitialized_push.h"
+  #include "private/diagnostic_uninitialized_push.h"
     message_packet(const message_packet& other)
       : valid(other.is_valid())
     {
@@ -1007,11 +1131,11 @@ namespace etl
         add_new_message(other.get());
       }
     }
-  #include "etl/private/diagnostic_pop.h"
+  #include "private/diagnostic_pop.h"
 
   #if ETL_USING_CPP11 && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION)
     //**********************************************
-  #include "etl/private/diagnostic_uninitialized_push.h"
+  #include "private/diagnostic_uninitialized_push.h"
     message_packet(message_packet&& other)
       : valid(other.is_valid())
     {
@@ -1020,10 +1144,11 @@ namespace etl
         add_new_message(etl::move(other.get()));
       }
     }
-  #include "etl/private/diagnostic_pop.h"
+  #include "private/diagnostic_pop.h"
   #endif
 
     //**********************************************
+  #include "private/diagnostic_uninitialized_push.h"
     message_packet& operator =(const message_packet& rhs)
     {
       delete_current_message();
@@ -1035,9 +1160,11 @@ namespace etl
 
       return *this;
     }
+  #include "private/diagnostic_pop.h"
 
   #if ETL_USING_CPP11 && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION)
     //**********************************************
+  #include "private/diagnostic_uninitialized_push.h"
     message_packet& operator =(message_packet&& rhs)
     {
       delete_current_message();
@@ -1049,6 +1176,7 @@ namespace etl
 
       return *this;
     }
+  #include "private/diagnostic_pop.h"
   #endif
 
     //********************************************
@@ -1121,17 +1249,45 @@ namespace etl
   private:
 
     //********************************************
-    #include "etl/private/diagnostic_uninitialized_push.h"
+    #include "private/diagnostic_uninitialized_push.h"
     void delete_current_message()
     {
       if (valid)
       {
         etl::imessage* pmsg = static_cast<etl::imessage*>(data);
 
+
+  #if ETL_HAS_VIRTUAL_MESSAGES
         pmsg->~imessage();
+  #else
+        delete_message(pmsg);
+  #endif
       }
     }
-    #include "etl/private/diagnostic_pop.h"
+    #include "private/diagnostic_pop.h"
+
+    //********************************************
+    void delete_message(etl::imessage* pmsg)
+    {
+      switch (pmsg->get_message_id())
+      {
+        case T1::ID: static_cast<const T1*>(pmsg)->~T1(); break;
+        case T2::ID: static_cast<const T2*>(pmsg)->~T2(); break;
+        case T3::ID: static_cast<const T3*>(pmsg)->~T3(); break;
+        case T4::ID: static_cast<const T4*>(pmsg)->~T4(); break;
+        case T5::ID: static_cast<const T5*>(pmsg)->~T5(); break;
+        case T6::ID: static_cast<const T6*>(pmsg)->~T6(); break;
+        case T7::ID: static_cast<const T7*>(pmsg)->~T7(); break;
+        case T8::ID: static_cast<const T8*>(pmsg)->~T8(); break;
+        case T9::ID: static_cast<const T9*>(pmsg)->~T9(); break;
+        case T10::ID: static_cast<const T10*>(pmsg)->~T10(); break;
+        case T11::ID: static_cast<const T11*>(pmsg)->~T11(); break;
+        case T12::ID: static_cast<const T12*>(pmsg)->~T12(); break;
+        case T13::ID: static_cast<const T13*>(pmsg)->~T13(); break;
+        case T14::ID: static_cast<const T14*>(pmsg)->~T14(); break;
+        default: ETL_ASSERT_FAIL(ETL_ERROR(unhandled_message_exception)); break;
+      }
+    }
 
     //********************************************
     void add_new_message(const etl::imessage& msg)
@@ -1155,7 +1311,7 @@ namespace etl
         case T12::ID: ::new (p) T12(static_cast<const T12&>(msg)); break;
         case T13::ID: ::new (p) T13(static_cast<const T13&>(msg)); break;
         case T14::ID: ::new (p) T14(static_cast<const T14&>(msg)); break;
-        default: break;
+        default: ETL_ASSERT_FAIL(ETL_ERROR(unhandled_message_exception)); break;
       }
     }
 
@@ -1203,15 +1359,15 @@ namespace etl
   public:
 
     //********************************************
-  #include "etl/private/diagnostic_uninitialized_push.h"
+  #include "private/diagnostic_uninitialized_push.h"
     message_packet()
       : valid(false)
     {
     }
-  #include "etl/private/diagnostic_pop.h"
+  #include "private/diagnostic_pop.h"
 
     //********************************************
-  #include "etl/private/diagnostic_uninitialized_push.h"
+  #include "private/diagnostic_uninitialized_push.h"
     explicit message_packet(const etl::imessage& msg)
     {
       if (accepts(msg))
@@ -1226,11 +1382,11 @@ namespace etl
 
       ETL_ASSERT(valid, ETL_ERROR(unhandled_message_exception));
     }
-  #include "etl/private/diagnostic_pop.h"
+  #include "private/diagnostic_pop.h"
 
   #if ETL_USING_CPP11 && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION)
     //********************************************
-  #include "etl/private/diagnostic_uninitialized_push.h"
+  #include "private/diagnostic_uninitialized_push.h"
     explicit message_packet(etl::imessage&& msg)
     {
       if (accepts(msg))
@@ -1245,12 +1401,12 @@ namespace etl
 
       ETL_ASSERT(valid, ETL_ERROR(unhandled_message_exception));
     }
-  #include "etl/private/diagnostic_pop.h"
+  #include "private/diagnostic_pop.h"
   #endif
 
   #if ETL_USING_CPP11 && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION) && !defined(ETL_COMPILER_GREEN_HILLS)
     //********************************************
-  #include "etl/private/diagnostic_uninitialized_push.h"
+  #include "private/diagnostic_uninitialized_push.h"
     template <typename TMessage, typename = typename etl::enable_if<!etl::is_same<typename etl::remove_cvref<TMessage>::type, etl::message_packet<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13> >::value &&
                                                                     !etl::is_same<typename etl::remove_cvref<TMessage>::type, etl::imessage>::value &&
                                                                     !etl::is_one_of<typename etl::remove_cvref<TMessage>::type, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13>::value, int>::type>
@@ -1264,10 +1420,10 @@ namespace etl
 
       ETL_STATIC_ASSERT(Enabled, "Message not in packet type list");
     }
-  #include "etl/private/diagnostic_pop.h"
+  #include "private/diagnostic_pop.h"
   #else
     //********************************************
-  #include "etl/private/diagnostic_uninitialized_push.h"
+  #include "private/diagnostic_uninitialized_push.h"
     template <typename TMessage>
     explicit message_packet(const TMessage& /*msg*/, typename etl::enable_if<!etl::is_same<typename etl::remove_cvref<TMessage>::type, etl::message_packet<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13> >::value &&
                                                                          !etl::is_same<typename etl::remove_cvref<TMessage>::type, etl::imessage>::value &&
@@ -1281,11 +1437,11 @@ namespace etl
 
       ETL_STATIC_ASSERT(Enabled, "Message not in packet type list");
     }
-  #include "etl/private/diagnostic_pop.h"
+  #include "private/diagnostic_pop.h"
   #endif
 
     //**********************************************
-  #include "etl/private/diagnostic_uninitialized_push.h"
+  #include "private/diagnostic_uninitialized_push.h"
     message_packet(const message_packet& other)
       : valid(other.is_valid())
     {
@@ -1294,11 +1450,11 @@ namespace etl
         add_new_message(other.get());
       }
     }
-  #include "etl/private/diagnostic_pop.h"
+  #include "private/diagnostic_pop.h"
 
   #if ETL_USING_CPP11 && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION)
     //**********************************************
-  #include "etl/private/diagnostic_uninitialized_push.h"
+  #include "private/diagnostic_uninitialized_push.h"
     message_packet(message_packet&& other)
       : valid(other.is_valid())
     {
@@ -1307,10 +1463,11 @@ namespace etl
         add_new_message(etl::move(other.get()));
       }
     }
-  #include "etl/private/diagnostic_pop.h"
+  #include "private/diagnostic_pop.h"
   #endif
 
     //**********************************************
+  #include "private/diagnostic_uninitialized_push.h"
     message_packet& operator =(const message_packet& rhs)
     {
       delete_current_message();
@@ -1322,9 +1479,11 @@ namespace etl
 
       return *this;
     }
+  #include "private/diagnostic_pop.h"
 
   #if ETL_USING_CPP11 && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION)
     //**********************************************
+  #include "private/diagnostic_uninitialized_push.h"
     message_packet& operator =(message_packet&& rhs)
     {
       delete_current_message();
@@ -1336,6 +1495,7 @@ namespace etl
 
       return *this;
     }
+  #include "private/diagnostic_pop.h"
   #endif
 
     //********************************************
@@ -1408,17 +1568,44 @@ namespace etl
   private:
 
     //********************************************
-    #include "etl/private/diagnostic_uninitialized_push.h"
+    #include "private/diagnostic_uninitialized_push.h"
     void delete_current_message()
     {
       if (valid)
       {
         etl::imessage* pmsg = static_cast<etl::imessage*>(data);
 
+
+  #if ETL_HAS_VIRTUAL_MESSAGES
         pmsg->~imessage();
+  #else
+        delete_message(pmsg);
+  #endif
       }
     }
-    #include "etl/private/diagnostic_pop.h"
+    #include "private/diagnostic_pop.h"
+
+    //********************************************
+    void delete_message(etl::imessage* pmsg)
+    {
+      switch (pmsg->get_message_id())
+      {
+        case T1::ID: static_cast<const T1*>(pmsg)->~T1(); break;
+        case T2::ID: static_cast<const T2*>(pmsg)->~T2(); break;
+        case T3::ID: static_cast<const T3*>(pmsg)->~T3(); break;
+        case T4::ID: static_cast<const T4*>(pmsg)->~T4(); break;
+        case T5::ID: static_cast<const T5*>(pmsg)->~T5(); break;
+        case T6::ID: static_cast<const T6*>(pmsg)->~T6(); break;
+        case T7::ID: static_cast<const T7*>(pmsg)->~T7(); break;
+        case T8::ID: static_cast<const T8*>(pmsg)->~T8(); break;
+        case T9::ID: static_cast<const T9*>(pmsg)->~T9(); break;
+        case T10::ID: static_cast<const T10*>(pmsg)->~T10(); break;
+        case T11::ID: static_cast<const T11*>(pmsg)->~T11(); break;
+        case T12::ID: static_cast<const T12*>(pmsg)->~T12(); break;
+        case T13::ID: static_cast<const T13*>(pmsg)->~T13(); break;
+        default: ETL_ASSERT_FAIL(ETL_ERROR(unhandled_message_exception)); break;
+      }
+    }
 
     //********************************************
     void add_new_message(const etl::imessage& msg)
@@ -1441,7 +1628,7 @@ namespace etl
         case T11::ID: ::new (p) T11(static_cast<const T11&>(msg)); break;
         case T12::ID: ::new (p) T12(static_cast<const T12&>(msg)); break;
         case T13::ID: ::new (p) T13(static_cast<const T13&>(msg)); break;
-        default: break;
+        default: ETL_ASSERT_FAIL(ETL_ERROR(unhandled_message_exception)); break;
       }
     }
 
@@ -1487,15 +1674,15 @@ namespace etl
   public:
 
     //********************************************
-  #include "etl/private/diagnostic_uninitialized_push.h"
+  #include "private/diagnostic_uninitialized_push.h"
     message_packet()
       : valid(false)
     {
     }
-  #include "etl/private/diagnostic_pop.h"
+  #include "private/diagnostic_pop.h"
 
     //********************************************
-  #include "etl/private/diagnostic_uninitialized_push.h"
+  #include "private/diagnostic_uninitialized_push.h"
     explicit message_packet(const etl::imessage& msg)
     {
       if (accepts(msg))
@@ -1510,11 +1697,11 @@ namespace etl
 
       ETL_ASSERT(valid, ETL_ERROR(unhandled_message_exception));
     }
-  #include "etl/private/diagnostic_pop.h"
+  #include "private/diagnostic_pop.h"
 
   #if ETL_USING_CPP11 && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION)
     //********************************************
-  #include "etl/private/diagnostic_uninitialized_push.h"
+  #include "private/diagnostic_uninitialized_push.h"
     explicit message_packet(etl::imessage&& msg)
     {
       if (accepts(msg))
@@ -1529,12 +1716,12 @@ namespace etl
 
       ETL_ASSERT(valid, ETL_ERROR(unhandled_message_exception));
     }
-  #include "etl/private/diagnostic_pop.h"
+  #include "private/diagnostic_pop.h"
   #endif
 
   #if ETL_USING_CPP11 && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION) && !defined(ETL_COMPILER_GREEN_HILLS)
     //********************************************
-  #include "etl/private/diagnostic_uninitialized_push.h"
+  #include "private/diagnostic_uninitialized_push.h"
     template <typename TMessage, typename = typename etl::enable_if<!etl::is_same<typename etl::remove_cvref<TMessage>::type, etl::message_packet<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12> >::value &&
                                                                     !etl::is_same<typename etl::remove_cvref<TMessage>::type, etl::imessage>::value &&
                                                                     !etl::is_one_of<typename etl::remove_cvref<TMessage>::type, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12>::value, int>::type>
@@ -1548,10 +1735,10 @@ namespace etl
 
       ETL_STATIC_ASSERT(Enabled, "Message not in packet type list");
     }
-  #include "etl/private/diagnostic_pop.h"
+  #include "private/diagnostic_pop.h"
   #else
     //********************************************
-  #include "etl/private/diagnostic_uninitialized_push.h"
+  #include "private/diagnostic_uninitialized_push.h"
     template <typename TMessage>
     explicit message_packet(const TMessage& /*msg*/, typename etl::enable_if<!etl::is_same<typename etl::remove_cvref<TMessage>::type, etl::message_packet<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12> >::value &&
                                                                          !etl::is_same<typename etl::remove_cvref<TMessage>::type, etl::imessage>::value &&
@@ -1565,11 +1752,11 @@ namespace etl
 
       ETL_STATIC_ASSERT(Enabled, "Message not in packet type list");
     }
-  #include "etl/private/diagnostic_pop.h"
+  #include "private/diagnostic_pop.h"
   #endif
 
     //**********************************************
-  #include "etl/private/diagnostic_uninitialized_push.h"
+  #include "private/diagnostic_uninitialized_push.h"
     message_packet(const message_packet& other)
       : valid(other.is_valid())
     {
@@ -1578,11 +1765,11 @@ namespace etl
         add_new_message(other.get());
       }
     }
-  #include "etl/private/diagnostic_pop.h"
+  #include "private/diagnostic_pop.h"
 
   #if ETL_USING_CPP11 && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION)
     //**********************************************
-  #include "etl/private/diagnostic_uninitialized_push.h"
+  #include "private/diagnostic_uninitialized_push.h"
     message_packet(message_packet&& other)
       : valid(other.is_valid())
     {
@@ -1591,10 +1778,11 @@ namespace etl
         add_new_message(etl::move(other.get()));
       }
     }
-  #include "etl/private/diagnostic_pop.h"
+  #include "private/diagnostic_pop.h"
   #endif
 
     //**********************************************
+  #include "private/diagnostic_uninitialized_push.h"
     message_packet& operator =(const message_packet& rhs)
     {
       delete_current_message();
@@ -1606,9 +1794,11 @@ namespace etl
 
       return *this;
     }
+  #include "private/diagnostic_pop.h"
 
   #if ETL_USING_CPP11 && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION)
     //**********************************************
+  #include "private/diagnostic_uninitialized_push.h"
     message_packet& operator =(message_packet&& rhs)
     {
       delete_current_message();
@@ -1620,6 +1810,7 @@ namespace etl
 
       return *this;
     }
+  #include "private/diagnostic_pop.h"
   #endif
 
     //********************************************
@@ -1689,17 +1880,43 @@ namespace etl
   private:
 
     //********************************************
-    #include "etl/private/diagnostic_uninitialized_push.h"
+    #include "private/diagnostic_uninitialized_push.h"
     void delete_current_message()
     {
       if (valid)
       {
         etl::imessage* pmsg = static_cast<etl::imessage*>(data);
 
+
+  #if ETL_HAS_VIRTUAL_MESSAGES
         pmsg->~imessage();
+  #else
+        delete_message(pmsg);
+  #endif
       }
     }
-    #include "etl/private/diagnostic_pop.h"
+    #include "private/diagnostic_pop.h"
+
+    //********************************************
+    void delete_message(etl::imessage* pmsg)
+    {
+      switch (pmsg->get_message_id())
+      {
+        case T1::ID: static_cast<const T1*>(pmsg)->~T1(); break;
+        case T2::ID: static_cast<const T2*>(pmsg)->~T2(); break;
+        case T3::ID: static_cast<const T3*>(pmsg)->~T3(); break;
+        case T4::ID: static_cast<const T4*>(pmsg)->~T4(); break;
+        case T5::ID: static_cast<const T5*>(pmsg)->~T5(); break;
+        case T6::ID: static_cast<const T6*>(pmsg)->~T6(); break;
+        case T7::ID: static_cast<const T7*>(pmsg)->~T7(); break;
+        case T8::ID: static_cast<const T8*>(pmsg)->~T8(); break;
+        case T9::ID: static_cast<const T9*>(pmsg)->~T9(); break;
+        case T10::ID: static_cast<const T10*>(pmsg)->~T10(); break;
+        case T11::ID: static_cast<const T11*>(pmsg)->~T11(); break;
+        case T12::ID: static_cast<const T12*>(pmsg)->~T12(); break;
+        default: ETL_ASSERT_FAIL(ETL_ERROR(unhandled_message_exception)); break;
+      }
+    }
 
     //********************************************
     void add_new_message(const etl::imessage& msg)
@@ -1721,7 +1938,7 @@ namespace etl
         case T10::ID: ::new (p) T10(static_cast<const T10&>(msg)); break;
         case T11::ID: ::new (p) T11(static_cast<const T11&>(msg)); break;
         case T12::ID: ::new (p) T12(static_cast<const T12&>(msg)); break;
-        default: break;
+        default: ETL_ASSERT_FAIL(ETL_ERROR(unhandled_message_exception)); break;
       }
     }
 
@@ -1766,15 +1983,15 @@ namespace etl
   public:
 
     //********************************************
-  #include "etl/private/diagnostic_uninitialized_push.h"
+  #include "private/diagnostic_uninitialized_push.h"
     message_packet()
       : valid(false)
     {
     }
-  #include "etl/private/diagnostic_pop.h"
+  #include "private/diagnostic_pop.h"
 
     //********************************************
-  #include "etl/private/diagnostic_uninitialized_push.h"
+  #include "private/diagnostic_uninitialized_push.h"
     explicit message_packet(const etl::imessage& msg)
     {
       if (accepts(msg))
@@ -1789,11 +2006,11 @@ namespace etl
 
       ETL_ASSERT(valid, ETL_ERROR(unhandled_message_exception));
     }
-  #include "etl/private/diagnostic_pop.h"
+  #include "private/diagnostic_pop.h"
 
   #if ETL_USING_CPP11 && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION)
     //********************************************
-  #include "etl/private/diagnostic_uninitialized_push.h"
+  #include "private/diagnostic_uninitialized_push.h"
     explicit message_packet(etl::imessage&& msg)
     {
       if (accepts(msg))
@@ -1808,12 +2025,12 @@ namespace etl
 
       ETL_ASSERT(valid, ETL_ERROR(unhandled_message_exception));
     }
-  #include "etl/private/diagnostic_pop.h"
+  #include "private/diagnostic_pop.h"
   #endif
 
   #if ETL_USING_CPP11 && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION) && !defined(ETL_COMPILER_GREEN_HILLS)
     //********************************************
-  #include "etl/private/diagnostic_uninitialized_push.h"
+  #include "private/diagnostic_uninitialized_push.h"
     template <typename TMessage, typename = typename etl::enable_if<!etl::is_same<typename etl::remove_cvref<TMessage>::type, etl::message_packet<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11> >::value &&
                                                                     !etl::is_same<typename etl::remove_cvref<TMessage>::type, etl::imessage>::value &&
                                                                     !etl::is_one_of<typename etl::remove_cvref<TMessage>::type, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11>::value, int>::type>
@@ -1827,10 +2044,10 @@ namespace etl
 
       ETL_STATIC_ASSERT(Enabled, "Message not in packet type list");
     }
-  #include "etl/private/diagnostic_pop.h"
+  #include "private/diagnostic_pop.h"
   #else
     //********************************************
-  #include "etl/private/diagnostic_uninitialized_push.h"
+  #include "private/diagnostic_uninitialized_push.h"
     template <typename TMessage>
     explicit message_packet(const TMessage& /*msg*/, typename etl::enable_if<!etl::is_same<typename etl::remove_cvref<TMessage>::type, etl::message_packet<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11> >::value &&
                                                                          !etl::is_same<typename etl::remove_cvref<TMessage>::type, etl::imessage>::value &&
@@ -1844,11 +2061,11 @@ namespace etl
 
       ETL_STATIC_ASSERT(Enabled, "Message not in packet type list");
     }
-  #include "etl/private/diagnostic_pop.h"
+  #include "private/diagnostic_pop.h"
   #endif
 
     //**********************************************
-  #include "etl/private/diagnostic_uninitialized_push.h"
+  #include "private/diagnostic_uninitialized_push.h"
     message_packet(const message_packet& other)
       : valid(other.is_valid())
     {
@@ -1857,11 +2074,11 @@ namespace etl
         add_new_message(other.get());
       }
     }
-  #include "etl/private/diagnostic_pop.h"
+  #include "private/diagnostic_pop.h"
 
   #if ETL_USING_CPP11 && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION)
     //**********************************************
-  #include "etl/private/diagnostic_uninitialized_push.h"
+  #include "private/diagnostic_uninitialized_push.h"
     message_packet(message_packet&& other)
       : valid(other.is_valid())
     {
@@ -1870,10 +2087,11 @@ namespace etl
         add_new_message(etl::move(other.get()));
       }
     }
-  #include "etl/private/diagnostic_pop.h"
+  #include "private/diagnostic_pop.h"
   #endif
 
     //**********************************************
+  #include "private/diagnostic_uninitialized_push.h"
     message_packet& operator =(const message_packet& rhs)
     {
       delete_current_message();
@@ -1885,9 +2103,11 @@ namespace etl
 
       return *this;
     }
+  #include "private/diagnostic_pop.h"
 
   #if ETL_USING_CPP11 && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION)
     //**********************************************
+  #include "private/diagnostic_uninitialized_push.h"
     message_packet& operator =(message_packet&& rhs)
     {
       delete_current_message();
@@ -1899,6 +2119,7 @@ namespace etl
 
       return *this;
     }
+  #include "private/diagnostic_pop.h"
   #endif
 
     //********************************************
@@ -1968,17 +2189,42 @@ namespace etl
   private:
 
     //********************************************
-    #include "etl/private/diagnostic_uninitialized_push.h"
+    #include "private/diagnostic_uninitialized_push.h"
     void delete_current_message()
     {
       if (valid)
       {
         etl::imessage* pmsg = static_cast<etl::imessage*>(data);
 
+
+  #if ETL_HAS_VIRTUAL_MESSAGES
         pmsg->~imessage();
+  #else
+        delete_message(pmsg);
+  #endif
       }
     }
-    #include "etl/private/diagnostic_pop.h"
+    #include "private/diagnostic_pop.h"
+
+    //********************************************
+    void delete_message(etl::imessage* pmsg)
+    {
+      switch (pmsg->get_message_id())
+      {
+        case T1::ID: static_cast<const T1*>(pmsg)->~T1(); break;
+        case T2::ID: static_cast<const T2*>(pmsg)->~T2(); break;
+        case T3::ID: static_cast<const T3*>(pmsg)->~T3(); break;
+        case T4::ID: static_cast<const T4*>(pmsg)->~T4(); break;
+        case T5::ID: static_cast<const T5*>(pmsg)->~T5(); break;
+        case T6::ID: static_cast<const T6*>(pmsg)->~T6(); break;
+        case T7::ID: static_cast<const T7*>(pmsg)->~T7(); break;
+        case T8::ID: static_cast<const T8*>(pmsg)->~T8(); break;
+        case T9::ID: static_cast<const T9*>(pmsg)->~T9(); break;
+        case T10::ID: static_cast<const T10*>(pmsg)->~T10(); break;
+        case T11::ID: static_cast<const T11*>(pmsg)->~T11(); break;
+        default: ETL_ASSERT_FAIL(ETL_ERROR(unhandled_message_exception)); break;
+      }
+    }
 
     //********************************************
     void add_new_message(const etl::imessage& msg)
@@ -1999,7 +2245,7 @@ namespace etl
         case T9::ID: ::new (p) T9(static_cast<const T9&>(msg)); break;
         case T10::ID: ::new (p) T10(static_cast<const T10&>(msg)); break;
         case T11::ID: ::new (p) T11(static_cast<const T11&>(msg)); break;
-        default: break;
+        default: ETL_ASSERT_FAIL(ETL_ERROR(unhandled_message_exception)); break;
       }
     }
 
@@ -2043,15 +2289,15 @@ namespace etl
   public:
 
     //********************************************
-  #include "etl/private/diagnostic_uninitialized_push.h"
+  #include "private/diagnostic_uninitialized_push.h"
     message_packet()
       : valid(false)
     {
     }
-  #include "etl/private/diagnostic_pop.h"
+  #include "private/diagnostic_pop.h"
 
     //********************************************
-  #include "etl/private/diagnostic_uninitialized_push.h"
+  #include "private/diagnostic_uninitialized_push.h"
     explicit message_packet(const etl::imessage& msg)
     {
       if (accepts(msg))
@@ -2066,11 +2312,11 @@ namespace etl
 
       ETL_ASSERT(valid, ETL_ERROR(unhandled_message_exception));
     }
-  #include "etl/private/diagnostic_pop.h"
+  #include "private/diagnostic_pop.h"
 
   #if ETL_USING_CPP11 && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION)
     //********************************************
-  #include "etl/private/diagnostic_uninitialized_push.h"
+  #include "private/diagnostic_uninitialized_push.h"
     explicit message_packet(etl::imessage&& msg)
     {
       if (accepts(msg))
@@ -2085,12 +2331,12 @@ namespace etl
 
       ETL_ASSERT(valid, ETL_ERROR(unhandled_message_exception));
     }
-  #include "etl/private/diagnostic_pop.h"
+  #include "private/diagnostic_pop.h"
   #endif
 
   #if ETL_USING_CPP11 && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION) && !defined(ETL_COMPILER_GREEN_HILLS)
     //********************************************
-  #include "etl/private/diagnostic_uninitialized_push.h"
+  #include "private/diagnostic_uninitialized_push.h"
     template <typename TMessage, typename = typename etl::enable_if<!etl::is_same<typename etl::remove_cvref<TMessage>::type, etl::message_packet<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> >::value &&
                                                                     !etl::is_same<typename etl::remove_cvref<TMessage>::type, etl::imessage>::value &&
                                                                     !etl::is_one_of<typename etl::remove_cvref<TMessage>::type, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>::value, int>::type>
@@ -2104,10 +2350,10 @@ namespace etl
 
       ETL_STATIC_ASSERT(Enabled, "Message not in packet type list");
     }
-  #include "etl/private/diagnostic_pop.h"
+  #include "private/diagnostic_pop.h"
   #else
     //********************************************
-  #include "etl/private/diagnostic_uninitialized_push.h"
+  #include "private/diagnostic_uninitialized_push.h"
     template <typename TMessage>
     explicit message_packet(const TMessage& /*msg*/, typename etl::enable_if<!etl::is_same<typename etl::remove_cvref<TMessage>::type, etl::message_packet<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> >::value &&
                                                                          !etl::is_same<typename etl::remove_cvref<TMessage>::type, etl::imessage>::value &&
@@ -2121,11 +2367,11 @@ namespace etl
 
       ETL_STATIC_ASSERT(Enabled, "Message not in packet type list");
     }
-  #include "etl/private/diagnostic_pop.h"
+  #include "private/diagnostic_pop.h"
   #endif
 
     //**********************************************
-  #include "etl/private/diagnostic_uninitialized_push.h"
+  #include "private/diagnostic_uninitialized_push.h"
     message_packet(const message_packet& other)
       : valid(other.is_valid())
     {
@@ -2134,11 +2380,11 @@ namespace etl
         add_new_message(other.get());
       }
     }
-  #include "etl/private/diagnostic_pop.h"
+  #include "private/diagnostic_pop.h"
 
   #if ETL_USING_CPP11 && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION)
     //**********************************************
-  #include "etl/private/diagnostic_uninitialized_push.h"
+  #include "private/diagnostic_uninitialized_push.h"
     message_packet(message_packet&& other)
       : valid(other.is_valid())
     {
@@ -2147,10 +2393,11 @@ namespace etl
         add_new_message(etl::move(other.get()));
       }
     }
-  #include "etl/private/diagnostic_pop.h"
+  #include "private/diagnostic_pop.h"
   #endif
 
     //**********************************************
+  #include "private/diagnostic_uninitialized_push.h"
     message_packet& operator =(const message_packet& rhs)
     {
       delete_current_message();
@@ -2162,9 +2409,11 @@ namespace etl
 
       return *this;
     }
+  #include "private/diagnostic_pop.h"
 
   #if ETL_USING_CPP11 && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION)
     //**********************************************
+  #include "private/diagnostic_uninitialized_push.h"
     message_packet& operator =(message_packet&& rhs)
     {
       delete_current_message();
@@ -2176,6 +2425,7 @@ namespace etl
 
       return *this;
     }
+  #include "private/diagnostic_pop.h"
   #endif
 
     //********************************************
@@ -2245,17 +2495,41 @@ namespace etl
   private:
 
     //********************************************
-    #include "etl/private/diagnostic_uninitialized_push.h"
+    #include "private/diagnostic_uninitialized_push.h"
     void delete_current_message()
     {
       if (valid)
       {
         etl::imessage* pmsg = static_cast<etl::imessage*>(data);
 
+
+  #if ETL_HAS_VIRTUAL_MESSAGES
         pmsg->~imessage();
+  #else
+        delete_message(pmsg);
+  #endif
       }
     }
-    #include "etl/private/diagnostic_pop.h"
+    #include "private/diagnostic_pop.h"
+
+    //********************************************
+    void delete_message(etl::imessage* pmsg)
+    {
+      switch (pmsg->get_message_id())
+      {
+        case T1::ID: static_cast<const T1*>(pmsg)->~T1(); break;
+        case T2::ID: static_cast<const T2*>(pmsg)->~T2(); break;
+        case T3::ID: static_cast<const T3*>(pmsg)->~T3(); break;
+        case T4::ID: static_cast<const T4*>(pmsg)->~T4(); break;
+        case T5::ID: static_cast<const T5*>(pmsg)->~T5(); break;
+        case T6::ID: static_cast<const T6*>(pmsg)->~T6(); break;
+        case T7::ID: static_cast<const T7*>(pmsg)->~T7(); break;
+        case T8::ID: static_cast<const T8*>(pmsg)->~T8(); break;
+        case T9::ID: static_cast<const T9*>(pmsg)->~T9(); break;
+        case T10::ID: static_cast<const T10*>(pmsg)->~T10(); break;
+        default: ETL_ASSERT_FAIL(ETL_ERROR(unhandled_message_exception)); break;
+      }
+    }
 
     //********************************************
     void add_new_message(const etl::imessage& msg)
@@ -2275,7 +2549,7 @@ namespace etl
         case T8::ID: ::new (p) T8(static_cast<const T8&>(msg)); break;
         case T9::ID: ::new (p) T9(static_cast<const T9&>(msg)); break;
         case T10::ID: ::new (p) T10(static_cast<const T10&>(msg)); break;
-        default: break;
+        default: ETL_ASSERT_FAIL(ETL_ERROR(unhandled_message_exception)); break;
       }
     }
 
@@ -2318,15 +2592,15 @@ namespace etl
   public:
 
     //********************************************
-  #include "etl/private/diagnostic_uninitialized_push.h"
+  #include "private/diagnostic_uninitialized_push.h"
     message_packet()
       : valid(false)
     {
     }
-  #include "etl/private/diagnostic_pop.h"
+  #include "private/diagnostic_pop.h"
 
     //********************************************
-  #include "etl/private/diagnostic_uninitialized_push.h"
+  #include "private/diagnostic_uninitialized_push.h"
     explicit message_packet(const etl::imessage& msg)
     {
       if (accepts(msg))
@@ -2341,11 +2615,11 @@ namespace etl
 
       ETL_ASSERT(valid, ETL_ERROR(unhandled_message_exception));
     }
-  #include "etl/private/diagnostic_pop.h"
+  #include "private/diagnostic_pop.h"
 
   #if ETL_USING_CPP11 && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION)
     //********************************************
-  #include "etl/private/diagnostic_uninitialized_push.h"
+  #include "private/diagnostic_uninitialized_push.h"
     explicit message_packet(etl::imessage&& msg)
     {
       if (accepts(msg))
@@ -2360,12 +2634,12 @@ namespace etl
 
       ETL_ASSERT(valid, ETL_ERROR(unhandled_message_exception));
     }
-  #include "etl/private/diagnostic_pop.h"
+  #include "private/diagnostic_pop.h"
   #endif
 
   #if ETL_USING_CPP11 && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION) && !defined(ETL_COMPILER_GREEN_HILLS)
     //********************************************
-  #include "etl/private/diagnostic_uninitialized_push.h"
+  #include "private/diagnostic_uninitialized_push.h"
     template <typename TMessage, typename = typename etl::enable_if<!etl::is_same<typename etl::remove_cvref<TMessage>::type, etl::message_packet<T1, T2, T3, T4, T5, T6, T7, T8, T9> >::value &&
                                                                     !etl::is_same<typename etl::remove_cvref<TMessage>::type, etl::imessage>::value &&
                                                                     !etl::is_one_of<typename etl::remove_cvref<TMessage>::type, T1, T2, T3, T4, T5, T6, T7, T8, T9>::value, int>::type>
@@ -2379,10 +2653,10 @@ namespace etl
 
       ETL_STATIC_ASSERT(Enabled, "Message not in packet type list");
     }
-  #include "etl/private/diagnostic_pop.h"
+  #include "private/diagnostic_pop.h"
   #else
     //********************************************
-  #include "etl/private/diagnostic_uninitialized_push.h"
+  #include "private/diagnostic_uninitialized_push.h"
     template <typename TMessage>
     explicit message_packet(const TMessage& /*msg*/, typename etl::enable_if<!etl::is_same<typename etl::remove_cvref<TMessage>::type, etl::message_packet<T1, T2, T3, T4, T5, T6, T7, T8, T9> >::value &&
                                                                          !etl::is_same<typename etl::remove_cvref<TMessage>::type, etl::imessage>::value &&
@@ -2396,11 +2670,11 @@ namespace etl
 
       ETL_STATIC_ASSERT(Enabled, "Message not in packet type list");
     }
-  #include "etl/private/diagnostic_pop.h"
+  #include "private/diagnostic_pop.h"
   #endif
 
     //**********************************************
-  #include "etl/private/diagnostic_uninitialized_push.h"
+  #include "private/diagnostic_uninitialized_push.h"
     message_packet(const message_packet& other)
       : valid(other.is_valid())
     {
@@ -2409,11 +2683,11 @@ namespace etl
         add_new_message(other.get());
       }
     }
-  #include "etl/private/diagnostic_pop.h"
+  #include "private/diagnostic_pop.h"
 
   #if ETL_USING_CPP11 && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION)
     //**********************************************
-  #include "etl/private/diagnostic_uninitialized_push.h"
+  #include "private/diagnostic_uninitialized_push.h"
     message_packet(message_packet&& other)
       : valid(other.is_valid())
     {
@@ -2422,10 +2696,11 @@ namespace etl
         add_new_message(etl::move(other.get()));
       }
     }
-  #include "etl/private/diagnostic_pop.h"
+  #include "private/diagnostic_pop.h"
   #endif
 
     //**********************************************
+  #include "private/diagnostic_uninitialized_push.h"
     message_packet& operator =(const message_packet& rhs)
     {
       delete_current_message();
@@ -2437,9 +2712,11 @@ namespace etl
 
       return *this;
     }
+  #include "private/diagnostic_pop.h"
 
   #if ETL_USING_CPP11 && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION)
     //**********************************************
+  #include "private/diagnostic_uninitialized_push.h"
     message_packet& operator =(message_packet&& rhs)
     {
       delete_current_message();
@@ -2451,6 +2728,7 @@ namespace etl
 
       return *this;
     }
+  #include "private/diagnostic_pop.h"
   #endif
 
     //********************************************
@@ -2520,17 +2798,40 @@ namespace etl
   private:
 
     //********************************************
-    #include "etl/private/diagnostic_uninitialized_push.h"
+    #include "private/diagnostic_uninitialized_push.h"
     void delete_current_message()
     {
       if (valid)
       {
         etl::imessage* pmsg = static_cast<etl::imessage*>(data);
 
+
+  #if ETL_HAS_VIRTUAL_MESSAGES
         pmsg->~imessage();
+  #else
+        delete_message(pmsg);
+  #endif
       }
     }
-    #include "etl/private/diagnostic_pop.h"
+    #include "private/diagnostic_pop.h"
+
+    //********************************************
+    void delete_message(etl::imessage* pmsg)
+    {
+      switch (pmsg->get_message_id())
+      {
+        case T1::ID: static_cast<const T1*>(pmsg)->~T1(); break;
+        case T2::ID: static_cast<const T2*>(pmsg)->~T2(); break;
+        case T3::ID: static_cast<const T3*>(pmsg)->~T3(); break;
+        case T4::ID: static_cast<const T4*>(pmsg)->~T4(); break;
+        case T5::ID: static_cast<const T5*>(pmsg)->~T5(); break;
+        case T6::ID: static_cast<const T6*>(pmsg)->~T6(); break;
+        case T7::ID: static_cast<const T7*>(pmsg)->~T7(); break;
+        case T8::ID: static_cast<const T8*>(pmsg)->~T8(); break;
+        case T9::ID: static_cast<const T9*>(pmsg)->~T9(); break;
+        default: ETL_ASSERT_FAIL(ETL_ERROR(unhandled_message_exception)); break;
+      }
+    }
 
     //********************************************
     void add_new_message(const etl::imessage& msg)
@@ -2549,7 +2850,7 @@ namespace etl
         case T7::ID: ::new (p) T7(static_cast<const T7&>(msg)); break;
         case T8::ID: ::new (p) T8(static_cast<const T8&>(msg)); break;
         case T9::ID: ::new (p) T9(static_cast<const T9&>(msg)); break;
-        default: break;
+        default: ETL_ASSERT_FAIL(ETL_ERROR(unhandled_message_exception)); break;
       }
     }
 
@@ -2590,15 +2891,15 @@ namespace etl
   public:
 
     //********************************************
-  #include "etl/private/diagnostic_uninitialized_push.h"
+  #include "private/diagnostic_uninitialized_push.h"
     message_packet()
       : valid(false)
     {
     }
-  #include "etl/private/diagnostic_pop.h"
+  #include "private/diagnostic_pop.h"
 
     //********************************************
-  #include "etl/private/diagnostic_uninitialized_push.h"
+  #include "private/diagnostic_uninitialized_push.h"
     explicit message_packet(const etl::imessage& msg)
     {
       if (accepts(msg))
@@ -2613,11 +2914,11 @@ namespace etl
 
       ETL_ASSERT(valid, ETL_ERROR(unhandled_message_exception));
     }
-  #include "etl/private/diagnostic_pop.h"
+  #include "private/diagnostic_pop.h"
 
   #if ETL_USING_CPP11 && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION)
     //********************************************
-  #include "etl/private/diagnostic_uninitialized_push.h"
+  #include "private/diagnostic_uninitialized_push.h"
     explicit message_packet(etl::imessage&& msg)
     {
       if (accepts(msg))
@@ -2632,12 +2933,12 @@ namespace etl
 
       ETL_ASSERT(valid, ETL_ERROR(unhandled_message_exception));
     }
-  #include "etl/private/diagnostic_pop.h"
+  #include "private/diagnostic_pop.h"
   #endif
 
   #if ETL_USING_CPP11 && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION) && !defined(ETL_COMPILER_GREEN_HILLS)
     //********************************************
-  #include "etl/private/diagnostic_uninitialized_push.h"
+  #include "private/diagnostic_uninitialized_push.h"
     template <typename TMessage, typename = typename etl::enable_if<!etl::is_same<typename etl::remove_cvref<TMessage>::type, etl::message_packet<T1, T2, T3, T4, T5, T6, T7, T8> >::value &&
                                                                     !etl::is_same<typename etl::remove_cvref<TMessage>::type, etl::imessage>::value &&
                                                                     !etl::is_one_of<typename etl::remove_cvref<TMessage>::type, T1, T2, T3, T4, T5, T6, T7, T8>::value, int>::type>
@@ -2651,10 +2952,10 @@ namespace etl
 
       ETL_STATIC_ASSERT(Enabled, "Message not in packet type list");
     }
-  #include "etl/private/diagnostic_pop.h"
+  #include "private/diagnostic_pop.h"
   #else
     //********************************************
-  #include "etl/private/diagnostic_uninitialized_push.h"
+  #include "private/diagnostic_uninitialized_push.h"
     template <typename TMessage>
     explicit message_packet(const TMessage& /*msg*/, typename etl::enable_if<!etl::is_same<typename etl::remove_cvref<TMessage>::type, etl::message_packet<T1, T2, T3, T4, T5, T6, T7, T8> >::value &&
                                                                          !etl::is_same<typename etl::remove_cvref<TMessage>::type, etl::imessage>::value &&
@@ -2668,11 +2969,11 @@ namespace etl
 
       ETL_STATIC_ASSERT(Enabled, "Message not in packet type list");
     }
-  #include "etl/private/diagnostic_pop.h"
+  #include "private/diagnostic_pop.h"
   #endif
 
     //**********************************************
-  #include "etl/private/diagnostic_uninitialized_push.h"
+  #include "private/diagnostic_uninitialized_push.h"
     message_packet(const message_packet& other)
       : valid(other.is_valid())
     {
@@ -2681,11 +2982,11 @@ namespace etl
         add_new_message(other.get());
       }
     }
-  #include "etl/private/diagnostic_pop.h"
+  #include "private/diagnostic_pop.h"
 
   #if ETL_USING_CPP11 && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION)
     //**********************************************
-  #include "etl/private/diagnostic_uninitialized_push.h"
+  #include "private/diagnostic_uninitialized_push.h"
     message_packet(message_packet&& other)
       : valid(other.is_valid())
     {
@@ -2694,10 +2995,11 @@ namespace etl
         add_new_message(etl::move(other.get()));
       }
     }
-  #include "etl/private/diagnostic_pop.h"
+  #include "private/diagnostic_pop.h"
   #endif
 
     //**********************************************
+  #include "private/diagnostic_uninitialized_push.h"
     message_packet& operator =(const message_packet& rhs)
     {
       delete_current_message();
@@ -2709,9 +3011,11 @@ namespace etl
 
       return *this;
     }
+  #include "private/diagnostic_pop.h"
 
   #if ETL_USING_CPP11 && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION)
     //**********************************************
+  #include "private/diagnostic_uninitialized_push.h"
     message_packet& operator =(message_packet&& rhs)
     {
       delete_current_message();
@@ -2723,6 +3027,7 @@ namespace etl
 
       return *this;
     }
+  #include "private/diagnostic_pop.h"
   #endif
 
     //********************************************
@@ -2789,17 +3094,39 @@ namespace etl
   private:
 
     //********************************************
-    #include "etl/private/diagnostic_uninitialized_push.h"
+    #include "private/diagnostic_uninitialized_push.h"
     void delete_current_message()
     {
       if (valid)
       {
         etl::imessage* pmsg = static_cast<etl::imessage*>(data);
 
+
+  #if ETL_HAS_VIRTUAL_MESSAGES
         pmsg->~imessage();
+  #else
+        delete_message(pmsg);
+  #endif
       }
     }
-    #include "etl/private/diagnostic_pop.h"
+    #include "private/diagnostic_pop.h"
+
+    //********************************************
+    void delete_message(etl::imessage* pmsg)
+    {
+      switch (pmsg->get_message_id())
+      {
+        case T1::ID: static_cast<const T1*>(pmsg)->~T1(); break;
+        case T2::ID: static_cast<const T2*>(pmsg)->~T2(); break;
+        case T3::ID: static_cast<const T3*>(pmsg)->~T3(); break;
+        case T4::ID: static_cast<const T4*>(pmsg)->~T4(); break;
+        case T5::ID: static_cast<const T5*>(pmsg)->~T5(); break;
+        case T6::ID: static_cast<const T6*>(pmsg)->~T6(); break;
+        case T7::ID: static_cast<const T7*>(pmsg)->~T7(); break;
+        case T8::ID: static_cast<const T8*>(pmsg)->~T8(); break;
+        default: ETL_ASSERT_FAIL(ETL_ERROR(unhandled_message_exception)); break;
+      }
+    }
 
     //********************************************
     void add_new_message(const etl::imessage& msg)
@@ -2817,7 +3144,7 @@ namespace etl
         case T6::ID: ::new (p) T6(static_cast<const T6&>(msg)); break;
         case T7::ID: ::new (p) T7(static_cast<const T7&>(msg)); break;
         case T8::ID: ::new (p) T8(static_cast<const T8&>(msg)); break;
-        default: break;
+        default: ETL_ASSERT_FAIL(ETL_ERROR(unhandled_message_exception)); break;
       }
     }
 
@@ -2857,15 +3184,15 @@ namespace etl
   public:
 
     //********************************************
-  #include "etl/private/diagnostic_uninitialized_push.h"
+  #include "private/diagnostic_uninitialized_push.h"
     message_packet()
       : valid(false)
     {
     }
-  #include "etl/private/diagnostic_pop.h"
+  #include "private/diagnostic_pop.h"
 
     //********************************************
-  #include "etl/private/diagnostic_uninitialized_push.h"
+  #include "private/diagnostic_uninitialized_push.h"
     explicit message_packet(const etl::imessage& msg)
     {
       if (accepts(msg))
@@ -2880,11 +3207,11 @@ namespace etl
 
       ETL_ASSERT(valid, ETL_ERROR(unhandled_message_exception));
     }
-  #include "etl/private/diagnostic_pop.h"
+  #include "private/diagnostic_pop.h"
 
   #if ETL_USING_CPP11 && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION)
     //********************************************
-  #include "etl/private/diagnostic_uninitialized_push.h"
+  #include "private/diagnostic_uninitialized_push.h"
     explicit message_packet(etl::imessage&& msg)
     {
       if (accepts(msg))
@@ -2899,12 +3226,12 @@ namespace etl
 
       ETL_ASSERT(valid, ETL_ERROR(unhandled_message_exception));
     }
-  #include "etl/private/diagnostic_pop.h"
+  #include "private/diagnostic_pop.h"
   #endif
 
   #if ETL_USING_CPP11 && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION) && !defined(ETL_COMPILER_GREEN_HILLS)
     //********************************************
-  #include "etl/private/diagnostic_uninitialized_push.h"
+  #include "private/diagnostic_uninitialized_push.h"
     template <typename TMessage, typename = typename etl::enable_if<!etl::is_same<typename etl::remove_cvref<TMessage>::type, etl::message_packet<T1, T2, T3, T4, T5, T6, T7> >::value &&
                                                                     !etl::is_same<typename etl::remove_cvref<TMessage>::type, etl::imessage>::value &&
                                                                     !etl::is_one_of<typename etl::remove_cvref<TMessage>::type, T1, T2, T3, T4, T5, T6, T7>::value, int>::type>
@@ -2918,10 +3245,10 @@ namespace etl
 
       ETL_STATIC_ASSERT(Enabled, "Message not in packet type list");
     }
-  #include "etl/private/diagnostic_pop.h"
+  #include "private/diagnostic_pop.h"
   #else
     //********************************************
-  #include "etl/private/diagnostic_uninitialized_push.h"
+  #include "private/diagnostic_uninitialized_push.h"
     template <typename TMessage>
     explicit message_packet(const TMessage& /*msg*/, typename etl::enable_if<!etl::is_same<typename etl::remove_cvref<TMessage>::type, etl::message_packet<T1, T2, T3, T4, T5, T6, T7> >::value &&
                                                                          !etl::is_same<typename etl::remove_cvref<TMessage>::type, etl::imessage>::value &&
@@ -2935,11 +3262,11 @@ namespace etl
 
       ETL_STATIC_ASSERT(Enabled, "Message not in packet type list");
     }
-  #include "etl/private/diagnostic_pop.h"
+  #include "private/diagnostic_pop.h"
   #endif
 
     //**********************************************
-  #include "etl/private/diagnostic_uninitialized_push.h"
+  #include "private/diagnostic_uninitialized_push.h"
     message_packet(const message_packet& other)
       : valid(other.is_valid())
     {
@@ -2948,11 +3275,11 @@ namespace etl
         add_new_message(other.get());
       }
     }
-  #include "etl/private/diagnostic_pop.h"
+  #include "private/diagnostic_pop.h"
 
   #if ETL_USING_CPP11 && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION)
     //**********************************************
-  #include "etl/private/diagnostic_uninitialized_push.h"
+  #include "private/diagnostic_uninitialized_push.h"
     message_packet(message_packet&& other)
       : valid(other.is_valid())
     {
@@ -2961,10 +3288,11 @@ namespace etl
         add_new_message(etl::move(other.get()));
       }
     }
-  #include "etl/private/diagnostic_pop.h"
+  #include "private/diagnostic_pop.h"
   #endif
 
     //**********************************************
+  #include "private/diagnostic_uninitialized_push.h"
     message_packet& operator =(const message_packet& rhs)
     {
       delete_current_message();
@@ -2976,9 +3304,11 @@ namespace etl
 
       return *this;
     }
+  #include "private/diagnostic_pop.h"
 
   #if ETL_USING_CPP11 && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION)
     //**********************************************
+  #include "private/diagnostic_uninitialized_push.h"
     message_packet& operator =(message_packet&& rhs)
     {
       delete_current_message();
@@ -2990,6 +3320,7 @@ namespace etl
 
       return *this;
     }
+  #include "private/diagnostic_pop.h"
   #endif
 
     //********************************************
@@ -3056,17 +3387,38 @@ namespace etl
   private:
 
     //********************************************
-    #include "etl/private/diagnostic_uninitialized_push.h"
+    #include "private/diagnostic_uninitialized_push.h"
     void delete_current_message()
     {
       if (valid)
       {
         etl::imessage* pmsg = static_cast<etl::imessage*>(data);
 
+
+  #if ETL_HAS_VIRTUAL_MESSAGES
         pmsg->~imessage();
+  #else
+        delete_message(pmsg);
+  #endif
       }
     }
-    #include "etl/private/diagnostic_pop.h"
+    #include "private/diagnostic_pop.h"
+
+    //********************************************
+    void delete_message(etl::imessage* pmsg)
+    {
+      switch (pmsg->get_message_id())
+      {
+        case T1::ID: static_cast<const T1*>(pmsg)->~T1(); break;
+        case T2::ID: static_cast<const T2*>(pmsg)->~T2(); break;
+        case T3::ID: static_cast<const T3*>(pmsg)->~T3(); break;
+        case T4::ID: static_cast<const T4*>(pmsg)->~T4(); break;
+        case T5::ID: static_cast<const T5*>(pmsg)->~T5(); break;
+        case T6::ID: static_cast<const T6*>(pmsg)->~T6(); break;
+        case T7::ID: static_cast<const T7*>(pmsg)->~T7(); break;
+        default: ETL_ASSERT_FAIL(ETL_ERROR(unhandled_message_exception)); break;
+      }
+    }
 
     //********************************************
     void add_new_message(const etl::imessage& msg)
@@ -3083,7 +3435,7 @@ namespace etl
         case T5::ID: ::new (p) T5(static_cast<const T5&>(msg)); break;
         case T6::ID: ::new (p) T6(static_cast<const T6&>(msg)); break;
         case T7::ID: ::new (p) T7(static_cast<const T7&>(msg)); break;
-        default: break;
+        default: ETL_ASSERT_FAIL(ETL_ERROR(unhandled_message_exception)); break;
       }
     }
 
@@ -3122,15 +3474,15 @@ namespace etl
   public:
 
     //********************************************
-  #include "etl/private/diagnostic_uninitialized_push.h"
+  #include "private/diagnostic_uninitialized_push.h"
     message_packet()
       : valid(false)
     {
     }
-  #include "etl/private/diagnostic_pop.h"
+  #include "private/diagnostic_pop.h"
 
     //********************************************
-  #include "etl/private/diagnostic_uninitialized_push.h"
+  #include "private/diagnostic_uninitialized_push.h"
     explicit message_packet(const etl::imessage& msg)
     {
       if (accepts(msg))
@@ -3145,11 +3497,11 @@ namespace etl
 
       ETL_ASSERT(valid, ETL_ERROR(unhandled_message_exception));
     }
-  #include "etl/private/diagnostic_pop.h"
+  #include "private/diagnostic_pop.h"
 
   #if ETL_USING_CPP11 && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION)
     //********************************************
-  #include "etl/private/diagnostic_uninitialized_push.h"
+  #include "private/diagnostic_uninitialized_push.h"
     explicit message_packet(etl::imessage&& msg)
     {
       if (accepts(msg))
@@ -3164,12 +3516,12 @@ namespace etl
 
       ETL_ASSERT(valid, ETL_ERROR(unhandled_message_exception));
     }
-  #include "etl/private/diagnostic_pop.h"
+  #include "private/diagnostic_pop.h"
   #endif
 
   #if ETL_USING_CPP11 && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION) && !defined(ETL_COMPILER_GREEN_HILLS)
     //********************************************
-  #include "etl/private/diagnostic_uninitialized_push.h"
+  #include "private/diagnostic_uninitialized_push.h"
     template <typename TMessage, typename = typename etl::enable_if<!etl::is_same<typename etl::remove_cvref<TMessage>::type, etl::message_packet<T1, T2, T3, T4, T5, T6> >::value &&
                                                                     !etl::is_same<typename etl::remove_cvref<TMessage>::type, etl::imessage>::value &&
                                                                     !etl::is_one_of<typename etl::remove_cvref<TMessage>::type, T1, T2, T3, T4, T5, T6>::value, int>::type>
@@ -3183,10 +3535,10 @@ namespace etl
 
       ETL_STATIC_ASSERT(Enabled, "Message not in packet type list");
     }
-  #include "etl/private/diagnostic_pop.h"
+  #include "private/diagnostic_pop.h"
   #else
     //********************************************
-  #include "etl/private/diagnostic_uninitialized_push.h"
+  #include "private/diagnostic_uninitialized_push.h"
     template <typename TMessage>
     explicit message_packet(const TMessage& /*msg*/, typename etl::enable_if<!etl::is_same<typename etl::remove_cvref<TMessage>::type, etl::message_packet<T1, T2, T3, T4, T5, T6> >::value &&
                                                                          !etl::is_same<typename etl::remove_cvref<TMessage>::type, etl::imessage>::value &&
@@ -3200,11 +3552,11 @@ namespace etl
 
       ETL_STATIC_ASSERT(Enabled, "Message not in packet type list");
     }
-  #include "etl/private/diagnostic_pop.h"
+  #include "private/diagnostic_pop.h"
   #endif
 
     //**********************************************
-  #include "etl/private/diagnostic_uninitialized_push.h"
+  #include "private/diagnostic_uninitialized_push.h"
     message_packet(const message_packet& other)
       : valid(other.is_valid())
     {
@@ -3213,11 +3565,11 @@ namespace etl
         add_new_message(other.get());
       }
     }
-  #include "etl/private/diagnostic_pop.h"
+  #include "private/diagnostic_pop.h"
 
   #if ETL_USING_CPP11 && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION)
     //**********************************************
-  #include "etl/private/diagnostic_uninitialized_push.h"
+  #include "private/diagnostic_uninitialized_push.h"
     message_packet(message_packet&& other)
       : valid(other.is_valid())
     {
@@ -3226,10 +3578,11 @@ namespace etl
         add_new_message(etl::move(other.get()));
       }
     }
-  #include "etl/private/diagnostic_pop.h"
+  #include "private/diagnostic_pop.h"
   #endif
 
     //**********************************************
+  #include "private/diagnostic_uninitialized_push.h"
     message_packet& operator =(const message_packet& rhs)
     {
       delete_current_message();
@@ -3241,9 +3594,11 @@ namespace etl
 
       return *this;
     }
+  #include "private/diagnostic_pop.h"
 
   #if ETL_USING_CPP11 && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION)
     //**********************************************
+  #include "private/diagnostic_uninitialized_push.h"
     message_packet& operator =(message_packet&& rhs)
     {
       delete_current_message();
@@ -3255,6 +3610,7 @@ namespace etl
 
       return *this;
     }
+  #include "private/diagnostic_pop.h"
   #endif
 
     //********************************************
@@ -3321,17 +3677,37 @@ namespace etl
   private:
 
     //********************************************
-    #include "etl/private/diagnostic_uninitialized_push.h"
+    #include "private/diagnostic_uninitialized_push.h"
     void delete_current_message()
     {
       if (valid)
       {
         etl::imessage* pmsg = static_cast<etl::imessage*>(data);
 
+
+  #if ETL_HAS_VIRTUAL_MESSAGES
         pmsg->~imessage();
+  #else
+        delete_message(pmsg);
+  #endif
       }
     }
-    #include "etl/private/diagnostic_pop.h"
+    #include "private/diagnostic_pop.h"
+
+    //********************************************
+    void delete_message(etl::imessage* pmsg)
+    {
+      switch (pmsg->get_message_id())
+      {
+        case T1::ID: static_cast<const T1*>(pmsg)->~T1(); break;
+        case T2::ID: static_cast<const T2*>(pmsg)->~T2(); break;
+        case T3::ID: static_cast<const T3*>(pmsg)->~T3(); break;
+        case T4::ID: static_cast<const T4*>(pmsg)->~T4(); break;
+        case T5::ID: static_cast<const T5*>(pmsg)->~T5(); break;
+        case T6::ID: static_cast<const T6*>(pmsg)->~T6(); break;
+        default: ETL_ASSERT_FAIL(ETL_ERROR(unhandled_message_exception)); break;
+      }
+    }
 
     //********************************************
     void add_new_message(const etl::imessage& msg)
@@ -3347,7 +3723,7 @@ namespace etl
         case T4::ID: ::new (p) T4(static_cast<const T4&>(msg)); break;
         case T5::ID: ::new (p) T5(static_cast<const T5&>(msg)); break;
         case T6::ID: ::new (p) T6(static_cast<const T6&>(msg)); break;
-        default: break;
+        default: ETL_ASSERT_FAIL(ETL_ERROR(unhandled_message_exception)); break;
       }
     }
 
@@ -3385,15 +3761,15 @@ namespace etl
   public:
 
     //********************************************
-  #include "etl/private/diagnostic_uninitialized_push.h"
+  #include "private/diagnostic_uninitialized_push.h"
     message_packet()
       : valid(false)
     {
     }
-  #include "etl/private/diagnostic_pop.h"
+  #include "private/diagnostic_pop.h"
 
     //********************************************
-  #include "etl/private/diagnostic_uninitialized_push.h"
+  #include "private/diagnostic_uninitialized_push.h"
     explicit message_packet(const etl::imessage& msg)
     {
       if (accepts(msg))
@@ -3408,11 +3784,11 @@ namespace etl
 
       ETL_ASSERT(valid, ETL_ERROR(unhandled_message_exception));
     }
-  #include "etl/private/diagnostic_pop.h"
+  #include "private/diagnostic_pop.h"
 
   #if ETL_USING_CPP11 && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION)
     //********************************************
-  #include "etl/private/diagnostic_uninitialized_push.h"
+  #include "private/diagnostic_uninitialized_push.h"
     explicit message_packet(etl::imessage&& msg)
     {
       if (accepts(msg))
@@ -3427,12 +3803,12 @@ namespace etl
 
       ETL_ASSERT(valid, ETL_ERROR(unhandled_message_exception));
     }
-  #include "etl/private/diagnostic_pop.h"
+  #include "private/diagnostic_pop.h"
   #endif
 
   #if ETL_USING_CPP11 && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION) && !defined(ETL_COMPILER_GREEN_HILLS)
     //********************************************
-  #include "etl/private/diagnostic_uninitialized_push.h"
+  #include "private/diagnostic_uninitialized_push.h"
     template <typename TMessage, typename = typename etl::enable_if<!etl::is_same<typename etl::remove_cvref<TMessage>::type, etl::message_packet<T1, T2, T3, T4, T5> >::value &&
                                                                     !etl::is_same<typename etl::remove_cvref<TMessage>::type, etl::imessage>::value &&
                                                                     !etl::is_one_of<typename etl::remove_cvref<TMessage>::type, T1, T2, T3, T4, T5>::value, int>::type>
@@ -3446,10 +3822,10 @@ namespace etl
 
       ETL_STATIC_ASSERT(Enabled, "Message not in packet type list");
     }
-  #include "etl/private/diagnostic_pop.h"
+  #include "private/diagnostic_pop.h"
   #else
     //********************************************
-  #include "etl/private/diagnostic_uninitialized_push.h"
+  #include "private/diagnostic_uninitialized_push.h"
     template <typename TMessage>
     explicit message_packet(const TMessage& /*msg*/, typename etl::enable_if<!etl::is_same<typename etl::remove_cvref<TMessage>::type, etl::message_packet<T1, T2, T3, T4, T5> >::value &&
                                                                          !etl::is_same<typename etl::remove_cvref<TMessage>::type, etl::imessage>::value &&
@@ -3463,11 +3839,11 @@ namespace etl
 
       ETL_STATIC_ASSERT(Enabled, "Message not in packet type list");
     }
-  #include "etl/private/diagnostic_pop.h"
+  #include "private/diagnostic_pop.h"
   #endif
 
     //**********************************************
-  #include "etl/private/diagnostic_uninitialized_push.h"
+  #include "private/diagnostic_uninitialized_push.h"
     message_packet(const message_packet& other)
       : valid(other.is_valid())
     {
@@ -3476,11 +3852,11 @@ namespace etl
         add_new_message(other.get());
       }
     }
-  #include "etl/private/diagnostic_pop.h"
+  #include "private/diagnostic_pop.h"
 
   #if ETL_USING_CPP11 && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION)
     //**********************************************
-  #include "etl/private/diagnostic_uninitialized_push.h"
+  #include "private/diagnostic_uninitialized_push.h"
     message_packet(message_packet&& other)
       : valid(other.is_valid())
     {
@@ -3489,10 +3865,11 @@ namespace etl
         add_new_message(etl::move(other.get()));
       }
     }
-  #include "etl/private/diagnostic_pop.h"
+  #include "private/diagnostic_pop.h"
   #endif
 
     //**********************************************
+  #include "private/diagnostic_uninitialized_push.h"
     message_packet& operator =(const message_packet& rhs)
     {
       delete_current_message();
@@ -3504,9 +3881,11 @@ namespace etl
 
       return *this;
     }
+  #include "private/diagnostic_pop.h"
 
   #if ETL_USING_CPP11 && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION)
     //**********************************************
+  #include "private/diagnostic_uninitialized_push.h"
     message_packet& operator =(message_packet&& rhs)
     {
       delete_current_message();
@@ -3518,6 +3897,7 @@ namespace etl
 
       return *this;
     }
+  #include "private/diagnostic_pop.h"
   #endif
 
     //********************************************
@@ -3584,17 +3964,36 @@ namespace etl
   private:
 
     //********************************************
-    #include "etl/private/diagnostic_uninitialized_push.h"
+    #include "private/diagnostic_uninitialized_push.h"
     void delete_current_message()
     {
       if (valid)
       {
         etl::imessage* pmsg = static_cast<etl::imessage*>(data);
 
+
+  #if ETL_HAS_VIRTUAL_MESSAGES
         pmsg->~imessage();
+  #else
+        delete_message(pmsg);
+  #endif
       }
     }
-    #include "etl/private/diagnostic_pop.h"
+    #include "private/diagnostic_pop.h"
+
+    //********************************************
+    void delete_message(etl::imessage* pmsg)
+    {
+      switch (pmsg->get_message_id())
+      {
+        case T1::ID: static_cast<const T1*>(pmsg)->~T1(); break;
+        case T2::ID: static_cast<const T2*>(pmsg)->~T2(); break;
+        case T3::ID: static_cast<const T3*>(pmsg)->~T3(); break;
+        case T4::ID: static_cast<const T4*>(pmsg)->~T4(); break;
+        case T5::ID: static_cast<const T5*>(pmsg)->~T5(); break;
+        default: ETL_ASSERT_FAIL(ETL_ERROR(unhandled_message_exception)); break;
+      }
+    }
 
     //********************************************
     void add_new_message(const etl::imessage& msg)
@@ -3609,7 +4008,7 @@ namespace etl
         case T3::ID: ::new (p) T3(static_cast<const T3&>(msg)); break;
         case T4::ID: ::new (p) T4(static_cast<const T4&>(msg)); break;
         case T5::ID: ::new (p) T5(static_cast<const T5&>(msg)); break;
-        default: break;
+        default: ETL_ASSERT_FAIL(ETL_ERROR(unhandled_message_exception)); break;
       }
     }
 
@@ -3645,15 +4044,15 @@ namespace etl
   public:
 
     //********************************************
-  #include "etl/private/diagnostic_uninitialized_push.h"
+  #include "private/diagnostic_uninitialized_push.h"
     message_packet()
       : valid(false)
     {
     }
-  #include "etl/private/diagnostic_pop.h"
+  #include "private/diagnostic_pop.h"
 
     //********************************************
-  #include "etl/private/diagnostic_uninitialized_push.h"
+  #include "private/diagnostic_uninitialized_push.h"
     explicit message_packet(const etl::imessage& msg)
     {
       if (accepts(msg))
@@ -3668,11 +4067,11 @@ namespace etl
 
       ETL_ASSERT(valid, ETL_ERROR(unhandled_message_exception));
     }
-  #include "etl/private/diagnostic_pop.h"
+  #include "private/diagnostic_pop.h"
 
   #if ETL_USING_CPP11 && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION)
     //********************************************
-  #include "etl/private/diagnostic_uninitialized_push.h"
+  #include "private/diagnostic_uninitialized_push.h"
     explicit message_packet(etl::imessage&& msg)
     {
       if (accepts(msg))
@@ -3687,12 +4086,12 @@ namespace etl
 
       ETL_ASSERT(valid, ETL_ERROR(unhandled_message_exception));
     }
-  #include "etl/private/diagnostic_pop.h"
+  #include "private/diagnostic_pop.h"
   #endif
 
   #if ETL_USING_CPP11 && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION) && !defined(ETL_COMPILER_GREEN_HILLS)
     //********************************************
-  #include "etl/private/diagnostic_uninitialized_push.h"
+  #include "private/diagnostic_uninitialized_push.h"
     template <typename TMessage, typename = typename etl::enable_if<!etl::is_same<typename etl::remove_cvref<TMessage>::type, etl::message_packet<T1, T2, T3, T4> >::value &&
                                                                     !etl::is_same<typename etl::remove_cvref<TMessage>::type, etl::imessage>::value &&
                                                                     !etl::is_one_of<typename etl::remove_cvref<TMessage>::type, T1, T2, T3, T4>::value, int>::type>
@@ -3706,10 +4105,10 @@ namespace etl
 
       ETL_STATIC_ASSERT(Enabled, "Message not in packet type list");
     }
-  #include "etl/private/diagnostic_pop.h"
+  #include "private/diagnostic_pop.h"
   #else
     //********************************************
-  #include "etl/private/diagnostic_uninitialized_push.h"
+  #include "private/diagnostic_uninitialized_push.h"
     template <typename TMessage>
     explicit message_packet(const TMessage& /*msg*/, typename etl::enable_if<!etl::is_same<typename etl::remove_cvref<TMessage>::type, etl::message_packet<T1, T2, T3, T4> >::value &&
                                                                          !etl::is_same<typename etl::remove_cvref<TMessage>::type, etl::imessage>::value &&
@@ -3723,11 +4122,11 @@ namespace etl
 
       ETL_STATIC_ASSERT(Enabled, "Message not in packet type list");
     }
-  #include "etl/private/diagnostic_pop.h"
+  #include "private/diagnostic_pop.h"
   #endif
 
     //**********************************************
-  #include "etl/private/diagnostic_uninitialized_push.h"
+  #include "private/diagnostic_uninitialized_push.h"
     message_packet(const message_packet& other)
       : valid(other.is_valid())
     {
@@ -3736,11 +4135,11 @@ namespace etl
         add_new_message(other.get());
       }
     }
-  #include "etl/private/diagnostic_pop.h"
+  #include "private/diagnostic_pop.h"
 
   #if ETL_USING_CPP11 && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION)
     //**********************************************
-  #include "etl/private/diagnostic_uninitialized_push.h"
+  #include "private/diagnostic_uninitialized_push.h"
     message_packet(message_packet&& other)
       : valid(other.is_valid())
     {
@@ -3749,10 +4148,11 @@ namespace etl
         add_new_message(etl::move(other.get()));
       }
     }
-  #include "etl/private/diagnostic_pop.h"
+  #include "private/diagnostic_pop.h"
   #endif
 
     //**********************************************
+  #include "private/diagnostic_uninitialized_push.h"
     message_packet& operator =(const message_packet& rhs)
     {
       delete_current_message();
@@ -3764,9 +4164,11 @@ namespace etl
 
       return *this;
     }
+  #include "private/diagnostic_pop.h"
 
   #if ETL_USING_CPP11 && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION)
     //**********************************************
+  #include "private/diagnostic_uninitialized_push.h"
     message_packet& operator =(message_packet&& rhs)
     {
       delete_current_message();
@@ -3778,6 +4180,7 @@ namespace etl
 
       return *this;
     }
+  #include "private/diagnostic_pop.h"
   #endif
 
     //********************************************
@@ -3841,17 +4244,35 @@ namespace etl
   private:
 
     //********************************************
-    #include "etl/private/diagnostic_uninitialized_push.h"
+    #include "private/diagnostic_uninitialized_push.h"
     void delete_current_message()
     {
       if (valid)
       {
         etl::imessage* pmsg = static_cast<etl::imessage*>(data);
 
+
+  #if ETL_HAS_VIRTUAL_MESSAGES
         pmsg->~imessage();
+  #else
+        delete_message(pmsg);
+  #endif
       }
     }
-    #include "etl/private/diagnostic_pop.h"
+    #include "private/diagnostic_pop.h"
+
+    //********************************************
+    void delete_message(etl::imessage* pmsg)
+    {
+      switch (pmsg->get_message_id())
+      {
+        case T1::ID: static_cast<const T1*>(pmsg)->~T1(); break;
+        case T2::ID: static_cast<const T2*>(pmsg)->~T2(); break;
+        case T3::ID: static_cast<const T3*>(pmsg)->~T3(); break;
+        case T4::ID: static_cast<const T4*>(pmsg)->~T4(); break;
+        default: ETL_ASSERT_FAIL(ETL_ERROR(unhandled_message_exception)); break;
+      }
+    }
 
     //********************************************
     void add_new_message(const etl::imessage& msg)
@@ -3865,7 +4286,7 @@ namespace etl
         case T2::ID: ::new (p) T2(static_cast<const T2&>(msg)); break;
         case T3::ID: ::new (p) T3(static_cast<const T3&>(msg)); break;
         case T4::ID: ::new (p) T4(static_cast<const T4&>(msg)); break;
-        default: break;
+        default: ETL_ASSERT_FAIL(ETL_ERROR(unhandled_message_exception)); break;
       }
     }
 
@@ -3900,15 +4321,15 @@ namespace etl
   public:
 
     //********************************************
-  #include "etl/private/diagnostic_uninitialized_push.h"
+  #include "private/diagnostic_uninitialized_push.h"
     message_packet()
       : valid(false)
     {
     }
-  #include "etl/private/diagnostic_pop.h"
+  #include "private/diagnostic_pop.h"
 
     //********************************************
-  #include "etl/private/diagnostic_uninitialized_push.h"
+  #include "private/diagnostic_uninitialized_push.h"
     explicit message_packet(const etl::imessage& msg)
     {
       if (accepts(msg))
@@ -3923,11 +4344,11 @@ namespace etl
 
       ETL_ASSERT(valid, ETL_ERROR(unhandled_message_exception));
     }
-  #include "etl/private/diagnostic_pop.h"
+  #include "private/diagnostic_pop.h"
 
   #if ETL_USING_CPP11 && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION)
     //********************************************
-  #include "etl/private/diagnostic_uninitialized_push.h"
+  #include "private/diagnostic_uninitialized_push.h"
     explicit message_packet(etl::imessage&& msg)
     {
       if (accepts(msg))
@@ -3942,12 +4363,12 @@ namespace etl
 
       ETL_ASSERT(valid, ETL_ERROR(unhandled_message_exception));
     }
-  #include "etl/private/diagnostic_pop.h"
+  #include "private/diagnostic_pop.h"
   #endif
 
   #if ETL_USING_CPP11 && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION) && !defined(ETL_COMPILER_GREEN_HILLS)
     //********************************************
-  #include "etl/private/diagnostic_uninitialized_push.h"
+  #include "private/diagnostic_uninitialized_push.h"
     template <typename TMessage, typename = typename etl::enable_if<!etl::is_same<typename etl::remove_cvref<TMessage>::type, etl::message_packet<T1, T2, T3> >::value &&
                                                                     !etl::is_same<typename etl::remove_cvref<TMessage>::type, etl::imessage>::value &&
                                                                     !etl::is_one_of<typename etl::remove_cvref<TMessage>::type, T1, T2, T3>::value, int>::type>
@@ -3961,10 +4382,10 @@ namespace etl
 
       ETL_STATIC_ASSERT(Enabled, "Message not in packet type list");
     }
-  #include "etl/private/diagnostic_pop.h"
+  #include "private/diagnostic_pop.h"
   #else
     //********************************************
-  #include "etl/private/diagnostic_uninitialized_push.h"
+  #include "private/diagnostic_uninitialized_push.h"
     template <typename TMessage>
     explicit message_packet(const TMessage& /*msg*/, typename etl::enable_if<!etl::is_same<typename etl::remove_cvref<TMessage>::type, etl::message_packet<T1, T2, T3> >::value &&
                                                                          !etl::is_same<typename etl::remove_cvref<TMessage>::type, etl::imessage>::value &&
@@ -3978,11 +4399,11 @@ namespace etl
 
       ETL_STATIC_ASSERT(Enabled, "Message not in packet type list");
     }
-  #include "etl/private/diagnostic_pop.h"
+  #include "private/diagnostic_pop.h"
   #endif
 
     //**********************************************
-  #include "etl/private/diagnostic_uninitialized_push.h"
+  #include "private/diagnostic_uninitialized_push.h"
     message_packet(const message_packet& other)
       : valid(other.is_valid())
     {
@@ -3991,11 +4412,11 @@ namespace etl
         add_new_message(other.get());
       }
     }
-  #include "etl/private/diagnostic_pop.h"
+  #include "private/diagnostic_pop.h"
 
   #if ETL_USING_CPP11 && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION)
     //**********************************************
-  #include "etl/private/diagnostic_uninitialized_push.h"
+  #include "private/diagnostic_uninitialized_push.h"
     message_packet(message_packet&& other)
       : valid(other.is_valid())
     {
@@ -4004,10 +4425,11 @@ namespace etl
         add_new_message(etl::move(other.get()));
       }
     }
-  #include "etl/private/diagnostic_pop.h"
+  #include "private/diagnostic_pop.h"
   #endif
 
     //**********************************************
+  #include "private/diagnostic_uninitialized_push.h"
     message_packet& operator =(const message_packet& rhs)
     {
       delete_current_message();
@@ -4019,9 +4441,11 @@ namespace etl
 
       return *this;
     }
+  #include "private/diagnostic_pop.h"
 
   #if ETL_USING_CPP11 && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION)
     //**********************************************
+  #include "private/diagnostic_uninitialized_push.h"
     message_packet& operator =(message_packet&& rhs)
     {
       delete_current_message();
@@ -4033,6 +4457,7 @@ namespace etl
 
       return *this;
     }
+  #include "private/diagnostic_pop.h"
   #endif
 
     //********************************************
@@ -4096,17 +4521,34 @@ namespace etl
   private:
 
     //********************************************
-    #include "etl/private/diagnostic_uninitialized_push.h"
+    #include "private/diagnostic_uninitialized_push.h"
     void delete_current_message()
     {
       if (valid)
       {
         etl::imessage* pmsg = static_cast<etl::imessage*>(data);
 
+
+  #if ETL_HAS_VIRTUAL_MESSAGES
         pmsg->~imessage();
+  #else
+        delete_message(pmsg);
+  #endif
       }
     }
-    #include "etl/private/diagnostic_pop.h"
+    #include "private/diagnostic_pop.h"
+
+    //********************************************
+    void delete_message(etl::imessage* pmsg)
+    {
+      switch (pmsg->get_message_id())
+      {
+        case T1::ID: static_cast<const T1*>(pmsg)->~T1(); break;
+        case T2::ID: static_cast<const T2*>(pmsg)->~T2(); break;
+        case T3::ID: static_cast<const T3*>(pmsg)->~T3(); break;
+        default: ETL_ASSERT_FAIL(ETL_ERROR(unhandled_message_exception)); break;
+      }
+    }
 
     //********************************************
     void add_new_message(const etl::imessage& msg)
@@ -4119,7 +4561,7 @@ namespace etl
         case T1::ID: ::new (p) T1(static_cast<const T1&>(msg)); break;
         case T2::ID: ::new (p) T2(static_cast<const T2&>(msg)); break;
         case T3::ID: ::new (p) T3(static_cast<const T3&>(msg)); break;
-        default: break;
+        default: ETL_ASSERT_FAIL(ETL_ERROR(unhandled_message_exception)); break;
       }
     }
 
@@ -4153,15 +4595,15 @@ namespace etl
   public:
 
     //********************************************
-  #include "etl/private/diagnostic_uninitialized_push.h"
+  #include "private/diagnostic_uninitialized_push.h"
     message_packet()
       : valid(false)
     {
     }
-  #include "etl/private/diagnostic_pop.h"
+  #include "private/diagnostic_pop.h"
 
     //********************************************
-  #include "etl/private/diagnostic_uninitialized_push.h"
+  #include "private/diagnostic_uninitialized_push.h"
     explicit message_packet(const etl::imessage& msg)
     {
       if (accepts(msg))
@@ -4176,11 +4618,11 @@ namespace etl
 
       ETL_ASSERT(valid, ETL_ERROR(unhandled_message_exception));
     }
-  #include "etl/private/diagnostic_pop.h"
+  #include "private/diagnostic_pop.h"
 
   #if ETL_USING_CPP11 && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION)
     //********************************************
-  #include "etl/private/diagnostic_uninitialized_push.h"
+  #include "private/diagnostic_uninitialized_push.h"
     explicit message_packet(etl::imessage&& msg)
     {
       if (accepts(msg))
@@ -4195,12 +4637,12 @@ namespace etl
 
       ETL_ASSERT(valid, ETL_ERROR(unhandled_message_exception));
     }
-  #include "etl/private/diagnostic_pop.h"
+  #include "private/diagnostic_pop.h"
   #endif
 
   #if ETL_USING_CPP11 && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION) && !defined(ETL_COMPILER_GREEN_HILLS)
     //********************************************
-  #include "etl/private/diagnostic_uninitialized_push.h"
+  #include "private/diagnostic_uninitialized_push.h"
     template <typename TMessage, typename = typename etl::enable_if<!etl::is_same<typename etl::remove_cvref<TMessage>::type, etl::message_packet<T1, T2> >::value &&
                                                                     !etl::is_same<typename etl::remove_cvref<TMessage>::type, etl::imessage>::value &&
                                                                     !etl::is_one_of<typename etl::remove_cvref<TMessage>::type, T1, T2>::value, int>::type>
@@ -4214,10 +4656,10 @@ namespace etl
 
       ETL_STATIC_ASSERT(Enabled, "Message not in packet type list");
     }
-  #include "etl/private/diagnostic_pop.h"
+  #include "private/diagnostic_pop.h"
   #else
     //********************************************
-  #include "etl/private/diagnostic_uninitialized_push.h"
+  #include "private/diagnostic_uninitialized_push.h"
     template <typename TMessage>
     explicit message_packet(const TMessage& /*msg*/, typename etl::enable_if<!etl::is_same<typename etl::remove_cvref<TMessage>::type, etl::message_packet<T1, T2> >::value &&
                                                                          !etl::is_same<typename etl::remove_cvref<TMessage>::type, etl::imessage>::value &&
@@ -4231,11 +4673,11 @@ namespace etl
 
       ETL_STATIC_ASSERT(Enabled, "Message not in packet type list");
     }
-  #include "etl/private/diagnostic_pop.h"
+  #include "private/diagnostic_pop.h"
   #endif
 
     //**********************************************
-  #include "etl/private/diagnostic_uninitialized_push.h"
+  #include "private/diagnostic_uninitialized_push.h"
     message_packet(const message_packet& other)
       : valid(other.is_valid())
     {
@@ -4244,11 +4686,11 @@ namespace etl
         add_new_message(other.get());
       }
     }
-  #include "etl/private/diagnostic_pop.h"
+  #include "private/diagnostic_pop.h"
 
   #if ETL_USING_CPP11 && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION)
     //**********************************************
-  #include "etl/private/diagnostic_uninitialized_push.h"
+  #include "private/diagnostic_uninitialized_push.h"
     message_packet(message_packet&& other)
       : valid(other.is_valid())
     {
@@ -4257,10 +4699,11 @@ namespace etl
         add_new_message(etl::move(other.get()));
       }
     }
-  #include "etl/private/diagnostic_pop.h"
+  #include "private/diagnostic_pop.h"
   #endif
 
     //**********************************************
+  #include "private/diagnostic_uninitialized_push.h"
     message_packet& operator =(const message_packet& rhs)
     {
       delete_current_message();
@@ -4272,9 +4715,11 @@ namespace etl
 
       return *this;
     }
+  #include "private/diagnostic_pop.h"
 
   #if ETL_USING_CPP11 && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION)
     //**********************************************
+  #include "private/diagnostic_uninitialized_push.h"
     message_packet& operator =(message_packet&& rhs)
     {
       delete_current_message();
@@ -4286,6 +4731,7 @@ namespace etl
 
       return *this;
     }
+  #include "private/diagnostic_pop.h"
   #endif
 
     //********************************************
@@ -4349,17 +4795,33 @@ namespace etl
   private:
 
     //********************************************
-    #include "etl/private/diagnostic_uninitialized_push.h"
+    #include "private/diagnostic_uninitialized_push.h"
     void delete_current_message()
     {
       if (valid)
       {
         etl::imessage* pmsg = static_cast<etl::imessage*>(data);
 
+
+  #if ETL_HAS_VIRTUAL_MESSAGES
         pmsg->~imessage();
+  #else
+        delete_message(pmsg);
+  #endif
       }
     }
-    #include "etl/private/diagnostic_pop.h"
+    #include "private/diagnostic_pop.h"
+
+    //********************************************
+    void delete_message(etl::imessage* pmsg)
+    {
+      switch (pmsg->get_message_id())
+      {
+        case T1::ID: static_cast<const T1*>(pmsg)->~T1(); break;
+        case T2::ID: static_cast<const T2*>(pmsg)->~T2(); break;
+        default: ETL_ASSERT_FAIL(ETL_ERROR(unhandled_message_exception)); break;
+      }
+    }
 
     //********************************************
     void add_new_message(const etl::imessage& msg)
@@ -4371,7 +4833,7 @@ namespace etl
       {
         case T1::ID: ::new (p) T1(static_cast<const T1&>(msg)); break;
         case T2::ID: ::new (p) T2(static_cast<const T2&>(msg)); break;
-        default: break;
+        default: ETL_ASSERT_FAIL(ETL_ERROR(unhandled_message_exception)); break;
       }
     }
 
@@ -4404,15 +4866,15 @@ namespace etl
   public:
 
     //********************************************
-  #include "etl/private/diagnostic_uninitialized_push.h"
+  #include "private/diagnostic_uninitialized_push.h"
     message_packet()
       : valid(false)
     {
     }
-  #include "etl/private/diagnostic_pop.h"
+  #include "private/diagnostic_pop.h"
 
     //********************************************
-  #include "etl/private/diagnostic_uninitialized_push.h"
+  #include "private/diagnostic_uninitialized_push.h"
     explicit message_packet(const etl::imessage& msg)
     {
       if (accepts(msg))
@@ -4427,11 +4889,11 @@ namespace etl
 
       ETL_ASSERT(valid, ETL_ERROR(unhandled_message_exception));
     }
-  #include "etl/private/diagnostic_pop.h"
+  #include "private/diagnostic_pop.h"
 
   #if ETL_USING_CPP11 && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION)
     //********************************************
-  #include "etl/private/diagnostic_uninitialized_push.h"
+  #include "private/diagnostic_uninitialized_push.h"
     explicit message_packet(etl::imessage&& msg)
     {
       if (accepts(msg))
@@ -4446,12 +4908,12 @@ namespace etl
 
       ETL_ASSERT(valid, ETL_ERROR(unhandled_message_exception));
     }
-  #include "etl/private/diagnostic_pop.h"
+  #include "private/diagnostic_pop.h"
   #endif
 
   #if ETL_USING_CPP11 && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION) && !defined(ETL_COMPILER_GREEN_HILLS)
     //********************************************
-  #include "etl/private/diagnostic_uninitialized_push.h"
+  #include "private/diagnostic_uninitialized_push.h"
     template <typename TMessage, typename = typename etl::enable_if<!etl::is_same<typename etl::remove_cvref<TMessage>::type, etl::message_packet<T1> >::value &&
                                                                     !etl::is_same<typename etl::remove_cvref<TMessage>::type, etl::imessage>::value &&
                                                                     !etl::is_one_of<typename etl::remove_cvref<TMessage>::type, T1>::value, int>::type>
@@ -4465,10 +4927,10 @@ namespace etl
 
       ETL_STATIC_ASSERT(Enabled, "Message not in packet type list");
     }
-  #include "etl/private/diagnostic_pop.h"
+  #include "private/diagnostic_pop.h"
   #else
     //********************************************
-  #include "etl/private/diagnostic_uninitialized_push.h"
+  #include "private/diagnostic_uninitialized_push.h"
     template <typename TMessage>
     explicit message_packet(const TMessage& /*msg*/, typename etl::enable_if<!etl::is_same<typename etl::remove_cvref<TMessage>::type, etl::message_packet<T1> >::value &&
                                                                          !etl::is_same<typename etl::remove_cvref<TMessage>::type, etl::imessage>::value &&
@@ -4482,11 +4944,11 @@ namespace etl
 
       ETL_STATIC_ASSERT(Enabled, "Message not in packet type list");
     }
-  #include "etl/private/diagnostic_pop.h"
+  #include "private/diagnostic_pop.h"
   #endif
 
     //**********************************************
-  #include "etl/private/diagnostic_uninitialized_push.h"
+  #include "private/diagnostic_uninitialized_push.h"
     message_packet(const message_packet& other)
       : valid(other.is_valid())
     {
@@ -4495,11 +4957,11 @@ namespace etl
         add_new_message(other.get());
       }
     }
-  #include "etl/private/diagnostic_pop.h"
+  #include "private/diagnostic_pop.h"
 
   #if ETL_USING_CPP11 && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION)
     //**********************************************
-  #include "etl/private/diagnostic_uninitialized_push.h"
+  #include "private/diagnostic_uninitialized_push.h"
     message_packet(message_packet&& other)
       : valid(other.is_valid())
     {
@@ -4508,10 +4970,11 @@ namespace etl
         add_new_message(etl::move(other.get()));
       }
     }
-  #include "etl/private/diagnostic_pop.h"
+  #include "private/diagnostic_pop.h"
   #endif
 
     //**********************************************
+  #include "private/diagnostic_uninitialized_push.h"
     message_packet& operator =(const message_packet& rhs)
     {
       delete_current_message();
@@ -4523,9 +4986,11 @@ namespace etl
 
       return *this;
     }
+  #include "private/diagnostic_pop.h"
 
   #if ETL_USING_CPP11 && !defined(ETL_MESSAGE_PACKET_FORCE_CPP03_IMPLEMENTATION)
     //**********************************************
+  #include "private/diagnostic_uninitialized_push.h"
     message_packet& operator =(message_packet&& rhs)
     {
       delete_current_message();
@@ -4537,6 +5002,7 @@ namespace etl
 
       return *this;
     }
+  #include "private/diagnostic_pop.h"
   #endif
 
     //********************************************
@@ -4600,17 +5066,32 @@ namespace etl
   private:
 
     //********************************************
-    #include "etl/private/diagnostic_uninitialized_push.h"
+    #include "private/diagnostic_uninitialized_push.h"
     void delete_current_message()
     {
       if (valid)
       {
         etl::imessage* pmsg = static_cast<etl::imessage*>(data);
 
+
+  #if ETL_HAS_VIRTUAL_MESSAGES
         pmsg->~imessage();
+  #else
+        delete_message(pmsg);
+  #endif
       }
     }
-    #include "etl/private/diagnostic_pop.h"
+    #include "private/diagnostic_pop.h"
+
+    //********************************************
+    void delete_message(etl::imessage* pmsg)
+    {
+      switch (pmsg->get_message_id())
+      {
+        case T1::ID: static_cast<const T1*>(pmsg)->~T1(); break;
+        default: ETL_ASSERT_FAIL(ETL_ERROR(unhandled_message_exception)); break;
+      }
+    }
 
     //********************************************
     void add_new_message(const etl::imessage& msg)
@@ -4621,7 +5102,7 @@ namespace etl
       switch (id)
       {
         case T1::ID: ::new (p) T1(static_cast<const T1&>(msg)); break;
-        default: break;
+        default: ETL_ASSERT_FAIL(ETL_ERROR(unhandled_message_exception)); break;
       }
     }
 
