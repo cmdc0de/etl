@@ -3283,14 +3283,20 @@
     <ClInclude Include="..\..\include\etl\byte_stream.h" />
     <ClInclude Include="..\..\include\etl\callback_timer.h" />
     <ClInclude Include="..\..\include\etl\callback_timer_atomic.h" />
+    <ClInclude Include="..\..\include\etl\callback_timer_deferred_locked.h" />
     <ClInclude Include="..\..\include\etl\callback_timer_interrupt.h" />
     <ClInclude Include="..\..\include\etl\callback_timer_locked.h" />
     <ClInclude Include="..\..\include\etl\chrono.h" />
     <ClInclude Include="..\..\include\etl\circular_buffer.h" />
     <ClInclude Include="..\..\include\etl\circular_iterator.h" />
+    <ClInclude Include="..\..\include\etl\closure.h" />
     <ClInclude Include="..\..\include\etl\combinations.h" />
     <ClInclude Include="..\..\include\etl\compare.h" />
     <ClInclude Include="..\..\include\etl\constant.h" />
+    <ClInclude Include="..\..\include\etl\const_map.h" />
+    <ClInclude Include="..\..\include\etl\const_multimap.h" />
+    <ClInclude Include="..\..\include\etl\const_multiset.h" />
+    <ClInclude Include="..\..\include\etl\const_set.h" />
     <ClInclude Include="..\..\include\etl\correlation.h" />
     <ClInclude Include="..\..\include\etl\covariance.h" />
     <ClInclude Include="..\..\include\etl\crc.h" />
@@ -3312,6 +3318,8 @@
     <ClInclude Include="..\..\include\etl\crc16_maxim.h" />
     <ClInclude Include="..\..\include\etl\crc16_mcrf4xx.h" />
     <ClInclude Include="..\..\include\etl\crc16_modbus.h" />
+    <ClInclude Include="..\..\include\etl\crc16_opensafety_a.h" />
+    <ClInclude Include="..\..\include\etl\crc16_opensafety_b.h" />
     <ClInclude Include="..\..\include\etl\crc16_profibus.h" />
     <ClInclude Include="..\..\include\etl\crc16_riello.h" />
     <ClInclude Include="..\..\include\etl\crc16_t10dif.h" />
@@ -3330,6 +3338,7 @@
     <ClInclude Include="..\..\include\etl\crc32_q.h" />
     <ClInclude Include="..\..\include\etl\crc32_xfer.h" />
     <ClInclude Include="..\..\include\etl\crc64_ecma.h" />
+    <ClInclude Include="..\..\include\etl\crc64_iso.h" />
     <ClInclude Include="..\..\include\etl\crc8_ccitt.h" />
     <ClInclude Include="..\..\include\etl\crc8_cdma2000.h" />
     <ClInclude Include="..\..\include\etl\crc8_darc.h" />
@@ -3340,8 +3349,11 @@
     <ClInclude Include="..\..\include\etl\crc8_j1850.h" />
     <ClInclude Include="..\..\include\etl\crc8_j1850_zero.h" />
     <ClInclude Include="..\..\include\etl\crc8_maxim.h" />
+    <ClInclude Include="..\..\include\etl\crc8_nrsc5.h" />
+    <ClInclude Include="..\..\include\etl\crc8_opensafety.h" />
     <ClInclude Include="..\..\include\etl\crc8_rohc.h" />
     <ClInclude Include="..\..\include\etl\crc8_wcdma.h" />
+    <ClInclude Include="..\..\include\etl\delegate_observable.h" />
     <ClInclude Include="..\..\include\etl\expected.h" />
     <ClInclude Include="..\..\include\etl\function_traits.h" />
     <ClInclude Include="..\..\include\etl\gcd.h" />
@@ -3350,6 +3362,7 @@
     <ClInclude Include="..\..\include\etl\math.h" />
     <ClInclude Include="..\..\include\etl\message_broker.h" />
     <ClInclude Include="..\..\include\etl\monostate.h" />
+    <ClInclude Include="..\..\include\etl\not_null.h" />
     <ClInclude Include="..\..\include\etl\poly_span.h" />
     <ClInclude Include="..\..\include\etl\private\bitset_legacy.h" />
     <ClInclude Include="..\..\include\etl\private\bitset_new.h" />
@@ -3469,6 +3482,7 @@
     <ClInclude Include="..\..\include\etl\rescale.h" />
     <ClInclude Include="..\..\include\etl\result.h" />
     <ClInclude Include="..\..\include\etl\rms.h" />
+    <ClInclude Include="..\..\include\etl\rounded_integral_division.h" />
     <ClInclude Include="..\..\include\etl\scaled_rounding.h" />
     <ClInclude Include="..\..\include\etl\shared_message.h" />
     <ClInclude Include="..\..\include\etl\singleton.h" />
@@ -3819,11 +3833,6 @@
     <ClInclude Include="..\etl_profile.h" />
     <ClInclude Include="..\murmurhash3.h" />
     <ClInclude Include="..\iterators_for_unit_tests.h" />
-    <ClInclude Include="..\syntax_check\c++03\etl_profile.h" />
-    <ClInclude Include="..\syntax_check\c++11\etl_profile.h" />
-    <ClInclude Include="..\syntax_check\c++14\etl_profile.h" />
-    <ClInclude Include="..\syntax_check\c++17\etl_profile.h" />
-    <ClInclude Include="..\syntax_check\c++20\etl_profile.h" />
     <ClInclude Include="..\unittest++\AssertException.h" />
     <ClInclude Include="..\unittest++\CheckMacros.h" />
     <ClInclude Include="..\unittest++\Checks.h" />
@@ -4632,6 +4641,24 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug MSVC C++20 - Force C++03|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug MSVC C++20 - Force C++03 - No virtual messages|Win32'">true</ExcludedFromBuild>
     </ClCompile>
+    <ClCompile Include="..\syntax_check\callback_timer_deferred_locked.h.t.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug MSVC C++20|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug MSVC C++20 - No virtual imessage|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug MSVC C++ 20 - No Tests|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug MSVC C++23 - No STL|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug MSVC C++23|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug MSVC C++20 - No STL|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug MSVC C++14|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release MSVC C++20 - No STL - Optimised -O2|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release MSVC C++20 - No STL - Optimised -O2 - Sanitiser|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug MSVC C++20 - Force C++03 - No virtual messages|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug MSVC C++17|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug MSVC C++17 - No STL|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release MSVC C++20 - Optimised O2|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug MSVC C++20 - No virtual messages|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug MSVC C++14 - No STL|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug MSVC C++20 - Force C++03|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
     <ClCompile Include="..\syntax_check\callback_timer_interrupt.h.t.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug MSVC C++20|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug MSVC C++23|Win32'">true</ExcludedFromBuild>
@@ -4757,6 +4784,24 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug MSVC C++14 - No STL|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug MSVC C++20 - Force C++03|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug MSVC C++20 - Force C++03 - No virtual messages|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="..\syntax_check\closure.h.t.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug MSVC C++20|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug MSVC C++20 - No virtual imessage|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug MSVC C++ 20 - No Tests|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug MSVC C++23 - No STL|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug MSVC C++23|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug MSVC C++20 - No STL|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug MSVC C++14|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release MSVC C++20 - No STL - Optimised -O2|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release MSVC C++20 - No STL - Optimised -O2 - Sanitiser|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug MSVC C++20 - Force C++03 - No virtual messages|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug MSVC C++17|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug MSVC C++17 - No STL|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release MSVC C++20 - Optimised O2|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug MSVC C++20 - No virtual messages|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug MSVC C++14 - No STL|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug MSVC C++20 - Force C++03|Win32'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="..\syntax_check\combinations.h.t.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug MSVC C++20|Win32'">true</ExcludedFromBuild>
@@ -5223,6 +5268,42 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug MSVC C++14 - No STL|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug MSVC C++20 - Force C++03|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug MSVC C++20 - Force C++03 - No virtual messages|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="..\syntax_check\crc16_opensafety_a.h.t.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug MSVC C++20|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug MSVC C++20 - No virtual imessage|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug MSVC C++ 20 - No Tests|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug MSVC C++23 - No STL|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug MSVC C++23|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug MSVC C++20 - No STL|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug MSVC C++14|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release MSVC C++20 - No STL - Optimised -O2|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release MSVC C++20 - No STL - Optimised -O2 - Sanitiser|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug MSVC C++20 - Force C++03 - No virtual messages|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug MSVC C++17|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug MSVC C++17 - No STL|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release MSVC C++20 - Optimised O2|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug MSVC C++20 - No virtual messages|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug MSVC C++14 - No STL|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug MSVC C++20 - Force C++03|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="..\syntax_check\crc16_opensafety_b.h.t.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug MSVC C++20|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug MSVC C++20 - No virtual imessage|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug MSVC C++ 20 - No Tests|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug MSVC C++23 - No STL|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug MSVC C++23|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug MSVC C++20 - No STL|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug MSVC C++14|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release MSVC C++20 - No STL - Optimised -O2|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release MSVC C++20 - No STL - Optimised -O2 - Sanitiser|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug MSVC C++20 - Force C++03 - No virtual messages|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug MSVC C++17|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug MSVC C++17 - No STL|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release MSVC C++20 - Optimised O2|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug MSVC C++20 - No virtual messages|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug MSVC C++14 - No STL|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug MSVC C++20 - Force C++03|Win32'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="..\syntax_check\crc16_profibus.h.t.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug MSVC C++20|Win32'">true</ExcludedFromBuild>
@@ -5728,6 +5809,24 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug MSVC C++20 - Force C++03|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug MSVC C++20 - Force C++03 - No virtual messages|Win32'">true</ExcludedFromBuild>
     </ClCompile>
+    <ClCompile Include="..\syntax_check\crc8_opensafety.h.t.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug MSVC C++20|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug MSVC C++20 - No virtual imessage|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug MSVC C++ 20 - No Tests|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug MSVC C++23 - No STL|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug MSVC C++23|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug MSVC C++20 - No STL|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug MSVC C++14|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release MSVC C++20 - No STL - Optimised -O2|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release MSVC C++20 - No STL - Optimised -O2 - Sanitiser|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug MSVC C++20 - Force C++03 - No virtual messages|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug MSVC C++17|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug MSVC C++17 - No STL|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release MSVC C++20 - Optimised O2|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug MSVC C++20 - No virtual messages|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug MSVC C++14 - No STL|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug MSVC C++20 - Force C++03|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
     <ClCompile Include="..\syntax_check\crc8_rohc.h.t.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug MSVC C++20|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug MSVC C++23|Win32'">true</ExcludedFromBuild>
@@ -5853,6 +5952,24 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug MSVC C++14 - No STL|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug MSVC C++20 - Force C++03|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug MSVC C++20 - Force C++03 - No virtual messages|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="..\syntax_check\delegate_observable.h.t.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug MSVC C++20|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug MSVC C++20 - No virtual imessage|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug MSVC C++ 20 - No Tests|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug MSVC C++23 - No STL|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug MSVC C++23|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug MSVC C++20 - No STL|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug MSVC C++14|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release MSVC C++20 - No STL - Optimised -O2|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release MSVC C++20 - No STL - Optimised -O2 - Sanitiser|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug MSVC C++20 - Force C++03 - No virtual messages|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug MSVC C++17|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug MSVC C++17 - No STL|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release MSVC C++20 - Optimised O2|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug MSVC C++20 - No virtual messages|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug MSVC C++14 - No STL|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug MSVC C++20 - Force C++03|Win32'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="..\syntax_check\delegate_service.h.t.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug MSVC C++20|Win32'">true</ExcludedFromBuild>
@@ -7345,6 +7462,24 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug MSVC C++14 - No STL|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug MSVC C++20 - Force C++03|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug MSVC C++20 - Force C++03 - No virtual messages|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="..\syntax_check\not_null.h.t.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug MSVC C++20|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug MSVC C++20 - No virtual imessage|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug MSVC C++ 20 - No Tests|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug MSVC C++23 - No STL|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug MSVC C++23|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug MSVC C++20 - No STL|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug MSVC C++14|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release MSVC C++20 - No STL - Optimised -O2|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release MSVC C++20 - No STL - Optimised -O2 - Sanitiser|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug MSVC C++20 - Force C++03 - No virtual messages|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug MSVC C++17|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug MSVC C++17 - No STL|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release MSVC C++20 - Optimised O2|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug MSVC C++20 - No virtual messages|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug MSVC C++14 - No STL|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug MSVC C++20 - Force C++03|Win32'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="..\syntax_check\nth_type.h.t.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug MSVC C++20|Win32'">true</ExcludedFromBuild>
@@ -9244,6 +9379,7 @@
     <ClCompile Include="..\test_byte_stream.cpp" />
     <ClCompile Include="..\test_callback_service.cpp" />
     <ClCompile Include="..\test_callback_timer_atomic.cpp" />
+    <ClCompile Include="..\test_callback_timer_deferred_locked.cpp" />
     <ClCompile Include="..\test_callback_timer_interrupt.cpp" />
     <ClCompile Include="..\test_callback_timer_locked.cpp" />
     <ClCompile Include="..\test_char_traits.cpp" />
@@ -9270,6 +9406,24 @@
     <ClCompile Include="..\test_circular_buffer.cpp" />
     <ClCompile Include="..\test_circular_buffer_external_buffer.cpp" />
     <ClCompile Include="..\test_circular_iterator.cpp" />
+    <ClCompile Include="..\test_closure.cpp" />
+    <ClCompile Include="..\test_closure_constexpr.cpp" />
+    <ClCompile Include="..\test_const_map.cpp" />
+    <ClCompile Include="..\test_const_map_constexpr.cpp" />
+    <ClCompile Include="..\test_const_map_ext.cpp" />
+    <ClCompile Include="..\test_const_map_ext_constexpr.cpp" />
+    <ClCompile Include="..\test_const_multimap.cpp" />
+    <ClCompile Include="..\test_const_multimap_constexpr.cpp" />
+    <ClCompile Include="..\test_const_multimap_ext.cpp" />
+    <ClCompile Include="..\test_const_multimap_ext_constexpr.cpp" />
+    <ClCompile Include="..\test_const_multiset.cpp" />
+    <ClCompile Include="..\test_const_multiset_constexpr.cpp" />
+    <ClCompile Include="..\test_const_multiset_ext.cpp" />
+    <ClCompile Include="..\test_const_multiset_ext_constexpr.cpp" />
+    <ClCompile Include="..\test_const_set.cpp" />
+    <ClCompile Include="..\test_const_set_constexpr.cpp" />
+    <ClCompile Include="..\test_const_set_ext.cpp" />
+    <ClCompile Include="..\test_const_set_ext_constexpr.cpp" />
     <ClCompile Include="..\test_correlation.cpp" />
     <ClCompile Include="..\test_covariance.cpp" />
     <ClCompile Include="..\test_crc1.cpp" />
@@ -9290,6 +9444,8 @@
     <ClCompile Include="..\test_crc16_m17.cpp" />
     <ClCompile Include="..\test_crc16_maxim.cpp" />
     <ClCompile Include="..\test_crc16_mcrf4xx.cpp" />
+    <ClCompile Include="..\test_crc16_opensafety_a.cpp" />
+    <ClCompile Include="..\test_crc16_opensafety_b.cpp" />
     <ClCompile Include="..\test_crc16_profibus.cpp" />
     <ClCompile Include="..\test_crc16_riello.cpp" />
     <ClCompile Include="..\test_crc16_t10dif.cpp" />
@@ -9309,6 +9465,7 @@
     <ClCompile Include="..\test_crc32_q.cpp" />
     <ClCompile Include="..\test_crc32_xfer.cpp" />
     <ClCompile Include="..\test_crc64_ecma.cpp" />
+    <ClCompile Include="..\test_crc64_iso.cpp" />
     <ClCompile Include="..\test_crc8_ccitt.cpp" />
     <ClCompile Include="..\test_crc8_cdma2000.cpp" />
     <ClCompile Include="..\test_crc8_darc.cpp" />
@@ -9319,8 +9476,11 @@
     <ClCompile Include="..\test_crc8_j1850.cpp" />
     <ClCompile Include="..\test_crc8_j1850_zero.cpp" />
     <ClCompile Include="..\test_crc8_maxim.cpp" />
+    <ClCompile Include="..\test_crc8_nrsc5.cpp" />
+    <ClCompile Include="..\test_crc8_opensafety.cpp" />
     <ClCompile Include="..\test_crc8_rohc.cpp" />
     <ClCompile Include="..\test_crc8_wcdma.cpp" />
+    <ClCompile Include="..\test_delegate_observable.cpp" />
     <ClCompile Include="..\test_expected.cpp" />
     <ClCompile Include="..\test_function_traits.cpp" />
     <ClCompile Include="..\test_hfsm_recurse_to_inner_state_on_start.cpp" />
@@ -9331,6 +9491,9 @@
     <ClCompile Include="..\test_math_functions.cpp" />
     <ClCompile Include="..\test_message.cpp" />
     <ClCompile Include="..\test_message_broker.cpp" />
+    <ClCompile Include="..\test_not_null_pointer.cpp" />
+    <ClCompile Include="..\test_not_null_pointer_constexpr.cpp" />
+    <ClCompile Include="..\test_not_null_unique_pointer.cpp" />
     <ClCompile Include="..\test_poly_span_dynamic_extent.cpp" />
     <ClCompile Include="..\test_poly_span_fixed_extent.cpp" />
     <ClCompile Include="..\test_pseudo_moving_average.cpp" />
@@ -10263,6 +10426,7 @@
     <ClCompile Include="..\test_rescale.cpp" />
     <ClCompile Include="..\test_result.cpp" />
     <ClCompile Include="..\test_rms.cpp" />
+    <ClCompile Include="..\test_rounded_integral_division.cpp" />
     <ClCompile Include="..\test_shared_message.cpp" />
     <ClCompile Include="..\test_priority_queue.cpp" />
     <ClCompile Include="..\test_queue.cpp" />
@@ -10430,6 +10594,8 @@
     <None Include="..\..\library.properties" />
     <None Include="..\..\meson.build" />
     <None Include="..\..\README.md" />
+    <None Include="..\..\scripts\convert_headers_to_use_guards.bat" />
+    <None Include="..\..\scripts\convert_headers_to_use_once.bat" />
     <None Include="..\..\scripts\generator_test.bat" />
     <None Include="..\..\scripts\generator_test.py" />
     <None Include="..\..\scripts\update_release.bat" />
@@ -10446,6 +10612,7 @@
   </ItemGroup>
   <ItemGroup>
     <Text Include="..\..\CMakeLists.txt" />
+    <Text Include="..\..\Converting header guards.txt" />
     <Text Include="..\..\support\Release notes.txt" />
     <Text Include="..\..\todo.txt" />
     <Text Include="..\..\version.txt" />
@@ -10632,11 +10799,6 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug MSVC  - No Checks|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug MSVC - Force C++03|Win32'">true</ExcludedFromBuild>
     </Text>
-    <Text Include="..\syntax_check\c++03\CMakeLists.txt" />
-    <Text Include="..\syntax_check\c++11\CMakeLists.txt" />
-    <Text Include="..\syntax_check\c++14\CMakeLists.txt" />
-    <Text Include="..\syntax_check\c++17\CMakeLists.txt" />
-    <Text Include="..\syntax_check\c++20\CMakeLists.txt" />
     <Text Include="..\syntax_check\CMakeLists.txt" />
     <Text Include="..\syntax_check\log.txt">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug MSVC C++20|Win32'">true</ExcludedFromBuild>

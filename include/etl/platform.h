@@ -245,8 +245,10 @@ SOFTWARE.
 // Indicate if C++ exceptions are enabled.
 #if defined(ETL_THROW_EXCEPTIONS)
   #define ETL_USING_EXCEPTIONS 1
+  #define ETL_NOT_USING_EXCEPTIONS 0
 #else
   #define ETL_USING_EXCEPTIONS 0
+  #define ETL_NOT_USING_EXCEPTIONS 1
 #endif
 
 //*************************************
@@ -329,13 +331,15 @@ SOFTWARE.
   #define ETL_ENUM_CLASS(name)            enum class name
   #define ETL_ENUM_CLASS_TYPE(name, type) enum class name : type
   #define ETL_LVALUE_REF_QUALIFIER        &
+  #define ETL_NOEXCEPT                    noexcept
+  #define ETL_NOEXCEPT_EXPR(...)          noexcept(__VA_ARGS__)
 
-  #if ETL_USING_EXCEPTIONS
-    #define ETL_NOEXCEPT           noexcept
-    #define ETL_NOEXCEPT_EXPR(...) noexcept(__VA_ARGS__)
+  #if ETL_NOT_USING_EXCEPTIONS
+    #define ETL_NOEXCEPT_IF_NO_THROW           noexcept
+    #define ETL_NOEXCEPT_IF_NO_THROW_EXPR(...) noexcept(__VA_ARGS__)
   #else
-    #define ETL_NOEXCEPT
-    #define ETL_NOEXCEPT_EXPR(...)
+    #define ETL_NOEXCEPT_IF_NO_THROW
+    #define ETL_NOEXCEPT_IF_NO_THROW_EXPR(...)
   #endif
 #else
   #define ETL_CONSTEXPR
@@ -352,6 +356,8 @@ SOFTWARE.
   #define ETL_ENUM_CLASS(name)            enum name
   #define ETL_ENUM_CLASS_TYPE(name, type) enum name
   #define ETL_LVALUE_REF_QUALIFIER
+  #define ETL_NOEXCEPT_IF_NO_THROW
+  #define ETL_NOEXCEPT_IF_NO_THROW_EXPR(...)
 #endif
 
 //*************************************
@@ -476,6 +482,7 @@ SOFTWARE.
     defined(ETL_TARGET_DEVICE_ARM_CORTEX_M0_PLUS) || \
     defined(__STDC_NO_ATOMICS__)
   #define ETL_HAS_ATOMIC 0
+  #define ETL_HAS_ATOMIC_ALWAYS_LOCK_FREE 0
 #else
   #if ((ETL_USING_CPP11 && (ETL_USING_STL || defined(ETL_IN_UNIT_TEST))) || \
         defined(ETL_COMPILER_ARM5)  || \
@@ -579,7 +586,7 @@ namespace etl
     static ETL_CONSTANT bool using_generic_compiler           = (ETL_USING_GENERIC_COMPILER == 1);
     static ETL_CONSTANT bool using_legacy_bitset              = (ETL_USING_LEGACY_BITSET == 1);
     static ETL_CONSTANT bool using_exceptions                 = (ETL_USING_EXCEPTIONS == 1);
-    static ETL_CONSTANT bool using_wide_characters            = (ETL_USING_WIDE_CHARACTERS == 1);
+    static ETL_CONSTANT bool using_libc_wchar_h               = (ETL_USING_LIBC_WCHAR_H == 1);
     
     // Has...
     static ETL_CONSTANT bool has_initializer_list             = (ETL_HAS_INITIALIZER_LIST == 1);
@@ -610,6 +617,7 @@ namespace etl
     static ETL_CONSTANT bool has_chrono_literals_milliseconds = (ETL_HAS_CHRONO_LITERALS_DURATION == 1);
     static ETL_CONSTANT bool has_chrono_literals_microseconds = (ETL_HAS_CHRONO_LITERALS_DURATION == 1);
     static ETL_CONSTANT bool has_chrono_literals_nanoseconds  = (ETL_HAS_CHRONO_LITERALS_DURATION == 1);
+    static ETL_CONSTANT bool has_std_byteswap                 = (ETL_HAS_STD_BYTESWAP == 1);
 
     // Is...
     static ETL_CONSTANT bool is_debug_build                   = (ETL_IS_DEBUG_BUILD == 1);
