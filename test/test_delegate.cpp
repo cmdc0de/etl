@@ -37,6 +37,12 @@ SOFTWARE.
 #include <functional>
 #include <algorithm>
 #include <type_traits>
+#include <stdexcept>
+
+// Enable exactly one of these at a time to see the corresponding static_assert fire.
+// #define ETL_NEGATIVE_TEST_DELEGATE_BAD_RETURN
+// #define ETL_NEGATIVE_TEST_DELEGATE_RVALUE_PARAM_MISMATCH_NONCONST
+// #define ETL_NEGATIVE_TEST_DELEGATE_RVALUE_PARAM_MISMATCH_CONST
 
 namespace
 {
@@ -158,6 +164,20 @@ namespace
 
     return i + j + 1;
   }
+
+  //*****************************************************************************
+  // The throwing function.
+  //*****************************************************************************
+  void throwing_void()
+  {
+    throw std::runtime_error("throwing function");
+  }
+
+  int throwing_normal(int, int)
+  {
+    throw std::runtime_error("throwing function with two parameters");
+  }
+
 
   //*****************************************************************************
   // The test class with member functions.
@@ -356,6 +376,24 @@ namespace
       d();
 
       CHECK(function_called == FunctionCalled::Free_Void_Called);
+    }
+
+    //*************************************************************************
+    TEST_FIXTURE(SetupFixture, test_throwing)
+    {
+      {
+        auto d = etl::delegate<void(void)>::create<throwing_void>();
+
+        CHECK_THROW(d(), std::runtime_error);
+        CHECK_THROW(d.call_if(), std::runtime_error);
+      }
+
+      {
+        auto d = etl::delegate<int(int, int)>::create<throwing_normal>();
+
+        CHECK_THROW({d.call_or(alternative, VALUE1, VALUE2);}, std::runtime_error);
+        CHECK_THROW({d.call_or<alternative>(VALUE1, VALUE2);}, std::runtime_error);
+      }
     }
 
     //*************************************************************************
@@ -1426,7 +1464,7 @@ namespace
 
     //*************************************************************************
 #if ETL_USING_CPP17
-    TEST_FIXTURE(SetupFixture, test_make_delegate_member_int_const_compile_tim1e_new_api)
+    TEST_FIXTURE(SetupFixture, test_make_delegate_member_int_const_compile_time_new_api)
     {
       auto d = etl::make_delegate<Object, &Object::member_int_const, const_object_static>();
 
@@ -1944,6 +1982,43 @@ namespace
       CHECK(*itr != d2);
       CHECK(*itr == d3);
     }
+
+#if defined(ETL_NEGATIVE_TEST_DELEGATE_BAD_RETURN)
+    //*************************************************************************
+    // Triggers: return type not convertible (void -> int)
+    TEST(test_delegate_static_assert_bad_return)
+    {
+      auto bad = [](int) { /* returns void */ };
+      // static_assert in lambda_stub/const_lambda_stub should trigger:
+      // "etl::delegate: bound lambda/functor is not compatible with the delegate signature"
+      auto d = etl::delegate<int(int)>::create(bad);
+      (void)d;
+    }
+#endif
+
+#if defined(ETL_NEGATIVE_TEST_DELEGATE_RVALUE_PARAM_MISMATCH_NONCONST)
+    //*************************************************************************
+    // Triggers: parameter ref-qualification mismatch (expects rvalue, lambda takes lvalue ref)
+    TEST(test_delegate_static_assert_param_mismatch_nonconst)
+    {
+      auto bad = [](int&) { /* needs lvalue */ };
+      // Not invocable with int&&, so is_compatible_callable is false -> static_assert fires
+      auto d = etl::delegate<void(int&&)>::create(bad);
+      (void)d;
+    }
+#endif
+
+#if defined(ETL_NEGATIVE_TEST_DELEGATE_RVALUE_PARAM_MISMATCH_CONST)
+    //*************************************************************************
+    // Same as above, but binds a const lambda to hit const_lambda_stub
+    TEST(test_delegate_static_assert_param_mismatch_const)
+    {
+      const auto bad = [](int&) { /* needs lvalue */ };
+      // Not invocable with int&&, so is_compatible_callable is false -> static_assert fires
+      auto d = etl::delegate<void(int&&)>::create(bad);
+      (void)d;
+    }
+#endif
   };
 }
 

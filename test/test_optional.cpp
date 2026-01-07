@@ -218,13 +218,25 @@ namespace
     }
 
     //*************************************************************************
-    TEST(test_emplace_zero_parameters)
+    TEST(test_emplace_zero_parameters_fundamental)
     {
       etl::optional<std::uint8_t> result = 1;
-      result.emplace();
+      CHECK_EQUAL(0, static_cast<int>(result.emplace()));
 
       CHECK_TRUE(result.has_value());
       CHECK_EQUAL(0, int(result.value()));
+    }
+
+    //*************************************************************************
+    TEST(test_emplace_zero_parameters_non_fundamental)
+    {
+      etl::optional<std::string> result = std::string("abc");
+
+      std::string& ref = result.emplace();
+      CHECK_EQUAL(std::string(), ref);
+      CHECK_EQUAL(&ref, &result.value());
+      CHECK_TRUE(result.has_value());
+      CHECK_EQUAL("", std::string(result.value()));
     }
 
     //*************************************************************************
@@ -284,6 +296,21 @@ namespace
       data = Data("Value");
       result = data.value_or(Data("Default"));
       CHECK_EQUAL(Data("Value"), result);
+    }
+
+    //*************************************************************************
+    TEST(test_value_or_const)
+    {
+      using FundamentalType = int;
+      using NonFundamentalType = std::string;
+
+      const FundamentalType constFT{ 5 };
+      int resultFT = etl::optional<FundamentalType>{}.value_or(constFT);
+      CHECK_EQUAL(5, resultFT);
+
+      const NonFundamentalType constNFT{ "Default" };
+      NonFundamentalType resultNFT = etl::optional<NonFundamentalType>{}.value_or(constNFT);
+      CHECK_EQUAL("Default", resultNFT);
     }
 
     //*************************************************************************
@@ -976,7 +1003,36 @@ namespace
         }
       };
     }
+
+    //*************************************************************************
+    using ItemType = etl::array<uint8_t, 2>;
+
+    etl::optional<const ItemType> create_optional_issue_1171() 
+    {
+      ItemType t;
+      t[0] = 1;
+      t[1] = 20;
+
+      return etl::optional<const ItemType>(t);
+    }
+
+    TEST(test_optional_issue_1171)
+    {
+      etl::optional<const ItemType> opt1 = create_optional_issue_1171(); 
+      CHECK_TRUE(opt1.has_value());
+      CHECK_EQUAL(1, (*opt1)[0]);
+      CHECK_EQUAL(20, (*opt1)[1]);
+
+      etl::optional<const ItemType> opt2(create_optional_issue_1171());     
+      CHECK_TRUE(opt2.has_value());
+      CHECK_EQUAL(1, (*opt2)[0]);
+      CHECK_EQUAL(20, (*opt2)[1]);
+
+      etl::optional<const ItemType> opt3;
+      opt3.emplace(create_optional_issue_1171());
+      CHECK_TRUE(opt3.has_value());
+      CHECK_EQUAL(1, (*opt3)[0]);
+      CHECK_EQUAL(20, (*opt3)[1]);
+    }
   };
 }
-
-

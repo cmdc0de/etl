@@ -1,4 +1,107 @@
 ﻿===============================================================================
+20.44.2
+
+Updates:
+Replaced locally defined logical_not_t with etl::negation
+
+Fixes:
+#1228 unused parameter 'secure'
+#1224 Passing a const in optional::value_or() not compiling
+
+Pull Requests:
+#1210 Fixed span reinterpret_as should return fixed span
+#1211 Change generators to reflect changes in fsm.h and type_traits.h
+#1217 Add const specialization for etl::get_object_at
+#1218 Cleanup platform.h includes, add missing test for unaligned_type
+#1221 Add test for swap
+#1222 Basic string checks
+#1223 Fix is_truncated in basic_string
+#1225 Fix value_or not taking const in optional
+#1226 Add missing include to optional
+#1229 variant_legacy.h: Rename template parameters
+#1231 Issue 1212 span constructor
+
+===============================================================================
+20.44.1
+
+Updates:
+Added perfect forwarding for alternative callback for etl::delegate::call_or()
+
+Pull Requests:
+#1208 array noexcept expr
+      Fixed ETL_NOEXCEPT_EXPR for etl::array
+      Added ETL_NOEXCEPT for zero sized etl::array specialisation.
+
+===============================================================================
+20.44.0
+
+Updates:
+Added etl::type_list_has_duplicates_of and etl::type_list_count_of
+
+Fixes:
+#1186 Fix usage of noexcept
+#1203 Potential issue with forwarding in etl::delegate
+      Improved forwarding of arguments to bound functions.
+      Added compile time checks for functors and lambdas argument compatibility.
+
+Pull Requests:
+#1012 Implement Signal
+      A signal/slot implementation.
+#1155 Added callbacks when a timer is inserted or removed
+#1175 Debug assert
+      Added ETL_DEBUG_ASSERT macro, which is a debug only assert.
+      Added extra assert enable/disable macros.
+#1188 etl::array checks
+#1190 Enforce semicolon after ETL_ASSERT
+#1191 Introduce cast to void for condition of assert
+      Avoids compiler warnings for unused results of ETL_ASSERT and ETL_DEBUG_ASSERT
+#1192 Allow easy creation of generic exceptions with just a text
+#1195 Added conditional support of noexcept to fix IAR support
+#1196 Added back in support for populating non 8 bit strings with 8 bit data
+#1198 Add etl::is_constant_evaluated
+#1199 Added support for transitions on state enter for HFSM
+#1201 etl::span checks
+
+===============================================================================
+20.43.4
+
+#1185 Remove noexcept from delegate method stubs.
+
+===============================================================================
+20.43.3
+
+Removed ETL_NOEXCEPT from delegate operator(), call_if(), and call_or()
+Removed ETL_NOEXCEPT from closure
+
+===============================================================================
+20.43.2
+
+Pull Requests:
+#1182 Fix etl::typed_storage by supporting omitted destructors
+#1183 Regression fix: Support zero arguments emplace() in etl::optional
+
+===============================================================================
+20.43.1
+
+Updates:
+Added automatic use of __builtin_memcpy, __builtin_memmove, __builtin_memset, __builtin_memcmp, and __builtin_memchr for GCC and Clang, if available.
+#1170 Place a typed pointer instead of a bool into etl::typed_storage
+      Modified the storage used by etl::typed_storage to be a union, along the lines of etl::optional.
+      Added etl::typed_storage_ext to wrap external storage.
+
+Fixes:
+#1171 optional of a const array can't be emplaced with gcc-15
+#1176 Fix GCC __builtin_memcpy errors when compiling with -O2 optimisation
+#1180 Duplicate definition of const_reference in etl::const_set_ext
+#1181 Compilation errors on basic_string
+
+Pull Requests:
+#1169 Remove Unreachable Break Statements
+#1172 Make call interfaces in etl::delegate and etl::closure conditionally noexcept
+#1177 Fix .clang-format
+#1179 Made all 'noexcept' statements use ETL_NOEXCEPT macro
+
+===============================================================================
 20.43.0
 
 Updates:
